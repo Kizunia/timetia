@@ -11,8 +11,11 @@ Third batch of business-logic decisions for the Lecture Rescheduling module. It 
 ## 1. Rooms
 
 - The **author picks the room**. The system only **suggests** free rooms that fit (room type, seats, projector).
-- A room is **mandatory** for every rescheduled or extra lecture, so every changed lecture has a place. This applies even when the original lecture had no room (the ERP export shows "--" for some lectures).
-- The room conflict checks (room occupied, room unfit) always run on the chosen room and **block** as described in Batch 1.
+- Every lecture has a **mode**: **in person** or **online**.
+- An **in-person** lecture needs a room, so every changed in-person lecture has a place. This applies even when the original lecture had no room.
+- An **online** lecture has **no room**, and the room checks are skipped for it. FCTC is an example: it runs fully online.
+- The ERP's room "--" is read as **online**.
+- For in-person lectures, the room conflict checks (room occupied, room unfit) always run on the chosen room and **block** as described in Batch 1.
 - A missing projector remains plain information, never a conflict.
 
 ## 2. Notifications
@@ -38,7 +41,7 @@ The ERP can publish a new timetable version (new W.E.F. date) while changes are 
 | 11 When | Remove the reminder before a moved occurrence. |
 | 8.1 step 3 | The author chooses the room; suggestions only. |
 | 5 and 10 | A new ERP version re-checks pending and applied changes and flags conflicts instead of discarding them. |
-| 13 Q4 | Room "--" is only an ERP state. Any changed lecture needs a room. |
+| 13 Q4 | Answered: room "--" means online. Online lectures have no room; in-person lectures need one. |
 
 ## 5. Still open
 
