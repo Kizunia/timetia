@@ -8,7 +8,7 @@
 
 This is the first batch of business-logic decisions for the Lecture Rescheduling module. It records what the owner decided in the design discussion of 2026-10-27, together with the decisions that were already taken earlier. Where a decision here differs from [`../modules/lecture-rescheduling.md`](../modules/lecture-rescheduling.md), **this document wins** and the module spec is to be updated when the docs are migrated (see [`../STRUCTURE.md`](../STRUCTURE.md)).
 
-Batch 2 (revert, same-slot tickets, extra lectures requested by CR/BR, cancellation) is not decided yet and is listed in section 8.
+Batch 2 ([reverts, same-slot tickets, cancellation and requests](batch-2-reverts-same-slot-tickets-cancellation-and-requests.md)) has since been decided; its questions are listed in section 8 only as history.
 
 ## 1. Context in one paragraph
 
@@ -132,7 +132,7 @@ These were warnings in the spec. They are now **plain information**: shown on th
 | 10 Conflict rules | All checks block. Remove warnings and the "Default" column. Faculty overload, no projector and short notice become plain information. |
 | 13 Q6 | Partly answered: no review timeout. "Short notice" no longer drives behaviour. |
 
-## 8. Still open (batch 2)
+## 8. Questions that were open here (answered in batch 2)
 
 1. **Revert right:** can the other faculty revert at any time before the lecture, and is the revert itself conflict-checked if the original slot was taken?
 2. **Two tickets on the same slot or room:** does the first to be approved win, or the first to be submitted?

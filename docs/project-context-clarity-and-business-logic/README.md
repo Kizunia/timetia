@@ -11,3 +11,4 @@ Business-logic decisions for the Lecture Rescheduling module, recorded batch by 
 | Batch | Topic | Status |
 | --- | --- | --- |
 | [Batch 1](batch-1-approval-roles-and-conflict-rules.md) | Approval, roles and conflict rules | Review |
+| [Batch 2](batch-2-reverts-same-slot-tickets-cancellation-and-requests.md) | Reverts, same-slot tickets, cancellation and CR/BR requests | Review |
