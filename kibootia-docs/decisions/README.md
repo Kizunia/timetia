@@ -14,6 +14,6 @@ Project-wide architecture decision records (ADRs), numbered `NNNN-short-title.md
 |---|---|
 | [INDEX.md](INDEX.md) | Table of every ADR with status |
 | [open-questions.md](open-questions.md) | Unresolved decisions, provisional choices and observed deviations |
-| `0001` to `0021` | The ADRs, listed in the index |
+| `0001` to `0022` | The ADRs, listed in the index |
 
-New ADRs start from the [ADR template](../meta/templates/adr.md).
+New ADRs start from the [ADR template](../meta/templates/adr.md) and follow the [documentation standards](../meta/documentation-standards.md#7-architecture-decision-records).

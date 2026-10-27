@@ -30,7 +30,6 @@ Live list of unresolved decisions, provisional choices and deviations observed i
 | OQ-12 | No JPA starter, although `ddl-auto=validate` is set | Add JPA in milestone 4 |
 | OQ-13 | Tracked root `.env` (in history) and a hardcoded datasource password | Owner cleanup and credential rotation; see [secrets management](../operations/security/secrets-management.md) |
 | OQ-14 | `adminer:latest` in `compose.yaml` is not version-pinned | Decide whether to pin |
-| OQ-15 | `STRUCTURE.md` still carries another project's content and "awaiting migration" status | Owner may later patch it; see [ADR 0001](0001-adopt-structure-conventions-selectively.md) |
 
 ## Undecided
 

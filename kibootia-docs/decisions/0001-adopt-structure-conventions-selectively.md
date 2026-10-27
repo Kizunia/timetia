@@ -2,15 +2,17 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** accepted
+- **Status:** deprecated
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-27
 
 > **Implementation:** not applicable (documentation convention).
 
+> **Superseded by [ADR 0022](0022-maintain-own-documentation-standards.md).** Kibootia now maintains its own [documentation standards](../meta/documentation-standards.md) and `STRUCTURE.md` has been deleted. The text below is the original decision, kept as history; its dependency on `STRUCTURE.md` is no longer current and the file no longer exists.
+
 ## Context
 
-[STRUCTURE.md](../STRUCTURE.md) was written for another project (a timetable product with ERP integration, academic roles and a lecture-rescheduling module). It contains useful general conventions and also content that does not apply to Kibootia. The owner stated this in the documentation interview.
+`STRUCTURE.md` (since deleted) was written for another project (a timetable product with ERP integration, academic roles and a lecture-rescheduling module). It contains useful general conventions and also content that does not apply to Kibootia. The owner stated this in the documentation interview.
 
 ## Decision
 
@@ -31,8 +33,8 @@ Use STRUCTURE.md for its conventions: top-level taxonomy, lowercase kebab-case n
 
 ## Status
 
-accepted
+deprecated; was accepted on 2026-10-27. Superseded by [ADR 0022](0022-maintain-own-documentation-standards.md).
 
 ## Related
 
-[docs README](../README.md), [living documentation](../meta/living-documentation.md).
+[docs README](../README.md), [living documentation](../meta/living-documentation.md), [ADR 0022](0022-maintain-own-documentation-standards.md).

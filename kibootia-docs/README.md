@@ -10,7 +10,7 @@
 
 Kibootia is a reusable Spring Boot and Next.js application starter. These docs describe what it is intended to be, which decisions have been taken, and what currently exists in the repository. They are kept in step with the code (see [living documentation](meta/living-documentation.md)).
 
-The folder conventions come from [STRUCTURE.md](STRUCTURE.md). Only the conventions are used; parts of that file that belong to another product are not applied (see [ADR 0001](decisions/0001-adopt-structure-conventions-selectively.md)).
+The documentation conventions (areas, naming, headers, status values, ADRs, links and portability across forks) are defined in [documentation standards](meta/documentation-standards.md). Earlier versions relied on a separate `STRUCTURE.md`; that file was removed, see [ADR 0022](decisions/0022-maintain-own-documentation-standards.md).
 
 ## How to read the status of a statement
 
@@ -20,7 +20,7 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 
 | Area | What it holds |
 |---|---|
-| [meta/](meta/README.md) | How these docs are written and kept current, plus templates |
+| [meta/](meta/README.md) | [Documentation standards](meta/documentation-standards.md), how docs are kept current, plus templates |
 | [product/](product/README.md) | Vision, goals and non-goals, milestones, implementation status |
 | [shared/](shared/README.md) | Glossary of terms used across documents |
 | [architecture/](architecture/README.md) | System design: boundaries, identity, data, API, communication |
@@ -37,4 +37,4 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 
 ## Non-authoritative material
 
-`docs/temp/kibootia-project-definition.md` is the source document the first version of these docs was derived from. It is not part of the permanent set and is not kept in step with changes. When it and a document here disagree, the document here, together with the ADRs, wins.
+[`temp/kibootia-project-definition.md`](temp/kibootia-project-definition.md) is the source document the first version of these docs was derived from. It is not part of the permanent set and is not kept in step with changes. When it and a document here disagree, the document here, together with the ADRs, wins.

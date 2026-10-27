@@ -8,13 +8,13 @@
 
 > **Implementation:** not applicable (index).
 
-Every ADR in the project. Update this table in the same change that adds or alters an ADR. An accepted ADR is never rewritten; a changed decision is a new ADR that supersedes the old one.
+Every ADR in the project. Update this table in the same change that adds or alters an ADR. An accepted ADR is never rewritten; a changed decision is a new ADR that supersedes the old one. Rules: [documentation standards](../meta/documentation-standards.md#7-architecture-decision-records).
 
 Accepted does not mean implemented: see [implementation status](../product/roadmap/implementation-status.md).
 
 | ID | Title | Scope | Status | Date | Link |
 |---|---|---|---|---|---|
-| 0001 | Adopt STRUCTURE.md conventions selectively | platform | accepted | 2026-10-27 | [0001](0001-adopt-structure-conventions-selectively.md) |
+| 0001 | Adopt STRUCTURE.md conventions selectively | platform | deprecated (superseded by 0022) | 2026-10-27 | [0001](0001-adopt-structure-conventions-selectively.md) |
 | 0002 | Modular monolith as initial architecture | platform | accepted | 2026-10-27 | [0002](0002-modular-monolith.md) |
 | 0003 | Hexagonal architecture where boundaries matter | platform | accepted | 2026-10-27 | [0003](0003-hexagonal-architecture-where-boundaries-matter.md) |
 | 0004 | Separate API, application and persistence models | platform | accepted | 2026-10-27 | [0004](0004-separate-api-application-and-persistence-models.md) |
@@ -35,5 +35,6 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0019 | Java 21 baseline | platform | accepted | 2026-10-27 | [0019](0019-java-21-baseline.md) |
 | 0020 | Keycloak in local Compose with an imported realm | platform | accepted | 2026-10-27 | [0020](0020-keycloak-in-local-compose.md) |
 | 0021 | Frontend beside backend in one repository | platform | draft | 2026-10-27 | [0021](0021-frontend-beside-backend-in-one-repository.md) |
+| 0022 | Maintain Kibootia's own documentation standards | platform | accepted | 2026-10-27 | [0022](0022-maintain-own-documentation-standards.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.

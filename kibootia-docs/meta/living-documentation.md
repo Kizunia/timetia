@@ -8,7 +8,7 @@
 
 > **Implementation:** not applicable (process rules).
 
-Documentation is part of engineering work in Kibootia. This document defines how it stays accurate. Folder, naming, header and ADR rules are in [STRUCTURE.md](../STRUCTURE.md).
+Documentation is part of engineering work in Kibootia. This document defines how it stays accurate. Folder, naming, header and ADR rules are in the [documentation standards](documentation-standards.md).
 
 ## Source-of-truth order
 
@@ -16,7 +16,7 @@ Documentation is part of engineering work in Kibootia. This document defines how
 2. Accepted [ADRs](../decisions/INDEX.md).
 3. The permanent docs in this tree.
 4. Current code and automated tests, as evidence of what works.
-5. Drafts, proposals and notes (including `docs/temp/`).
+5. Drafts, proposals and notes (including `temp/`).
 
 This order says which source wins in a conflict. It never allows an intended design to be described as implemented.
 
@@ -71,4 +71,4 @@ Code proves what is implemented, not what was intended.
 
 ## ADRs
 
-Accepted ADRs are never rewritten. A changed decision is a new ADR that supersedes the old one; both statuses and the index are updated together.
+Accepted ADRs are never rewritten. A changed decision is a new ADR that supersedes the old one; both statuses and the index are updated together (see [ADR rules](documentation-standards.md#7-architecture-decision-records)). An accepted ADR records a decision, not implemented behavior.
