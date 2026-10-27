@@ -15,6 +15,7 @@ Third batch of business-logic decisions for the Lecture Rescheduling module. It 
 - An **in-person** lecture needs a room, so every changed in-person lecture has a place. This applies even when the original lecture had no room.
 - An **online** lecture has **no room**, and the room checks are skipped for it. FCTC is an example: it runs fully online.
 - Every lecture has one **location** field. For an in-person lecture it holds the **room number**; for an online lecture it holds the **meeting link** (mostly a Google Meet link) instead.
+- The meeting link is **optional for now**. If it is missing, students are told "link to follow". The owner may make it required later.
 - The ERP's room "--" is read as **online**.
 - For in-person lectures, the room conflict checks (room occupied, room unfit) always run on the chosen room and **block** as described in Batch 1.
 - A missing projector remains plain information, never a conflict.
