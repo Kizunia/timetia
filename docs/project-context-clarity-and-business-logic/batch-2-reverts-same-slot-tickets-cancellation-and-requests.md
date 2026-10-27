@@ -56,9 +56,10 @@ Requests from the student side work **exactly like GitHub issues**. This replace
 | Who gets notified | Every mentioned faculty. The HOD is notified only when mentioned. |
 | Linking | An issue can be linked to the ticket that answers it, as with a GitHub issue linked to a pull request. |
 
-### 4.3 Not decided yet
+### 4.3 Closing and expiry
 
-Whether issues can be closed, who can close them, and whether replies on an issue are allowed to everyone concerned or only to faculty and the author. These are listed in section 6.
+- An issue can be **closed** by anyone concerned: the **opener** or **any mentioned faculty**.
+- Issues **do not expire** for now. This feature is low priority, so it stays minimal. Replies and labels are not part of this version.
 
 ## 5. Changes to the module spec
 
@@ -72,6 +73,4 @@ Whether issues can be closed, who can close them, and whether replies on an issu
 
 ## 6. Still open
 
-1. Can issues be closed, and by whom? Can they have replies and labels?
-2. Do issues expire, for example when the date they asked about passes?
-3. Which rooms and notification settings apply (batch 3: rooms, notifications and edge cases)?
+Rooms, notifications and edge cases are covered in batch 3.
