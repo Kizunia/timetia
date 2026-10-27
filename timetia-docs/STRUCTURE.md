@@ -28,7 +28,7 @@ The docs folder will hold thousands of Markdown files. This document defines whe
 ## 3. Top-level layout
 
 ```
-docs/
+timetia-docs/
 ├── README.md              # Entry point: map of the docs, how to find things
 ├── STRUCTURE.md           # This file (moves to meta/ after migration)
 ├── meta/                  # How we write docs: rules, style, templates
@@ -43,7 +43,7 @@ docs/
 └── guides/                # Task-oriented how-tos by audience
 ```
 
-`modules/` keeps its current name, so the existing path `docs/modules/` stays valid.
+`modules/` keeps its current name, so the existing path `timetia-docs/modules/` stays valid.
 
 ## 4. What belongs in each area
 
@@ -276,7 +276,7 @@ No tooling for now. Rules are enforced in PR review:
 | 13 Decisions taken | ADRs in `decisions/`, listed in `decisions/INDEX.md` |
 
 3. Replace the original file with the module `README.md` linking to all parts.
-4. Move this file to `meta/structure.md` and write `docs/README.md`.
+4. Move this file to `meta/structure.md` and write `timetia-docs/README.md`.
 
 Each step is a separate commit so it can be reviewed or reverted independently.
 
