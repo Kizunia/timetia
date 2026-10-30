@@ -4,18 +4,19 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** not applicable (index).
 
-The project is built through six ordered milestones. A milestone is complete only when its criteria are verified.
+The project is built through seven ordered milestones, each a vertical slice: every capability is tested as soon as it exists, and the documentation is updated within the milestone. A milestone is complete only when its criteria are verified. The order and scope were set by the owner on 2026-10-28; the completion criteria are proposals until the owner approves them. The vision is not limited to this order: delivery order and product scope are separate.
 
 | Item | Summary |
 |---|---|
 | [implementation-status.md](implementation-status.md) | Per capability: intended, observed in the repository, verified |
-| [milestone-1-architectural-skeleton.md](milestone-1-architectural-skeleton.md) | Package structure, module contracts, architecture tests |
-| [milestone-2-configuration-and-secrets.md](milestone-2-configuration-and-secrets.md) | Externalised, validated configuration; secrets conventions |
-| [milestone-3-security-baseline.md](milestone-3-security-baseline.md) | Keycloak, token validation, role-based authorization |
-| [milestone-4-persistence-conventions.md](milestone-4-persistence-conventions.md) | MySQL, JPA, Flyway, model separation |
-| [milestone-5-api-and-operational-conventions.md](milestone-5-api-and-operational-conventions.md) | Error handling, validation, logging, health |
-| [milestone-6-frontend-integration.md](milestone-6-frontend-integration.md) | Next.js app and a protected end-to-end flow |
+| [milestone-0-hygiene-and-guardrails.md](milestone-0-hygiene-and-guardrails.md) | Clean-up, externalised configuration, module skeleton, ArchUnit, CI. Blocked on the Java decision |
+| [milestone-1-walking-skeleton.md](milestone-1-walking-skeleton.md) | Sign-in through Next.js to a protected Spring endpoint, with traces, on a fresh clone |
+| [milestone-2-platform-conventions.md](milestone-2-platform-conventions.md) | Persistence, tenancy, soft delete, API behavior, outbox and jobs |
+| [milestone-3-identity-and-access-administration.md](milestone-3-identity-and-access-administration.md) | Profiles, roles and permissions, admin UI, invitations, audit log, rate limiting |
+| [milestone-4-files.md](milestone-4-files.md) | Object storage and the avatar flow |
+| [milestone-5-example-feature.md](milestone-5-example-feature.md) | The deletable example feature and the module-removal matrix |
+| [milestone-6-production-readiness.md](milestone-6-production-readiness.md) | Reference deployment, production guards, first recipes, first release |

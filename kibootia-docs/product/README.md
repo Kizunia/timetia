@@ -12,4 +12,4 @@
 |---|---|
 | [vision.md](vision.md) | What Kibootia is, who it is for, the problem it addresses |
 | [goals-and-non-goals.md](goals-and-non-goals.md) | Objectives, principles, exclusions, what success looks like |
-| [roadmap/](roadmap/README.md) | The six implementation milestones and the current implementation status |
+| [roadmap/](roadmap/README.md) | The seven implementation milestones and the current implementation status |
