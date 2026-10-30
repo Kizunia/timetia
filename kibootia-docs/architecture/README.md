@@ -14,8 +14,8 @@
 | [context-and-boundaries.md](context-and-boundaries.md) | What Kibootia owns versus what a consuming application and external systems own |
 | [layers-and-boundaries.md](layers-and-boundaries.md) | Layers, model separation, features and shared platform packages |
 | [architecture-enforcement.md](architecture-enforcement.md) | Candidate ArchUnit rules |
-| [communication.md](communication.md) | Synchronous contracts, in-process events, future messaging |
-| [identity/](identity/README.md) | Authentication, token validation, authorization |
+| [communication.md](communication.md) | Synchronous contracts, in-process events, the outbox and jobs, brokers as a recipe |
+| [identity/](identity/README.md) | Authentication through the Next.js backend-for-frontend, token validation, authorization |
 | [data/](data/README.md) | Persistence stack, model separation, migrations, transactions, data ownership |
 | [api/](api/README.md) | API-wide conventions |
 

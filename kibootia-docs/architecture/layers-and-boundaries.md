@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned. The repository has one package, `com.kibootia.backend`, with only the application class.
 
@@ -40,10 +40,14 @@ Allowed for API conventions, security conventions, configuration, observability 
 
 API DTOs, application/domain models and persistence entities are separate types with separate responsibilities. Entities are not returned from APIs, and application logic does not depend on concrete entity classes where a persistence boundary is warranted. Details: [model separation](data/model-separation.md).
 
+## Modules and capability tiers
+
+The backend is one Maven project whose modules are packages ([ADR 0024](../decisions/0024-package-modules-with-infrastructure-toggles.md)). A module that depends on infrastructure (object storage, observability, mail) has its own on/off property, Flyway migration folder and Compose profile, and a documented removal recipe; CI proves the application starts with it disabled. Modules are classified by [capability tier](../shared/glossary/capability-tier.md) in the [technology catalogue](../technology/README.md). Foundation modules (user and role administration, profiles and avatars, audit log, storage) contain no business-domain concepts. The deletable example feature is the model for how an application adds its own module.
+
 ## Not every class needs an interface
 
 Ports exist where they protect a meaningful boundary. Adding an interface with a single implementation and no boundary value is not required.
 
 ## Known limitations
 
-Package names, the location of ports, and how a feature declares its public contract are undecided ([open questions](../decisions/open-questions.md)).
+Package names, the location of ports, and how a module declares its public contract are undecided ([open questions](../decisions/open-questions.md)).

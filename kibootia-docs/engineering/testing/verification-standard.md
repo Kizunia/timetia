@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned. There is no CI pipeline, so no behavior in the repository can currently be called verified.
 
@@ -32,6 +32,15 @@ When a capability becomes verified, update its row in [implementation status](..
 
 A milestone is complete when each of its criteria is verified under this rule. Criteria are listed in the [milestone files](../../product/roadmap/README.md).
 
+## CI pipeline (owner decisions of 2026-10-28; none of it exists yet)
+
+- **Platform:** GitHub Actions.
+- **On every pull request:** backend build with unit, ArchUnit and Testcontainers integration tests (including migrate-from-empty, tenant isolation and soft-delete filtering); frontend lint, type check and unit tests; the module-removal job ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)); secret scanning.
+- **Images:** built and scanned for known vulnerabilities.
+- **Dependencies:** automated grouped update pull requests, with security updates first ([ADR 0035](../../decisions/0035-version-adoption-policy.md)).
+- **End-to-end tests:** nightly, before release tags, and on pull requests labelled `e2e`.
+- **Workflow:** trunk-based, with short-lived branches and pull requests into `main`. Commit messages follow Conventional Commits, which generates the changelog. Releases are SemVer tags ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)).
+
 ## Not decided
 
-The CI platform and pipeline layout, and what other checks (formatting, dependency scanning, link checking) the pipeline runs. See [open questions](../../decisions/open-questions.md).
+Formatting and link-checking jobs. See [open questions](../../decisions/open-questions.md).

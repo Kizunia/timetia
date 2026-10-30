@@ -4,25 +4,46 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
-> **Implementation:** planned. No actuator dependency and no logging configuration exist.
+> **Implementation:** planned. No actuator dependency, logging configuration or telemetry exists.
 
-## Scope (owner decision)
+Decision: [ADR 0030](../../decisions/0030-otlp-telemetry-and-local-lgtm.md).
 
-The initial foundation provides:
+## Scope (owner decision of 2026-10-28)
 
-1. Basic logging.
-2. Request correlation.
-3. Health checks.
+The foundation provides logs, metrics, traces, request correlation and health checks, and a local stack to see them. This replaces the earlier scope of basic logging, correlation and health only.
 
-Advanced metrics, distributed tracing, dashboards and a Prometheus/Grafana stack are deferred until operational need justifies them.
+## Design
 
-## Requirements to settle during milestone 5
+```mermaid
+flowchart LR
+    be[Spring backend] -->|OTLP logs, metrics, traces| lgtm[Grafana LGTM container<br/>local only]
+    fe[Next.js server] -->|OTLP, trace context| lgtm
+    fe -->|traceparent| be
+    be --> console[Console JSON logs]
+```
 
-- A correlation ID per request, present in log lines and available to callers.
-- Logs must not contain secrets, tokens or other sensitive data ([API conventions](../../architecture/api/conventions.md)).
-- A health endpoint, and whether it is public (the [token policy](../../architecture/identity/token-validation.md) provisionally allows health only as a public endpoint).
+| Signal | How |
+|---|---|
+| Logs | Structured JSON on the console always, carrying trace and span IDs; also sent over OTLP when the stack is on |
+| Metrics | Micrometer, exported over OTLP |
+| Traces | OpenTelemetry, with W3C trace context passed from the Next.js server to Spring, through the outbox and into jobs |
+| Correlation | The trace ID doubles as the request correlation ID, visible in logs and available to callers |
+| Health | Actuator liveness and readiness, separate from telemetry |
+
+The application emits OTLP only. Where it goes is deployment configuration, so there is one telemetry path and no duplicate collectors.
+
+## Local and production
+
+- **Locally:** one Grafana LGTM all-in-one development container starts with `docker compose up`. It can be switched off with a property and a Compose profile; the application then keeps logging to the console.
+- **Production:** the same OTLP settings point at a managed backend or a self-hosted collector with Prometheus, Tempo, Loki and Grafana. That is a planned recipe, not shipped. Retention, access control, alerting and sizing are the deployer's responsibility. The local container is never a production component.
+
+## Requirements
+
+- Logs and traces must not contain secrets, tokens or other sensitive data ([API conventions](../../architecture/api/conventions.md)).
+- A health endpoint exists, and whether it is public is open (the [token policy](../../architecture/identity/token-validation.md) allows health only as a public endpoint).
+- OTLP log export in the Spring Boot version in use needs extra wiring that must be verified ([open questions](../../decisions/open-questions.md)).
 
 ## Observed deviation
 
@@ -30,4 +51,4 @@ Advanced metrics, distributed tracing, dashboards and a Prometheus/Grafana stack
 
 ## Related
 
-[Milestone 5](../../product/roadmap/milestone-5-api-and-operational-conventions.md).
+[Milestone 1](../../product/roadmap/milestone-1-walking-skeleton.md).

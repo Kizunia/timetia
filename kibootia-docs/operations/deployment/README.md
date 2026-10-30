@@ -4,10 +4,10 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** not applicable (index).
 
 | Item | Summary |
 |---|---|
-| [container-deployment.md](container-deployment.md) | Provisional generic container deployment model |
+| [container-deployment.md](container-deployment.md) | The single-server Docker Compose reference deployment and its limits |

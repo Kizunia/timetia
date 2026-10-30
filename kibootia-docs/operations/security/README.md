@@ -10,6 +10,7 @@
 
 | Item | Summary |
 |---|---|
-| [secrets-management.md](secrets-management.md) | Secrets rules, the Vault target, and a dated known limitation |
+| [secrets-management.md](secrets-management.md) | Secrets rules, environment and file delivery, Vault as the recommended store, and a dated known limitation |
+| [threat-model.md](threat-model.md) | Living threat model by trust boundary |
 
-Authentication and authorization design is in [architecture/identity](../../architecture/identity/README.md). A threat model has not been written.
+Authentication and authorization design is in [architecture/identity](../../architecture/identity/README.md).

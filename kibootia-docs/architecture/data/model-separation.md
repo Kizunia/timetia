@@ -29,7 +29,7 @@ Hand-written mapper classes or methods owned by the adapter or layer that needs 
 
 ## Examples
 
-No example exists yet. [Milestone 4](../../product/roadmap/milestone-4-persistence-conventions.md) proposes a reference example.
+No example exists yet. [Milestone 2](../../product/roadmap/milestone-2-platform-conventions.md) proposes a reference example.
 
 ## Related
 
