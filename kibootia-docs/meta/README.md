@@ -14,4 +14,4 @@ Rules about the documentation itself. Start with the [documentation standards](d
 |---|---|
 | [documentation-standards.md](documentation-standards.md) | Authority for areas, naming, indexing, headers, status values, ADR rules, links, portability across forks and retiring documents |
 | [living-documentation.md](living-documentation.md) | When docs must change with code, how code/doc disagreements are handled, the implementation-status vocabulary |
-| [templates/](templates/) | Starting points: [adr](templates/adr.md), [spec](templates/spec.md), [guide](templates/guide.md) |
+| [templates/](templates/) | Starting points: [adr](templates/adr.md), [spec](templates/spec.md), [guide](templates/guide.md), [recipe](templates/recipe.md) |

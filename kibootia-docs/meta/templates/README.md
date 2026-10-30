@@ -15,3 +15,4 @@ Copy a template to start a new document. Only the templates that are actually ne
 | [adr.md](adr.md) | Architecture decision records in `decisions/` |
 | [spec.md](spec.md) | Technical specifications of a concern (architecture, data, API, operations) |
 | [guide.md](guide.md) | Task-oriented how-tos |
+| [recipe.md](recipe.md) | Integration recipes in `recipes/` ([ADR 0036](../../decisions/0036-technology-catalogue-and-recipes-areas.md)) |

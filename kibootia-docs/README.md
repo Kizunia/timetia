@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** not applicable (index).
 
@@ -24,8 +24,9 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 | [product/](product/README.md) | Vision, goals and non-goals, milestones, implementation status |
 | [shared/](shared/README.md) | Glossary of terms used across documents |
 | [architecture/](architecture/README.md) | System design: boundaries, identity, data, API, communication |
+| [technology/](technology/README.md) | Technology catalogue: tier, selection and reasoning, including technologies not selected |
 | [engineering/](engineering/README.md) | Local setup, conventions, testing and verification |
-| [operations/](operations/README.md) | Configuration, deployment, monitoring, secrets |
+| [operations/](operations/README.md) | Configuration, deployment, monitoring, secrets, threat model |
 | [decisions/](decisions/README.md) | Architecture decision records, the [central ADR index](decisions/INDEX.md) and [open questions](decisions/open-questions.md) |
 
 ## Where to start
@@ -37,4 +38,4 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 
 ## Non-authoritative material
 
-[`temp/kibootia-project-definition.md`](temp/kibootia-project-definition.md) is the source document the first version of these docs was derived from. It is not part of the permanent set and is not kept in step with changes. When it and a document here disagree, the document here, together with the ADRs, wins.
+`temp/` holds working material: [`kibootia-project-definition.md`](temp/kibootia-project-definition.md) is the source of the first version of these docs, [`kibootia-ideation-decisions.md`](temp/kibootia-ideation-decisions.md) is the brief that started the 2026-10-28 interview, and [`kibootia-decision-log.md`](temp/kibootia-decision-log.md) records the decisions taken in it. None is part of the permanent set or kept in step with changes. When one of them and a document here disagree, the document here, together with the ADRs, wins. The project definition predates those decisions; its exclusions of object storage, a full observability stack and user administration no longer apply.
