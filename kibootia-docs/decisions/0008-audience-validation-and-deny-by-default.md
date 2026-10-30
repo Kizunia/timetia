@@ -2,19 +2,19 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned.
 
 ## Context
 
-Signature, issuer and expiry checks ([ADR 0007](0007-spring-security-resource-server.md)) would accept any valid token from the realm, including tokens meant for other clients. The definition does not mention audience or default access policy. The owner chose the recommended option, labelled provisional.
+Signature, issuer and expiry checks ([ADR 0007](0007-spring-security-resource-server.md)) would accept any valid token from the realm, including tokens meant for other clients. The definition does not mention audience or default access policy. The owner chose the recommended option, first labelled provisional; it was accepted on 2026-10-28 as part of the security baseline the owner delegated to the architect.
 
 ## Decision
 
-Provisional: require the API's audience in access tokens (using a Keycloak audience mapper), and require authentication on every endpoint unless explicitly marked public. The only intended initial public endpoint is health.
+Require the API's audience in access tokens (using a Keycloak audience mapper), and require authentication on every endpoint unless explicitly marked public. The only intended initial public endpoint is health.
 
 ## Alternatives considered
 
@@ -29,7 +29,7 @@ The realm must define the audience mapper, so the imported development realm ([A
 
 ## Status
 
-draft (provisional; listed in [open questions](open-questions.md))
+accepted. Resolves OQ-02. The security baseline around it (realm hardening, cookie and CSRF rules, behavior when signing keys are unavailable) is in [token validation](../architecture/identity/token-validation.md).
 
 ## Related
 

@@ -33,4 +33,4 @@ draft (provisional; listed in [open questions](open-questions.md))
 
 ## Related
 
-[Milestone 6](../product/roadmap/milestone-6-frontend-integration.md).
+[Milestone 1](../product/roadmap/milestone-1-walking-skeleton.md), [ADR 0038](0038-frontend-stack.md).

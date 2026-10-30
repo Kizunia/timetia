@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned.
+
+> **Extended by [ADR 0031](0031-transactional-outbox-and-locked-jobs.md)**, which adds a database outbox for events that must not be lost. "No broker initially" still holds.
 
 ## Context
 
@@ -28,7 +30,7 @@ Nothing needing guaranteed delivery may rely on in-process events.
 
 ## Status
 
-accepted
+accepted. Extended by [ADR 0031](0031-transactional-outbox-and-locked-jobs.md).
 
 ## Related
 

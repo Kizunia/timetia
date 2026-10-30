@@ -2,11 +2,13 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** deprecated
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned.
+
+> **Superseded by [ADR 0025](0025-identity-and-authorization-data-split.md).** Roles are now stored in Kibootia's database, not read from Keycloak realm roles in the token.
 
 ## Context
 
@@ -29,7 +31,7 @@ Simple to set up. Roles are shared by all clients in the realm. Switching later 
 
 ## Status
 
-draft (provisional; listed in [open questions](open-questions.md))
+deprecated. Superseded by [ADR 0025](0025-identity-and-authorization-data-split.md).
 
 ## Related
 

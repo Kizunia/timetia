@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned.
+
+> **Partly superseded by [ADR 0032](0032-secrets-from-environment-and-files.md):** Vault is the recommended production secret store, not a mandatory one. The rules that secrets are never committed and that production never falls back to development credentials still hold.
 
 ## Context
 
@@ -26,7 +28,7 @@ Vault is an operational dependency in production. Known gaps in the current repo
 
 ## Status
 
-accepted
+accepted. Partly superseded by [ADR 0032](0032-secrets-from-environment-and-files.md) (Vault is recommended, not mandatory).
 
 ## Related
 

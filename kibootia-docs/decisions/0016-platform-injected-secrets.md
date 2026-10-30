@@ -2,19 +2,19 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned.
 
 ## Context
 
-[ADR 0015](0015-vault-for-production-secrets.md) fixes Vault but not how the application obtains secrets. The owner chose the recommended option, labelled provisional.
+[ADR 0015](0015-vault-for-production-secrets.md) fixes Vault but not how the application obtains secrets. The owner chose the recommended option, first labelled provisional and confirmed on 2026-10-28 together with [ADR 0032](0032-secrets-from-environment-and-files.md).
 
 ## Decision
 
-Provisional: the deployment platform or a Vault agent delivers secrets as environment variables or files. The application contains no Vault client.
+The deployment platform or a Vault agent delivers secrets as environment variables or files. The application contains no Vault client.
 
 ## Alternatives considered
 
@@ -29,7 +29,7 @@ Same configuration shape locally and in production. Requires a Vault agent or pl
 
 ## Status
 
-draft (provisional; listed in [open questions](open-questions.md))
+accepted. Confirmed with [ADR 0032](0032-secrets-from-environment-and-files.md), which makes Vault recommended rather than mandatory.
 
 ## Related
 

@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-10-28
 
 > **Implementation:** planned.
+
+> **Extended by [ADR 0027](0027-central-authorization-decision-point.md)**, which adds a permission model and a central decision point. This decision still holds. Role data is now stored in Kibootia's database ([ADR 0025](0025-identity-and-authorization-data-split.md)); [ADR 0010](0010-keycloak-realm-roles-as-role-source.md), named below, is superseded.
 
 ## Context
 
@@ -29,7 +31,7 @@ Contextual policies (ownership, tenant) will need later ADRs. The source of role
 
 ## Status
 
-accepted
+accepted. Extended by [ADR 0027](0027-central-authorization-decision-point.md).
 
 ## Related
 
