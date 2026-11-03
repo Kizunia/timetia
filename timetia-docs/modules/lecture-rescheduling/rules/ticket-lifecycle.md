@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-30
 
-The states a [ticket](../../../shared/glossary/ticket.md) moves through. Original design: [module spec](../../lecture-rescheduling.md), section 9. Where this file differs from the spec, this file wins. Revert and cancel as lifecycle events, expiry timing, audit log and notifications per transition are still being decided and are added here as they are agreed.
+The states a [ticket](../../../shared/glossary/ticket.md) moves through. Original design: [module spec](../../lecture-rescheduling.md), section 9. Where this file differs from the spec, this file wins. Audit log and notifications per transition are still being decided and are added here as they are agreed.
 
 ## States
 
@@ -42,7 +42,7 @@ stateDiagram-v2
     Reverted --> [*]
 ```
 
-Rejected is final. Cancel, revert and expiry timing are still being decided.
+Rejected is final. Expiry applies to Draft and In review tickets (see below).
 
 ## Conflicts and the lifecycle
 
@@ -70,3 +70,23 @@ Rejected is final. Cancel, revert and expiry timing are still being decided.
 - The author can withdraw a ticket at any time before it is Applied, from Draft or In review.
 - Requested reviewers are notified.
 - A withdrawal after a reviewer has already approved needs no extra step. The audit log records it as **"withdrawn after approval"** so the history is not lost.
+
+## Cancel and revert as lifecycle events
+
+A cancel is an ordinary ticket, applied directly ([cancellation](cancellation.md)). Both of these ways to bring a cancelled lecture back are allowed:
+
+1. **Revert the cancel.** The teaching faculty, or the HOD acting for them, raises a new revert ticket before the lecture starts. It is conflict-checked like any other change ([reverts](reverts.md)): if the slot or room has been taken since, it is blocked until fixed. If it passes, the **same occurrence is restored** with its history, and the original cancel ticket shows as Reverted, linked to the revert ticket.
+2. **Raise an extra lecture.** This is a new, separate lecture, checked like any extra lecture. It does not restore the original occurrence.
+
+## Expiry
+
+Draft and In review tickets **expire when the earliest occurrence they involve starts**, whether that is the source or the target.
+
+| Ticket | Expires when |
+| --- | --- |
+| Move a Friday lecture to Wednesday | Wednesday's slot starts. |
+| Move a Wednesday lecture to Friday | Wednesday's lecture starts. |
+| Extra lecture | The extra lecture's own slot starts. |
+| Exchange | The first of the two occurrences starts. |
+
+Expired tickets stay visible in history. A ticket that is Applied, Rejected, Withdrawn or Reverted never expires.
