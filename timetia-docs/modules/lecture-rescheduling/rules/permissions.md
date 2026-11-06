@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-27
 
-What each role can do in the lecture-rescheduling module. Original design: [module spec](../../lecture-rescheduling.md), section 6. Where this file differs from the spec, this file wins.
+What each role can do in the lecture-rescheduling module. Original design: [module spec](../_archive/original-spec.md), section 6. Where this file differs from the spec, this file wins.
 
 | Role | Powers |
 | --- | --- |

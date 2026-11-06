@@ -7,4 +7,4 @@
 - **Last updated:** 2026-10-27
 
 - Nothing happens automatically when a faculty goes on leave. Their pending tickets stay as they are.
-- The **HOD acts on their behalf** (raise, cancel, substitute), as the [module spec](../../lecture-rescheduling.md) allows in section 8.5.
+- The **HOD acts on their behalf** (raise, cancel, substitute), as the [module spec](../_archive/original-spec.md) allows in section 8.5.

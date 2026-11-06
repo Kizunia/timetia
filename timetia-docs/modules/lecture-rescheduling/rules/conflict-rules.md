@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-27
 
-How tickets are checked. Original design: [module spec](../../lecture-rescheduling.md), section 10. Where this file differs from the spec, this file wins.
+How tickets are checked. Original design: [module spec](../_archive/original-spec.md), section 10. Where this file differs from the spec, this file wins.
 
 ## Every conflict blocks
 

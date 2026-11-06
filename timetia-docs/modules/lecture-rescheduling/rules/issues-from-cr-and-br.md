@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-27
 
-Requests from the student side work **exactly like GitHub issues**. This replaces the spec rule that a CR-initiated extra lecture "needs the faculty's acceptance" ([module spec](../../lecture-rescheduling.md), section 8.4). See [issue](../../../shared/glossary/issue.md).
+Requests from the student side work **exactly like GitHub issues**. This replaces the spec rule that a CR-initiated extra lecture "needs the faculty's acceptance" ([module spec](../_archive/original-spec.md), section 8.4). See [issue](../../../shared/glossary/issue.md).
 
 ## How it works
 

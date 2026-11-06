@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-06
 
-The states a [ticket](../../../shared/glossary/ticket.md) moves through. Original design: [module spec](../../lecture-rescheduling.md), section 9. Where this file differs from the spec, this file wins. The audit log and notifications per transition are at the end of this file.
+The states a [ticket](../../../shared/glossary/ticket.md) moves through. Original design: [module spec](../_archive/original-spec.md), section 9. Where this file differs from the spec, this file wins. The audit log and notifications per transition are at the end of this file.
 
 ## States
 

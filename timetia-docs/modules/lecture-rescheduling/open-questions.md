@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-06
 
-Live list of unresolved decisions. Items answered by the owner are in the resolved table below. Original questions: [module spec](../lecture-rescheduling.md), section 13.
+Live list of unresolved decisions. Items answered by the owner are in the resolved table below. Original questions: [module spec](_archive/original-spec.md), section 13.
 
 | # | Question | Current position | Owner |
 | --- | --- | --- | --- |

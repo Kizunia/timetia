@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-27
 
-How a ticket gets approved. Original design: [module spec](../../lecture-rescheduling.md), section 9. Where this file differs from the spec, this file wins.
+How a ticket gets approved. Original design: [module spec](../_archive/original-spec.md), section 9. Where this file differs from the spec, this file wins.
 
 ## Self-approval
 

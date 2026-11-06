@@ -46,3 +46,9 @@ History of business-logic decisions, in the order they were taken with the owner
 - The ERP will not help: no API, data seeded manually, no sync for now.
 - Meeting link stays optional; multiple CRs kept; in-app only with no reminders; students see results only.
 - Question 8 decided: standalone for version 1. The real timetable is arranged manually; webhooks or similar come later and ERP sync is ignored for now.
+
+## 2026-11-06 Spec migration
+
+- The original spec was split into `overview/`, `requirements/`, `flows/`, `data/`, `decisions/` and `integration/erp-ownership.md`, and archived at `_archive/original-spec.md`.
+- Shared terms, roles, change types and the room entity moved to `shared/`.
+- Spec open question Q4 (room "--") is decided: online.

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-27
 
-Original design: [module spec](../../lecture-rescheduling.md), sections 8.1 and 12. Where this file differs from the spec, this file wins.
+Original design: [module spec](../_archive/original-spec.md), sections 8.1 and 12. Where this file differs from the spec, this file wins.
 
 - The **author picks the room**. The system only **suggests** free rooms that fit (room type, seats, projector).
 - Every lecture has a [mode](../../../shared/glossary/lecture-mode.md): **in person** or **online**.
