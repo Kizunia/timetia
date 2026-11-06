@@ -16,3 +16,4 @@ Live list of unresolved decisions. Original questions: [module spec](../lecture-
 | 4 | Should the online meeting link become required? | Optional for now ([rooms](rules/rooms-and-location.md)). | ishanKulkarni13 |
 | 5 | Keep "multiple CRs per class", or return to CR/ACR? | Multiple CRs for now ([permissions](rules/permissions.md)). | ishanKulkarni13 |
 | 6 | Other notification channels (email, SMS, WhatsApp) and reminders | In-app only, no reminders in version 1. | ishanKulkarni13 |
+| 7 | Can students see tickets (pull requests) themselves, or only the result of a change? | Students see results only for now ([ticket lifecycle](rules/ticket-lifecycle.md)). | ishanKulkarni13 |

@@ -38,7 +38,7 @@ There is **no escalation**. If a requested reviewer does not respond, the ticket
 ## Rejection
 
 - A faculty reviewer, the HOD, and a CR or BR within their scope ([permissions](permissions.md)) can reject. A rejection needs a reason.
-- The author can escalate a rejection to the HOD, or edit and resubmit.
+- The author can escalate a rejection to the HOD, or raise a new ticket that copies the rejected one. A rejected ticket is final ([ticket lifecycle](ticket-lifecycle.md)).
 
 ## Always logged
 

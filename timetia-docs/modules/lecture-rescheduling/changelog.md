@@ -30,3 +30,13 @@ History of business-logic decisions, in the order they were taken with the owner
 **Shared courses, load, permanent changes, leave**
 - Shared-course check skipped ([shared courses](rules/shared-courses.md)); extra lectures count toward load ([faculty load](rules/faculty-load.md)).
 - Permanent changes applied by the module for now ([permanent changes](rules/permanent-changes.md)); HOD covers faculty on leave ([faculty on leave](rules/faculty-on-leave.md)).
+
+## 2026-11-06 Ticket lifecycle
+
+- Seven states: Draft, In review, Applied, Rejected, Withdrawn, Expired, Reverted. Open and Approved dropped.
+- Conflicted tickets can be reviewed but not applied; a conflict during review sets a "conflicted" flag.
+- Applied and Rejected are final; revert and re-submission are new tickets.
+- Edits to date, slot, room, lecture or type clear approvals.
+- A cancel can be reverted, and an extra lecture can also be raised.
+- Tickets expire at the earliest involved occurrence, with no notification.
+- Append-only audit log; notification table per transition.

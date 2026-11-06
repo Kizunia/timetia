@@ -2,11 +2,11 @@
 
 - **Type:** rules
 - **Module:** lecture-rescheduling
-- **Status:** draft
+- **Status:** review
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-30
+- **Last updated:** 2026-11-06
 
-The states a [ticket](../../../shared/glossary/ticket.md) moves through. Original design: [module spec](../../lecture-rescheduling.md), section 9. Where this file differs from the spec, this file wins. Audit log and notifications per transition are still being decided and are added here as they are agreed.
+The states a [ticket](../../../shared/glossary/ticket.md) moves through. Original design: [module spec](../../lecture-rescheduling.md), section 9. Where this file differs from the spec, this file wins. The audit log and notifications per transition are at the end of this file.
 
 ## States
 
@@ -90,3 +90,26 @@ Draft and In review tickets **expire when the earliest occurrence they involve s
 | Exchange | The first of the two occurrences starts. |
 
 Expired tickets stay visible in history. A ticket that is Applied, Rejected, Withdrawn or Reverted never expires.
+
+## Audit log
+
+- **Records:** every state change, edit (with before and after values), review action and conflict flag, with who, when and from which state.
+- **Who can read a ticket's log:** the author, requested reviewers, the HOD, the CR/BR within scope, and the Super Admin. Students see the result of a change, not the log.
+- **Append-only:** entries are never edited or deleted. How long they are kept is an operations decision.
+- Whether students can see tickets themselves (not just results) is open ([open questions](../open-questions.md)).
+
+## Notifications per transition
+
+In-app only, as in [notification triggers](../notifications/triggers.md).
+
+| Transition | Who is notified |
+| --- | --- |
+| Sent for review | Requested reviewers and mentioned faculty. |
+| Approved by a reviewer, or rejected | Author. A rejection includes the reason. |
+| Applied | Author, affected students, the other faculty involved, the HOD, and the CR/BR within scope. A self-approval sends only this message. |
+| Conflicted flag raised | Author and HOD. |
+| Edited (approvals cleared) | Requested reviewers. |
+| Withdrawn | Requested reviewers. |
+| Expired | **Nobody.** |
+| Reverted | Everyone who was notified of the original change. |
+| Cancel applied | Students, the HOD, the CR/BR within scope, and the ERP attendance module through the `occurrence.cancelled` event. |

@@ -4,6 +4,7 @@ Business rules of the lecture-rescheduling module, one concern per file.
 
 | File | Summary |
 | --- | --- |
+| [ticket-lifecycle.md](ticket-lifecycle.md) | States, transitions, edits, withdrawal, expiry, audit log, notifications |
 | [approval-model.md](approval-model.md) | Self-approval, optional consent, timeout, expiry, rejection |
 | [permissions.md](permissions.md) | Roles and powers, CR for theory, BR for labs and tutorials |
 | [conflict-rules.md](conflict-rules.md) | Every conflict blocks, no overrides, plain information |

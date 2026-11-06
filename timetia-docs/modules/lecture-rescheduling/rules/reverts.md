@@ -13,3 +13,4 @@ An exchange or substitute can be applied without the other faculty's consent ([a
 - The revert is **conflict-checked like any other change**. If the original slot has been taken meanwhile, the revert is **blocked** until the conflict is resolved.
 - A revert notifies everyone who was notified of the original change.
 - Every revert is written to the audit log.
+- A revert is a **new ticket**. The original shows as Reverted, linked to it ([ticket lifecycle](ticket-lifecycle.md)).
