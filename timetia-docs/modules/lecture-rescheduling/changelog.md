@@ -52,3 +52,4 @@ History of business-logic decisions, in the order they were taken with the owner
 - The original spec was split into `overview/`, `requirements/`, `flows/`, `data/`, `decisions/` and `integration/erp-ownership.md`, and archived at `_archive/original-spec.md`.
 - Shared terms, roles, change types and the room entity moved to `shared/`.
 - Spec open question Q4 (room "--") is decided: online.
+- Shared courses are handled per batch from a manually seeded list. The conflict check and notifications cover every listed batch. This replaces the earlier "skipped in version 1" decision.
