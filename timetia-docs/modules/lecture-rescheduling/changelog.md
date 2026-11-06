@@ -40,3 +40,9 @@ History of business-logic decisions, in the order they were taken with the owner
 - A cancel can be reverted, and an extra lecture can also be raised.
 - Tickets expire at the earliest involved occurrence, with no notification.
 - Append-only audit log; notification table per transition.
+
+## 2026-11-06 Open questions answered
+
+- The ERP will not help: no API, data seeded manually, no sync for now.
+- Meeting link stays optional; multiple CRs kept; in-app only with no reminders; students see results only.
+- New open question 8: is the module standalone, now that the ERP gives nothing?

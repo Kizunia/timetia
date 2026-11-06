@@ -13,6 +13,6 @@ Original design: [module spec](../../lecture-rescheduling.md), sections 8.1 and 
 - An **in-person** lecture needs a room, so every changed in-person lecture has a place. This applies even when the original lecture had no room.
 - An **online** lecture has **no room**, and the room checks are skipped for it. FCTC is an example: it runs fully online.
 - Every lecture has one **location** field. For an in-person lecture it holds the **room number**; for an online lecture it holds the **meeting link** (mostly Google Meet).
-- The meeting link is **optional for now**. If it is missing, students are told "link to follow". The owner may make it required later.
+- The meeting link is **optional for now**. If it is missing, students are told "link to follow". The owner confirmed on 2026-11-06 that it stays optional.
 - The ERP's room "--" is read as **online**.
 - For in-person lectures the room checks block as described in [conflict rules](conflict-rules.md). A missing projector is plain information only.
