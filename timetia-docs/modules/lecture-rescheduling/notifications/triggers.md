@@ -13,4 +13,4 @@ Original design: [module spec](../../lecture-rescheduling.md), section 11. Where
 - **Events:** ticket raised, review requested, approved, rejected, applied, conflicted, edited, withdrawn, reverted, cancelled, and "an issue mentions you".
 - **Expiry sends no notification.** Per-transition recipients are in the [ticket lifecycle](../rules/ticket-lifecycle.md).
 - **No reminder** is sent before a moved or extra lecture. Only the change notification is sent.
-- A moved, cancelled or added occurrence still emits an event for the ERP attendance module.
+- A moved, cancelled or added occurrence still emits an event, intended for an attendance module or later ERP integration.

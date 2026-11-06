@@ -20,6 +20,6 @@ What each role can do in the lecture-rescheduling module. Original design: [modu
 
 ## CR and BR
 
-- **CR and BR have no assign powers.** Assigning faculty, HODs and timetables stays in the ERP.
+- **CR and BR have no assign powers.** Assigning faculty, HODs and timetables stays outside this module's rules. In version 1 the base timetable is arranged manually; later it may come from an ERP.
 - A class can have **multiple CRs** instead of "CR plus ACR". This is the current decision and the CR/ACR split may be revisited.
 - Labs and tutorials belong to the BR because they are batch sessions. PAS is a regular theory lecture, so it is covered by the CR.

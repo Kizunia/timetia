@@ -10,8 +10,7 @@ Live list of unresolved decisions. Items answered by the owner are in the resolv
 
 | # | Question | Current position | Owner |
 | --- | --- | --- | --- |
-| 3 | Should shared-course student lists be read from the ERP later? | Check skipped in version 1 ([shared courses](rules/shared-courses.md)). | ishanKulkarni13 |
-| 8 | Since the ERP gives no help (see resolved 1), is the module standalone with its own base timetable? | Not yet decided. Affects the "ERP owns the base timetable" statements in the spec. | ishanKulkarni13 |
+| 3 | Should shared-course student lists be read from the ERP once ERP integration exists? | Check skipped in version 1 ([shared courses](rules/shared-courses.md)). | ishanKulkarni13 |
 
 ## Resolved (2026-11-06)
 
@@ -23,3 +22,4 @@ Live list of unresolved decisions. Items answered by the owner are in the resolv
 | 5 | Keep "multiple CRs per class", or return to CR/ACR? | **Keep multiple CRs** ([permissions](rules/permissions.md)). |
 | 6 | Other notification channels and reminders | **In-app only, no reminders** in version 1 ([triggers](notifications/triggers.md)). |
 | 7 | Can students see tickets themselves? | **Results only** for now ([ticket lifecycle](rules/ticket-lifecycle.md)). |
+| 8 | Is the module standalone, with its own base timetable? | **Standalone for version 1.** The real timetable is arranged manually. A webhook or similar ERP integration may come later; ignore ERP sync for now. | Decided |

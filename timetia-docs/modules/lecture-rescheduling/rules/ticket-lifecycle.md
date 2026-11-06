@@ -48,7 +48,7 @@ Rejected is final. Expiry applies to Draft and In review tickets (see below).
 
 - A ticket **with a conflict can still be sent for review**, like a pull request with merge conflicts. Review can go ahead, but the ticket **cannot be applied** while any [conflict](../../../shared/glossary/conflict.md) remains ([conflict rules](conflict-rules.md)).
 - Conflicts are checked when the ticket is raised and again at the moment of applying.
-- If a conflict appears while the ticket is In review (another ticket was applied first, see [same-slot tickets](same-slot-tickets.md), or a new ERP timetable version arrived, see [timetable version changes](../integration/timetable-version-changes.md)), the ticket **stays In review with a "conflicted" flag**. The author and the HOD are notified. Applying stays blocked until the conflict is fixed.
+- If a conflict appears while the ticket is In review (another ticket was applied first, see [same-slot tickets](same-slot-tickets.md), or a new base timetable version was loaded, see [timetable version changes](../integration/timetable-version-changes.md)), the ticket **stays In review with a "conflicted" flag**. The author and the HOD are notified. Applying stays blocked until the conflict is fixed.
 
 ## Applied is final
 
@@ -112,4 +112,4 @@ In-app only, as in [notification triggers](../notifications/triggers.md).
 | Withdrawn | Requested reviewers. |
 | Expired | **Nobody.** |
 | Reverted | Everyone who was notified of the original change. |
-| Cancel applied | Students, the HOD, the CR/BR within scope, and the ERP attendance module through the `occurrence.cancelled` event. |
+| Cancel applied | Students, the HOD, the CR/BR within scope, and the `occurrence.cancelled` event. |

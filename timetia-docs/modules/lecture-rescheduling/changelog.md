@@ -45,4 +45,4 @@ History of business-logic decisions, in the order they were taken with the owner
 
 - The ERP will not help: no API, data seeded manually, no sync for now.
 - Meeting link stays optional; multiple CRs kept; in-app only with no reminders; students see results only.
-- New open question 8: is the module standalone, now that the ERP gives nothing?
+- Question 8 decided: standalone for version 1. The real timetable is arranged manually; webhooks or similar come later and ERP sync is ignored for now.
