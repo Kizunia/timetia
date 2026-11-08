@@ -2,9 +2,11 @@
 
 - **Type:** reference
 - **Module:** platform
-- **Status:** accepted
+- **Status:** deprecated
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-11-08
+
+> **Historical.** This is the owner's first statement of the project (2026-10-27). Later decisions replaced parts of it: Vault is recommended, not mandatory ([ADR 0032](../decisions/0032-secrets-from-environment-and-files.md)); object storage, a local observability stack and user administration are now in scope ([goals and non-goals](../product/goals-and-non-goals.md)); the milestones are M0 to M6 ([roadmap](../product/roadmap/README.md)). The permanent documents and the [ADR index](../decisions/INDEX.md) win in any conflict.
 
 ---
 
