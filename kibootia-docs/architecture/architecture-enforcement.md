@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. There is no ArchUnit or Spring Modulith dependency and no architecture test in the repository.
+> **Implementation:** partly observed. Spring Modulith verification (`ModularityTests`) and ArchUnit rules 1, 4, 6 and 8 (`ArchitectureTests`) exist and pass locally (2026-11-08); rules 1, 4 and 6 are vacuous until module code exists. Rules 5 and 7 are not implemented. No CI run yet.
 
 Decisions: [ADR 0013](../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../decisions/0044-authorization-enforcement-conventions.md).
 
@@ -21,7 +21,7 @@ Record the architecture rules that are meant to be enforced by automated tests, 
 
 ## Rules
 
-Decided rules, none implemented yet. Package selectors follow [package structure](../engineering/conventions/package-structure.md).
+Decided rules. Rules 1, 4, 6 and 8 are implemented in `ArchitectureTests`, rules 2 and 3 are covered by `ModularityTests` (meaningful once two modules have code), rules 5 and 7 are not implemented. Package selectors follow [package structure](../engineering/conventions/package-structure.md).
 
 | # | Rule |
 |---|---|
@@ -32,7 +32,7 @@ Decided rules, none implemented yet. Package selectors follow [package structure
 | 5 | Optional capabilities must not introduce unnecessary dependencies; core code does not depend on an optional or default-on module ([ADR 0024](../decisions/0024-package-modules-with-infrastructure-toggles.md)) |
 | 6 | Persistence entities are not used in API types ([ADR 0004](../decisions/0004-separate-api-application-and-persistence-models.md)) |
 | 7 | Every public use-case method carries an authorization check or an explicit `@NoAuthorization("reason")` ([ADR 0044](../decisions/0044-authorization-enforcement-conventions.md)) |
-| 8 | The `platform` module contains no business logic and depends on no other module. Proposed (an inference from the module map, not an owner decision); confirm when the skeleton is built |
+| 8 | The `platform` module contains no business logic and depends on no other module. Proposed (an inference from the module map, not an owner decision); implemented for the dependency half (`platform` is declared with no allowed dependencies and ArchUnit checks it); "no business logic" is not machine-checkable |
 
 ## Beyond ArchUnit
 

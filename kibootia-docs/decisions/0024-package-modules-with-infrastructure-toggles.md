@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. The repository has one package and no modules.
+> **Implementation:** partly observed. The six module packages exist as empty skeletons; no `kibootia.<module>.enabled` property and no module-removal CI job exist yet.
 
 > **Extended by [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md)**, which fixes the module map, package layout and Spring Modulith verification. "Mail" is no longer an example of an infrastructure-backed module: Keycloak sends identity mail and the backend has no mail module ([ADR 0041](0041-user-lifecycle-and-account-model.md)).
 

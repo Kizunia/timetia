@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. Current repository state does not meet these rules; see Known limitations.
+> **Implementation:** partly observed. The hardcoded password is removed, `.env` is ignored, `.env.example` and `pnpm setup` exist, and a missing required setting stops startup with a message. Credentials that were ever committed are not yet rotated (owner task); see Known limitations.
 
 Decisions: [ADR 0015](../../decisions/0015-vault-for-production-secrets.md) (accepted, partly superseded), [ADR 0016](../../decisions/0016-platform-injected-secrets.md) (accepted), [ADR 0032](../../decisions/0032-secrets-from-environment-and-files.md) (accepted).
 
@@ -31,7 +31,7 @@ The Next.js client secret, the Keycloak service-account secret used for user adm
 These are observations from the repository. Their correction is a separate owner task ([milestone 0](../../product/roadmap/milestone-0-hygiene-and-guardrails.md)).
 
 1. The root `.env` file was committed in the first commit and is in git history. Later commits (`2a7e2ac`, `51e7dce`) removed it from tracking and added it to `.gitignore`, so it is no longer tracked.
-2. `backend/src/main/resources/application.properties` still contains a hardcoded datasource password.
+2. ~~`application.properties` contained a hardcoded datasource password.~~ Removed on 2026-11-08; the backend reads `MYSQL_PASSWORD` from the environment or the local `.env`. The old value remains in git history.
 
 Consequences: removing a file from tracking does not remove it from history, so credentials that were ever committed should be treated as exposed and rotated. This document does not reproduce any value.
 

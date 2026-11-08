@@ -6,35 +6,35 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** this document is the reference for implementation status. The observed rows come from a snapshot taken by reading the repository on 2026-10-27, rechecked for `.env` tracking, `.gitignore`, `application.properties` and the module list on 2026-10-28; no build or test command was run.
+> **Implementation:** this document is the reference for implementation status. The rows were first written from a snapshot of 2026-10-27 and updated on 2026-11-08 after milestone 0 was implemented.
 
 The one place that compares what is intended with what exists. Values follow the [vocabulary](../../meta/living-documentation.md): planned, observed, verified. The [technology catalogue](../../technology/README.md) lists what is selected and links here for status.
 
-**Nothing is verified.** The only test, `BackendApplicationTests.contextLoads`, was not executed for this snapshot, and there is no CI.
+**Nothing is verified.** Milestone 0 is implemented and its 13 tests passed in a local run on 2026-11-08 (Oracle JDK 25.0.5, Docker Desktop), but the pipeline in `.github/workflows/ci.yml` has never run, so by the [verification standard](../../engineering/testing/verification-standard.md) nothing counts as verified.
 
 ## Existing capabilities
 
 | Capability | Intended (decision) | Observed in repository | Level |
 |---|---|---|---|
 | Spring Boot backend application | [ADR 0002](../../decisions/0002-modular-monolith.md) | `backend/` with `BackendApplication` (Boot 4.1.1, Maven wrapper) | observed |
-| Java baseline | [ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md) (supersedes ADR 0019) | `pom.xml` sets `java.version` 17 | planned (pom disagrees) |
-| Package/module structure | [ADR 0002](../../decisions/0002-modular-monolith.md), [ADR 0003](../../decisions/0003-hexagonal-architecture-where-boundaries-matter.md), [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md) | Single package `com.kibootia.backend`, no modules | planned |
-| ArchUnit rules and Spring Modulith verification | [ADR 0013](../../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md) | No ArchUnit or Spring Modulith dependency, no tests | planned |
+| Java baseline | [ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md) (supersedes ADR 0019) | `pom.xml` sets `java.version` 25; CI uses Temurin 25. Local build and tests passed on Oracle JDK 25.0.5 (2026-11-08) | observed (no CI run) |
+| Package/module structure | [ADR 0002](../../decisions/0002-modular-monolith.md), [ADR 0003](../../decisions/0003-hexagonal-architecture-where-boundaries-matter.md), [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md) | Six module packages under `com.kibootia.backend` as skeletons (`platform`, `identity`, `access`, `audit`, `files`, `notes`) | observed |
+| ArchUnit rules and Spring Modulith verification | [ADR 0013](../../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md) | Spring Modulith 2.1.2 and ArchUnit 1.5.1; `ModularityTests` and `ArchitectureTests` (rules 1, 4, 6, 8) pass locally; rules 5 and 7 not implemented | observed (no CI run) |
 | Spring Security resource server | [ADR 0007](../../decisions/0007-spring-security-resource-server.md) | Starters present; no security configuration, no issuer property | observed (dependency only) |
 | Keycloak / OIDC | [ADR 0006](../../decisions/0006-keycloak-oidc-identity.md), [ADR 0020](../../decisions/0020-keycloak-in-local-compose.md), [ADR 0045](../../decisions/0045-keycloak-operations.md) | Not in `compose.yaml`; no realm configuration | planned |
 | Audience validation, deny-by-default | [ADR 0008](../../decisions/0008-audience-validation-and-deny-by-default.md) | None | planned |
 | MySQL | [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md) | MySQL 8.4 in `compose.yaml` (host port 3307); driver in pom; datasource properties set | observed |
-| Spring Data JPA / Hibernate | [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md) | No JPA starter in pom. `spring.jpa.hibernate.ddl-auto=validate` is set but cannot take effect without it (inference) | planned |
-| Flyway migrations | [ADR 0012](../../decisions/0012-flyway-managed-schema-evolution.md) | Flyway starters present; no migration scripts | observed (dependency only) |
+| Spring Data JPA / Hibernate | [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md) | `spring-boot-starter-data-jpa` in the pom; `ddl-auto=validate` takes effect and validates the event publication table (passing locally) | observed (no CI run) |
+| Flyway migrations | [ADR 0012](../../decisions/0012-flyway-managed-schema-evolution.md) | `db/migration/platform/V1__event_publication.sql`; migrate-from-empty is exercised by `BackendApplicationTests` | observed (no CI run) |
 | Input validation | [API conventions](../../architecture/api/conventions.md) | Validation starter present; no usage | observed (dependency only) |
-| Secret delivery from environment and files | [ADR 0032](../../decisions/0032-secrets-from-environment-and-files.md), [ADR 0016](../../decisions/0016-platform-injected-secrets.md) | None | planned |
-| Externalised configuration | [configuration](../../operations/configuration/application-configuration.md) | `compose.yaml` reads two passwords from a root `.env`, which is no longer tracked and is in `.gitignore` but remains in git history; `application.properties` contains a hardcoded datasource password. See [secrets management](../../operations/security/secrets-management.md) | observed (does not meet the target) |
-| Health, logging, correlation ID | [observability baseline](../../operations/monitoring/observability-baseline.md) | No actuator dependency. `spring-boot-admin-starter-server` is present, which is not a decided capability | planned |
-| Testcontainers persistence tests | [ADR 0017](../../decisions/0017-testcontainers-mysql-for-persistence-tests.md) | No Testcontainers dependency | planned |
-| CI | [ADR 0018](../../decisions/0018-ci-as-verification-standard.md) | No CI configuration | planned |
+| Secret delivery from environment and files | [ADR 0032](../../decisions/0032-secrets-from-environment-and-files.md), [ADR 0016](../../decisions/0016-platform-injected-secrets.md) | Backend reads `MYSQL_PASSWORD` from the environment or the local `.env`; no secret in `application.properties` | observed |
+| Externalised configuration | [configuration](../../operations/configuration/application-configuration.md) | No secret in version control; `.env.example` and `pnpm setup` exist; a missing required setting stops startup with a named message (`RequiredSettingsTests`). Credentials ever committed remain in git history and are not yet rotated (owner task) | observed (rotation open) |
+| Health, logging, correlation ID | [observability baseline](../../operations/monitoring/observability-baseline.md) | No actuator dependency. The unintended `spring-boot-admin-starter-server` was removed on 2026-11-08 | planned |
+| Testcontainers persistence tests | [ADR 0017](../../decisions/0017-testcontainers-mysql-for-persistence-tests.md) | Testcontainers MySQL 8.4 with `@ServiceConnection`; `BackendApplicationTests` and `EventPublicationRegistryTests` pass locally | observed (no CI run) |
+| CI | [ADR 0018](../../decisions/0018-ci-as-verification-standard.md) | `.github/workflows/ci.yml` (backend build and test, gitleaks secret scan) and `renovate.json` added; never run | observed (not run) |
 | Next.js frontend | [ADR 0021](../../decisions/0021-frontend-beside-backend-in-one-repository.md), [ADR 0038](../../decisions/0038-frontend-stack.md), [ADR 0042](../../decisions/0042-bff-api-proxy-and-csrf.md) | No `frontend/` directory | planned |
 | Container image / deployment | [container deployment](../../operations/deployment/container-deployment.md), [ADR 0037](../../decisions/0037-single-server-compose-reference-deployment.md), [ADR 0047](../../decisions/0047-health-exposure-and-container-images.md) | No Dockerfile | planned |
-| Automated tests | [testing strategy](../../engineering/testing/strategy.md) | One `contextLoads` test; test starters for Flyway, security, OAuth2 resource server, validation, WebMVC | observed (not run) |
+| Automated tests | [testing strategy](../../engineering/testing/strategy.md) | 13 tests (context and migration, event registry, Modulith, ArchUnit, required settings); all passed in one local run on 2026-11-08 | observed (no CI run) |
 
 ## Capabilities added by the decisions of 2026-10-28
 
@@ -75,6 +75,6 @@ All planned; none exists in the repository.
 
 ## Deviations the owner has called out
 
-- `spring-boot-admin-starter-server` in `pom.xml` is unintended and flagged for removal ([open question](../../decisions/open-questions.md)).
-- Java 17 in the pom versus the decided Java 25 ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)).
-- Secrets handling does not yet meet the target convention.
+- `spring-boot-admin-starter-server` was removed from `pom.xml` on 2026-11-08.
+- Java 17 in the pom versus the decided Java 25: resolved on 2026-11-08 ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)).
+- Secrets handling now meets the target convention in the repository; rotating the credentials that were committed to git history is an open owner task.

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. The repository has the single package `com.kibootia.backend` containing `BackendApplication`.
+> **Implementation:** observed. The six module packages exist under `com.kibootia.backend` as skeletons (a `package-info.java` with `@ApplicationModule` each); only `platform` has code (startup settings validation). No CI run yet.
 
 Decisions: [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 

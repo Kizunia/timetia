@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** the steps under "Current steps" are observed, **not verified**: written from `compose.yaml`, `application.properties` and `pom.xml`, and no command was executed while writing them. The "Target fresh-clone journey" is planned.
+> **Implementation:** the steps under "Current steps" were run on a Windows machine on 2026-11-08 for the tests, `pnpm setup` and `docker compose config`; a full clean-clone run (start Compose, start the backend against it) was **not** recorded, and nothing is **verified** because there is no CI run. The "Target fresh-clone journey" is planned.
 
 ## Current steps
 
@@ -17,7 +17,9 @@ Start the local database and the backend application.
 ### Prerequisites
 
 - Docker with Compose.
-- A JDK. `pom.xml` sets Java 17 today; the decided baseline is Java 25 on Eclipse Temurin ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)), which milestone 0 applies.
+- A Java 25 JDK, Eclipse Temurin recommended ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)); `pom.xml` sets `java.version` 25.
+- Node 22 or later, for `pnpm setup`.
+- Docker must be running to run the backend tests (Testcontainers starts MySQL).
 - No separate Maven install is needed; `backend/` has the Maven wrapper.
 
 ### What the Compose file provides (observed)
@@ -31,7 +33,7 @@ Keycloak is decided for the local environment ([ADR 0020](../../decisions/0020-k
 
 ### Environment variables (names only)
 
-Compose requires these two variables and refuses to start without them. Define them in a `.env` file at the repository root, with values you choose locally. **Never commit values.**
+Compose requires both variables and refuses to start without them; the backend reads `MYSQL_PASSWORD` and stops with a message naming the setting if it is missing. `pnpm setup` creates `.env` at the repository root from `.env.example` with generated random values, and does not overwrite an existing `.env`. **Never commit values.**
 
 | Variable | Used for |
 |---|---|
@@ -40,13 +42,14 @@ Compose requires these two variables and refuses to start without them. Define t
 
 ### Steps
 
-1. Create the root `.env` with the two variables above.
-2. From the repository root, start the database: `docker compose up -d`.
-3. Run the backend from `backend/` with `./mvnw spring-boot:run` (`mvnw.cmd` on Windows).
+1. From the repository root, run `node scripts/setup.mjs` (or `pnpm setup`) to create `.env`.
+2. Start the infrastructure: `docker compose up -d` (or `pnpm infra:up`).
+3. Run the backend from `backend/` with `./mvnw spring-boot:run` (`mvnw.cmd` on Windows). It imports the root `.env` automatically.
+4. Run the tests with `./mvnw verify` from `backend/` (Docker required).
 
 ### Known gap
 
-The datasource password is currently hardcoded in `backend/src/main/resources/application.properties`, so it must equal `MYSQL_PASSWORD` for the backend to connect. This is the situation the [secrets convention](../../operations/security/secrets-management.md) is meant to replace; once externalised, this guide will name the variable the backend reads.
+If you have a `.env` from before milestone 0, its `MYSQL_PASSWORD` must match the password your MySQL volume was created with; delete the volume (`docker compose down -v`) to start over with generated values.
 
 ### Verifying the result
 

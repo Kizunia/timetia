@@ -6,13 +6,13 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. The repository has a bare Spring Boot application, no CI and no architecture tests; see [implementation status](implementation-status.md).
+> **Implementation:** implemented in the repository and passing a local run on 2026-11-08 (Java 25, 13 tests including Testcontainers MySQL). **Not verified:** no CI run exists yet, so by the [verification standard](../../engineering/testing/verification-standard.md) the milestone is not complete until the pipeline in `.github/workflows/ci.yml` has run green on a pull request. See [implementation status](implementation-status.md).
 
 ## Scope
 
 Make the repository safe and checkable before features are added: clean up known deviations, settle the Java baseline, externalise configuration, create the module skeleton with enforced boundaries, and start CI. Decisions: [ADR 0023](../../decisions/0023-template-fork-adoption-model.md), [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md).
 
-The Java decision that blocked this milestone is made ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)). Before it starts, the owner approves these criteria and rotates the credentials that were committed to git history ([open questions](../../decisions/open-questions.md)).
+The Java decision that blocked this milestone is made ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)). The owner approved these criteria on 2026-11-08 (OQ-49). Rotating the credentials that were committed to git history is an owner task still open (OQ-13).
 
 ## Completion criteria (proposed; rewritten on 2026-11-08 after the second decision round, awaiting owner approval)
 

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. `backend/pom.xml` still sets `java.version` to 17.
+> **Implementation:** observed. `backend/pom.xml` sets `java.version` to 25 and the CI workflow uses Eclipse Temurin 25; the build and tests passed locally on Oracle JDK 25.0.5 on 2026-11-08. No CI run yet.
 
 ## Context
 

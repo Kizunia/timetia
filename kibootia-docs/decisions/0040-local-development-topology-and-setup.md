@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. `compose.yaml` has MySQL and an unpinned Adminer; there are no setup scripts, no `.env.example` and no Dockerfiles.
+> **Implementation:** partly observed. `pnpm setup` and `pnpm infra:up` exist, `.env.example` exists and Adminer is pinned to 6.3.0. `pnpm dev`, `pnpm reset`, the `apps` profile and the Dockerfiles do not exist yet.
 
 ## Context
 
