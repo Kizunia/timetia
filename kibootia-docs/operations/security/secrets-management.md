@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. Current repository state does not meet these rules; see Known limitations.
 
@@ -13,7 +13,7 @@ Decisions: [ADR 0015](../../decisions/0015-vault-for-production-secrets.md) (acc
 ## Rules (owner decisions)
 
 - Secrets are never committed to version control.
-- Local development reads secrets from environment variables (a root `.env` that is not tracked), generated per developer from a safe example file.
+- Local development reads secrets from environment variables (a root `.env` that is not tracked), generated per developer by `pnpm setup` from `.env.example` ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)).
 - In production the application reads secrets only from environment variables or mounted files. It has no Vault client.
 - Production configuration never silently falls back to development credentials, and startup fails if development defaults are detected (demo realm, demo passwords, development client secrets, seed data).
 - Documentation names variables and never records values.
@@ -24,7 +24,7 @@ The deployment supplies secrets as environment variables or files. The reference
 
 ## Secrets the foundation will have
 
-The Next.js client secret, the Keycloak service-account secret used for user administration, database credentials, object storage credentials, mail credentials and the key that encrypts session cookies. The list is completed in [application configuration](../configuration/application-configuration.md) as each is introduced.
+The Next.js client secret, the Keycloak service-account secret used for user administration, MySQL credentials, Keycloak's PostgreSQL credentials, Keycloak's SMTP credentials, the Keycloak administrator credentials used only by the OpenTofu deployment step, object storage credentials and the key that encrypts session cookies. OpenTofu's state also contains secrets in plain text and is stored privately and encrypted ([ADR 0045](../../decisions/0045-keycloak-operations.md)). The backend sends no mail and holds no mail credentials. The list is completed in [application configuration](../configuration/application-configuration.md) as each is introduced.
 
 ## Known limitations (as of 2026-10-28)
 

@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. No actuator dependency, logging configuration or telemetry exists.
 
@@ -30,7 +30,7 @@ flowchart LR
 | Metrics | Micrometer, exported over OTLP |
 | Traces | OpenTelemetry, with W3C trace context passed from the Next.js server to Spring, through the outbox and into jobs |
 | Correlation | The trace ID doubles as the request correlation ID, visible in logs and available to callers |
-| Health | Actuator liveness and readiness, separate from telemetry |
+| Health | Actuator liveness and readiness on a separate internal management port; readiness checks MySQL only. The Next.js server has `/healthz` ([ADR 0047](../../decisions/0047-health-exposure-and-container-images.md)) |
 
 The application emits OTLP only. Where it goes is deployment configuration, so there is one telemetry path and no duplicate collectors.
 
@@ -42,12 +42,12 @@ The application emits OTLP only. Where it goes is deployment configuration, so t
 ## Requirements
 
 - Logs and traces must not contain secrets, tokens or other sensitive data ([API conventions](../../architecture/api/conventions.md)).
-- A health endpoint exists, and whether it is public is open (the [token policy](../../architecture/identity/token-validation.md) allows health only as a public endpoint).
+- Health endpoints are never public: the management port is not exposed by the reverse proxy ([ADR 0047](../../decisions/0047-health-exposure-and-container-images.md)).
 - OTLP log export in the Spring Boot version in use needs extra wiring that must be verified ([open questions](../../decisions/open-questions.md)).
 
 ## Observed deviation
 
-`spring-boot-admin-starter-server` is in `pom.xml`. The owner states it is unintended and flagged for removal; it is not part of this baseline ([open questions](../../decisions/open-questions.md)).
+`spring-boot-admin-starter-server` is in `pom.xml`. The owner states it is unintended; it is removed in milestone 0 and is not part of this baseline ([open questions](../../decisions/open-questions.md)).
 
 ## Related
 

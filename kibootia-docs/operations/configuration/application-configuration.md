@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** observed, and short of the target below.
 
@@ -30,13 +30,32 @@ Names only; values are not documented here.
 | `spring.jpa.hibernate.ddl-auto` | `application.properties` | Set to `validate`; effective only once JPA is added |
 | `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` | Root `.env`, read by `compose.yaml` | Required by Compose |
 
-## Proposed approach (not decided)
+## Naming (owner decision of 2026-11-08)
 
-Standard Spring Boot behavior lets environment variables override properties, so the datasource password can be supplied by the environment without a code change. Typed configuration properties with validation for Kibootia's own settings follow the "typed and validated" principle. The naming scheme for Kibootia-specific settings and the full variable catalog are open ([open questions](../../decisions/open-questions.md)).
+- Kibootia's own settings are named `kibootia.<module>.<setting>` and bound to typed configuration classes with validation. A missing or invalid required setting stops startup with a message naming the setting.
+- Module switches are `kibootia.<module>.enabled` and exist only for infrastructure-backed modules ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)).
+- Environment variables follow Spring Boot's relaxed binding: `kibootia.files.max-upload-size` is set by `KIBOOTIA_FILES_MAX_UPLOAD_SIZE`.
+- Standard Spring Boot settings keep their own names (for example `SPRING_DATASOURCE_URL`).
+- Local values come from the root `.env`, created by `pnpm setup` with generated secrets ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)). `.env.example` lists every variable with safe placeholders.
 
-## Not configured yet
+## Variable catalogue
 
-Keycloak issuer and audience, the Next.js client and administration service-account secrets, storage endpoint and credentials, OTLP endpoint, mail settings, module on/off properties, the bootstrap administrator setting, logging format, health exposure, profiles per environment.
+The one list of every setting. Rows are added in the same change that introduces the setting; names only, never values. Planned entries, none implemented:
+
+| Area | Planned settings | Secrets among them |
+|---|---|---|
+| Database | Datasource URL, user, password | Password |
+| Keycloak (backend) | Issuer URL, internal key-set URL for the `apps` profile, audience, administration service-account client ID and secret | Client secret |
+| Next.js BFF | Keycloak client ID and secret, session-cookie encryption key, public base URL | Client secret, cookie key |
+| Keycloak service | Its PostgreSQL credentials, SMTP settings, hostname | Database password, SMTP password |
+| OpenTofu | Keycloak administrator credentials for realm configuration, state backend settings | Administrator password, storage keys |
+| Files | `kibootia.files.enabled`, endpoint, region, bucket, access key, secret key, size limits | Access and secret key |
+| Telemetry | `kibootia.observability.enabled`, OTLP endpoint | Endpoint credentials, if any |
+| Identity | `KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL` ([ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md)) | None |
+| Retention | Audit retention (default 365 days), soft-delete retention (default 30 days) | None |
+| Management | Management port for health ([ADR 0047](../../decisions/0047-health-exposure-and-container-images.md)) | None |
+
+Exact names are fixed when each setting is implemented, following the naming rules above.
 
 ## Related
 
