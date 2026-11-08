@@ -53,3 +53,7 @@ History of business-logic decisions, in the order they were taken with the owner
 - Shared terms, roles, change types and the room entity moved to `shared/`.
 - Spec open question Q4 (room "--") is decided: online.
 - Shared courses are handled per batch from a manually seeded list. The conflict check and notifications cover every listed batch. This replaces the earlier "skipped in version 1" decision.
+
+## 2026-11-08 Revert right
+
+- An exchange or substitute can be reverted before the lecture starts by its author, the affected faculty or the HOD, not only the affected faculty.

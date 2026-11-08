@@ -12,8 +12,8 @@ What each role can do in the lecture-rescheduling module. Original design: [modu
 | --- | --- |
 | Super Admin | Configures rooms, slot grid, calendar and notification settings. Not part of routine approval. |
 | Super HOD | Everything an HOD can, across departments. |
-| HOD | Sees the department. Approves and rejects tickets. Handles escalated rejections. Raises tickets for an absent faculty. Approves permanent changes. |
-| Faculty | Raises reschedule, exchange, extra, cancel and substitute tickets for lectures they teach. Reviews tickets they are asked to review. Can revert an exchange or substitute applied to their lecture. |
+| HOD | Sees the department. Approves and rejects tickets. Handles escalated rejections. Raises tickets for an absent faculty. Approves permanent changes. Can revert any change in the department before the lecture starts. |
+| Faculty | Raises reschedule, exchange, extra, cancel and substitute tickets for lectures they teach. Reviews tickets they are asked to review. Can revert an exchange or substitute applied to their lecture, including as its author. |
 | CR | Reviews, acknowledges and may reject tickets for **theory** lectures of the division. Opens [issues](issues-from-cr-and-br.md) for theory lectures. |
 | BR | The same powers as a CR, for **lab and tutorial** lectures of their batch. |
 | Student | Read-only timetable and notifications. Cannot open issues. |
