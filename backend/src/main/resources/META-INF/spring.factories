@@ -1,0 +1,5 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+com.kibootia.backend.platform.config.RequiredSettingsEnvironmentPostProcessor
+
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+com.kibootia.backend.platform.config.MissingRequiredSettingFailureAnalyzer
