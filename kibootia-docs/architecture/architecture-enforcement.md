@@ -4,28 +4,35 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
-> **Implementation:** planned. There is no ArchUnit dependency or architecture test in the repository.
+> **Implementation:** planned. There is no ArchUnit or Spring Modulith dependency and no architecture test in the repository.
 
-Decision: [ADR 0013](../decisions/0013-archunit-architecture-enforcement.md).
+Decisions: [ADR 0013](../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../decisions/0044-authorization-enforcement-conventions.md).
 
 ## Purpose
 
 Record the architecture rules that are meant to be enforced by automated tests, so they do not live only in these documents.
 
-## Candidate rules
+## Two tools
 
-These come from the project definition and are candidates, not implemented rules. Exact package selectors depend on the undecided [package structure](../engineering/conventions/package-structure.md).
+- **Spring Modulith** verifies the module level: no cycles between modules, and no module reaches into another module's private sub-packages.
+- **ArchUnit** verifies rules inside modules and project-wide conventions.
+
+## Rules
+
+Decided rules, none implemented yet. Package selectors follow [package structure](../engineering/conventions/package-structure.md).
 
 | # | Rule |
 |---|---|
 | 1 | Application logic must not depend on concrete infrastructure implementations |
-| 2 | A feature must not access another feature's private persistence implementation |
-| 3 | There are no circular dependencies between features |
+| 2 | A feature must not access another feature's private persistence implementation (Spring Modulith) |
+| 3 | There are no circular dependencies between features (Spring Modulith) |
 | 4 | Designated domain packages must not depend on infrastructure frameworks |
 | 5 | Optional capabilities must not introduce unnecessary dependencies; core code does not depend on an optional or default-on module ([ADR 0024](../decisions/0024-package-modules-with-infrastructure-toggles.md)) |
-| 6 | Persistence entities are not used in API types (derived from [ADR 0004](../decisions/0004-separate-api-application-and-persistence-models.md); proposed addition) |
+| 6 | Persistence entities are not used in API types ([ADR 0004](../decisions/0004-separate-api-application-and-persistence-models.md)) |
+| 7 | Every public use-case method carries an authorization check or an explicit `@NoAuthorization("reason")` ([ADR 0044](../decisions/0044-authorization-enforcement-conventions.md)) |
+| 8 | The `platform` module contains no business logic and depends on no other module. Proposed (an inference from the module map, not an owner decision); confirm when the skeleton is built |
 
 ## Beyond ArchUnit
 

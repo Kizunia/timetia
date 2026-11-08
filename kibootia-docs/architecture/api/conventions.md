@@ -1,48 +1,83 @@
 # API Conventions
 
-- **Type:** api
+- **Type:** spec
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
-> **Implementation:** planned. `spring-boot-starter-validation` and `spring-boot-starter-webmvc` are in `pom.xml`; no endpoints or conventions exist.
+> **Implementation:** planned. `spring-boot-starter-validation` and `spring-boot-starter-webmvc` are in `pom.xml`; no endpoints, error handling or OpenAPI generation exist.
+
+Decision: [ADR 0043](../../decisions/0043-http-api-conventions.md). Related: [ADR 0042](../../decisions/0042-bff-api-proxy-and-csrf.md) (how the browser reaches the API), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md) (authorization).
 
 ## Purpose
 
-Fix the topics on which the API behaves consistently, so the decisions are made once. Global conventions belong to shared API infrastructure; business behavior stays with the owning feature.
+Fix how the HTTP API behaves, once, for every module. Global conventions live in the `platform` module; business behavior stays with the owning module.
 
-## Topics covered (owner direction)
+## Contract
 
-Request validation; error responses; HTTP status codes; authentication failures; authorization failures; application-level failures; logging and sensitive-data handling.
+- **Code-first:** springdoc-openapi (v3 line, exact version pinned at implementation) generates the OpenAPI description from controllers and DTOs.
+- A test writes it to a committed `openapi.json`; CI fails when the committed file is out of date. API changes are therefore visible as a diff in every pull request.
+- The frontend's typed client is generated from that file ([frontend](../frontend.md)).
+- DTOs, never entities, form the contract ([model separation](../data/model-separation.md)).
+- Swagger UI is enabled locally and disabled in production by default.
 
-## Decided
+## URLs and formats
+
+- Everything under `/api/v1/`. Plural kebab-case nouns: `/api/v1/users/{id}`, `/api/v1/roles`.
+- Actions that are not plain create, read, update or delete are sub-resources: `POST /api/v1/users/{id}/disable`.
+- JSON in camelCase; timestamps ISO-8601 in UTC; identifiers as UUID strings.
+- A new major version only for a breaking change that matters to non-browser clients.
+
+## Errors
+
+RFC 9457 Problem Details with Kibootia extensions:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Validation failed",
+  "status": 400,
+  "detail": "The request contains invalid fields.",
+  "code": "platform.validation_failed",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "errors": [
+    { "field": "email", "code": "invalid_format", "message": "must be a valid email address" }
+  ]
+}
+```
+
+- `code` is stable and machine-readable, `<module>.<reason>`. The frontend chooses its message from it.
+- `traceId` lets a user's report be found in logs and traces.
+- No stack traces, infrastructure details, secrets or tokens in any error response or log.
+
+## Status codes
+
+| Situation | Status |
+|---|---|
+| Malformed request or failed validation | 400, with `errors` |
+| Missing or invalid token | 401 |
+| Authenticated but not allowed, including email not verified (`email_not_verified`) | 403 |
+| Not found, or exists but the caller may not see it (another tenant, no view permission) | 404 |
+| Concurrent-edit conflict (`version` mismatch), duplicate, or a business-state rule such as removing the last administrator | 409 |
+| Upload too large / unsupported type | 413 / 415 |
+| Rate limited | 429 with `Retry-After` |
+| Unexpected failure | 500, generic message with `traceId` |
+
+## Lists
+
+- Response: `{ "items": [...], "page": { "number", "size", "totalElements", "totalPages" } }`.
+- Parameters: `page`, `size` (default 20, maximum 100), `sort=field,asc|desc`. Sortable fields are an allow-list per endpoint.
+- Filters are named query parameters per endpoint (`?status=active&q=ann`). There is no generic filter language.
+- Offset paging is the default; keyset paging is documented for large tables.
+- What a caller may see in a list is decided by the authorization scope ([authorization](../identity/authorization.md)).
+
+## Other rules
 
 - The backend validates all input; client-side validation never replaces it.
-- Authentication failures and authorization failures are distinguishable.
-- DTOs, not entities, form the API contract ([model separation](../data/model-separation.md)).
-- The frontend depends on these contracts only, through a client generated from the backend's OpenAPI description ([ADR 0038](../../decisions/0038-frontend-stack.md)). The OpenAPI description is generated, and an interactive documentation page is available locally and secured or disabled in production.
-- A concurrent-edit conflict returns `409 Conflict` ([persistence stack](../data/persistence-stack.md)).
-- Lists use offset paging with a maximum page size; keyset paging is documented for large tables.
-- There is no CORS policy for browser traffic, because browsers call only the Next.js server ([ADR 0026](../../decisions/0026-nextjs-bff-session.md)).
-- Sensitive endpoints (invitations, uploads, administrative actions) are rate limited per application instance. Production must also limit at the edge or gateway. Keycloak's own brute-force detection covers login.
-
-## Not decided (do not assume)
-
-| Topic | Status |
-|---|---|
-| Error response format (for example a standard problem-details shape) | Open |
-| Validation error structure | Open |
-| Status code mapping per failure class | Open |
-| Sorting and filtering conventions | Open |
-| API versioning and URL layout | Open |
-
-All are tracked in [open questions](../../decisions/open-questions.md) and belong to [milestone 2](../../product/roadmap/milestone-2-platform-conventions.md).
-
-## Security considerations
-
-Error responses and logs must not leak secrets, tokens or internal details.
+- No CORS policy for browser traffic; browsers reach the API only through the Next.js proxy.
+- Sensitive endpoints (invitations, uploads, administrative actions) are rate limited per application instance; production also limits at the edge. Keycloak's brute-force detection covers login.
 
 ## Testing
 
-API tests for each convention are expected; none exist.
+API tests cover each endpoint, including its error cases ([verification standard](../../engineering/testing/verification-standard.md)). None exist.

@@ -1,14 +1,14 @@
 # Authorization
 
-- **Type:** rules
+- **Type:** spec
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned.
 
-Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md).
+Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 
 ## Principles (owner decisions)
 
@@ -18,26 +18,46 @@ Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [
 
 ## Model
 
-- **Permissions** are defined in code by each module (for example reading or managing users).
-- **Roles** are bundles of permissions stored in Kibootia's database. Administrators create and edit roles and assign them to users in the administration interface. Tokens carry identity only, so role changes apply immediately, through a cache that is invalidated when roles change (the invalidation approach is open).
-- **Baseline roles:** a protected built-in administrator role. Whether a default user role exists is open ([open questions](../../decisions/open-questions.md)).
-- **Safeguards:** the last administrator cannot be removed or demoted, and every change to roles, permissions and assignments is written to an audit log.
+- **Permissions** are defined in code by each module, named `<module>.<resource>.<action>` (for example `identity.users.invite`, `identity.profiles.view`, `notes.notes.update-any`). They are registered at startup so the role editor can list them.
+- **Roles** are bundles of permissions stored in Kibootia's database. Administrators create and edit roles and assign them in the administration interface. Tokens carry identity only.
+- **Built-in roles:** a protected administrator role, and a `user` role assigned automatically at first sign-in. Administrators may change the `user` role's permissions but cannot delete it. In the reference application it does not include `identity.profiles.view`.
+- **Ownership:** actions on one's own profile and avatar are allowed to any active user by ownership rules, without a role.
+- **Email verification:** until the email address is verified, only viewing one's own profile, resending verification and signing out are allowed. Other operations are denied with `email_not_verified`. Operations can be marked as allowed before verification.
+- **Safeguards:** the last administrator cannot be removed or demoted, and every change to roles, permissions and assignments is written to the [audit log](../audit-log.md).
 - **First administrator:** a demo administrator locally; in production a one-time setting grants the role to a named user on first sign-in, only while no administrator exists, and is audited.
 
 ## Decision point
 
-Every protected operation asks the [policy decision point](../../shared/glossary/policy-decision-point.md): `can(principal, action, resource)`, invoked through Spring Security method security. Policies behind it live in the modules and cover:
+Every protected operation asks the [policy decision point](../../shared/glossary/policy-decision-point.md). It has two operations:
 
-1. permission held (role-based);
-2. resource-level rules such as ownership;
-3. later, contextual rules, including tenant facts ([ADR 0028](../../decisions/0028-tenant-ready-schema.md)).
+| Operation | Answers | Used for |
+|---|---|---|
+| `can(principal, action, resource)` | May this caller do this to this record? | Single records |
+| `scopeFor(principal, action)` | Which records may this caller see or change: `ALL`, `OWN` or `NONE` (richer later)? | Lists; the module turns the scope into a query condition |
 
-The decision point is a port, so an external engine such as OPA can replace the Java policies. OPA is a recipe in the [technology catalogue](../../technology/README.md); nothing of it ships.
+Policies behind it live in the modules and cover the permission held, record rules such as ownership, the email-verification fact, and later contextual rules including tenant facts ([ADR 0028](../../decisions/0028-tenant-ready-schema.md)). The decision point is a port, so an external engine such as OPA can replace the Java policies; OPA is a recipe in the [technology catalogue](../../technology/README.md).
+
+## Where checks are written
+
+On application use-case methods, not controllers, because use cases are also called by other modules, jobs and event handlers:
+
+- `@RequiresPermission(...)` for permission-only checks;
+- `authorization.require(action, record)` after loading a record, for record rules.
+
+An ArchUnit rule requires every public use-case method to have a check or an explicit `@NoAuthorization("reason")` ([architecture enforcement](../architecture-enforcement.md)).
+
+## Freshness
+
+There is no permission cache at first. Each API request runs one indexed query that loads the caller's profile status and permission set. Role changes and disabling therefore apply on the next request, on any number of instances. If measurement shows a need, the documented upgrade is an in-memory cache checked against a per-tenant authorization version number.
+
+## Machine clients
+
+Only tokens that belong to a user are accepted. Tokens issued to service accounts are rejected by default; service principals with roles are a future recipe.
 
 ## Failure behavior
 
-An authenticated caller who lacks permission receives an authorization failure, distinct from an authentication failure. Response shape: [API conventions](../api/conventions.md) (open).
+An authenticated caller who lacks permission receives 403, distinct from 401 for authentication failures. A record the caller may not see at all is reported as 404 ([API conventions](../api/conventions.md)).
 
 ## Testing
 
-Every protected operation needs an allowed test and a denied test. None exist yet.
+Every protected operation needs an allowed and a denied test, and list endpoints test their scope. None exist yet.

@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** partly observed: MySQL 8.4 runs from `compose.yaml` (host port 3307) and the MySQL driver is in `pom.xml`. Spring Data JPA/Hibernate is **not** a dependency yet. Everything under "Conventions" is planned.
 
@@ -14,7 +14,7 @@ Decisions: [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md), 
 
 | Part | Role |
 |---|---|
-| MySQL | Initial relational database |
+| MySQL | The application's relational database. Keycloak keeps its own data in a separate PostgreSQL ([ADR 0045](../../decisions/0045-keycloak-operations.md)), which Kibootia never reads directly |
 | Spring Data JPA | Repository abstractions and integration |
 | Hibernate | JPA implementation |
 | Flyway | Versioned migrations ([schema migrations](schema-migrations.md)) |
@@ -32,8 +32,9 @@ Decisions: [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md), 
 | Tenancy | Every foundation table has `tenant_id`, enforced by a Hibernate discriminator; one default tenant. Native queries need review and tests |
 | Audit columns | `created_at`, `created_by`, `updated_at`, `updated_by`, filled by Spring Data auditing |
 | Concurrent edits | A `version` column (optimistic locking); a conflict returns `409 Conflict` |
-| Deletion | Soft delete on business and domain tables with restore and a retention purge; technical and append-only tables (audit log, outbox, failed events, job locks, Flyway history) are excluded. Unique keys include an active-marker column |
-| Events | Written to an outbox table in the same transaction ([ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md)) |
+| Deletion | Soft delete on business and domain tables with restore and a retention purge; technical and append-only tables (audit log, event publication registry, job locks, Flyway history) are excluded. Unique keys include an active-marker column |
+| Events | Recorded by Spring Modulith's event publication registry (the outbox) in the same transaction; its table is created by a Flyway migration ([ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md)) |
+| Audit entries | Written in the same transaction as the change, people referenced by ID only ([audit log](../audit-log.md)) |
 | Pagination | Offset paging with a maximum page size by default; keyset paging documented for large tables |
 | Seed data | A migration location loaded only in the local profile; production refuses to start with it |
 

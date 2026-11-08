@@ -4,17 +4,17 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned.
 
 ## Transactions (owner direction)
 
-Transaction boundaries align with application operations that need atomic change, and are placed deliberately, not spread across every layer. In the layering of [layers and boundaries](../layers-and-boundaries.md) that points at application use cases. A change that must publish an event writes the event to the outbox in the same transaction ([ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md)).
+Transaction boundaries align with application operations that need atomic change, and are placed deliberately, not spread across every layer. In the layering of [layers and boundaries](../layers-and-boundaries.md) that points at application use cases. A change that must publish an event records it in the outbox (Spring Modulith's event publication registry) in the same transaction ([ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md)). An auditable change writes its audit entry in the same transaction ([ADR 0046](../../decisions/0046-audit-log-design.md)).
 
 ## Data ownership
 
-Each [feature](../../shared/glossary/feature.md) owns its persistence implementation. A feature must not read or write another feature's private tables or repositories; it uses that feature's public contract. This is intended to be checked by [architecture rules](../architecture-enforcement.md) where practical.
+Each [feature](../../shared/glossary/feature.md) owns its persistence implementation inside its module's private `persistence/` package ([package structure](../../engineering/conventions/package-structure.md)). A feature must not read or write another feature's private tables or repositories; it uses that feature's public contract. This is checked by Spring Modulith's module verification ([architecture enforcement](../architecture-enforcement.md)).
 
 ## Tenant isolation
 
