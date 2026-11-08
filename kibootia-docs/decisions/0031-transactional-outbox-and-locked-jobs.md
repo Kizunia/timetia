@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned.
+
+> **Extended by [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md)**: the outbox is Spring Modulith's event publication registry (hand-written table as fallback). Audit entries are written in the same transaction rather than through the outbox ([ADR 0046](0046-audit-log-design.md)). This decision still holds.
 
 ## Context
 
@@ -34,7 +36,7 @@ One more table and the job conventions; no new infrastructure. Handlers must tol
 
 ## Status
 
-accepted. Extends [ADR 0014](0014-in-process-events-no-broker-initially.md), which stays accepted because "no broker initially" still holds.
+accepted. Extends [ADR 0014](0014-in-process-events-no-broker-initially.md), which stays accepted because "no broker initially" still holds. Implementation choice made in [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md).
 
 ## Related
 

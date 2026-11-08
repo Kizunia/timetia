@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. There is no `frontend/` directory.
+
+> **Extended by [ADR 0042](0042-bff-api-proxy-and-csrf.md)**, which re-examined this decision against RFC 10017, reaffirmed it, and adds the generic API proxy and the CSRF rule.
 
 ## Context
 
@@ -37,7 +39,7 @@ An extra hop for every API call, and about a few hundred lines of security-criti
 
 ## Status
 
-accepted. Resolves OQ-20.
+accepted. Resolves OQ-20. Reaffirmed and extended by [ADR 0042](0042-bff-api-proxy-and-csrf.md).
 
 ## Related
 

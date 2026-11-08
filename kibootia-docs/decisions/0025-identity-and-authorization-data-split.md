@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. No Keycloak service, realm file, user profile table or admin API client exists.
+
+> **Extended by [ADR 0041](0041-user-lifecycle-and-account-model.md)** (account creation, default `user` role, profile data, email verification, disabled users) and [ADR 0044](0044-authorization-enforcement-conventions.md) (permission freshness without a cache). This decision still holds.
 
 ## Context
 
@@ -44,7 +46,7 @@ Inviting a user uses Keycloak's email actions, which needs SMTP configuration; l
 
 ## Status
 
-accepted. Supersedes [ADR 0010](0010-keycloak-realm-roles-as-role-source.md) (draft). Resolves OQ-03; resolves part of OQ-24 (the baseline roles are the built-in admin role and a default user role, to be confirmed with the reference application).
+accepted. Supersedes [ADR 0010](0010-keycloak-realm-roles-as-role-source.md) (draft). Resolves OQ-03; resolves part of OQ-24 (the baseline roles are the built-in admin role and a default user role, to be confirmed with the reference application). The default user role was confirmed in [ADR 0041](0041-user-lifecycle-and-account-model.md), which resolves the rest of OQ-24.
 
 ## Related
 

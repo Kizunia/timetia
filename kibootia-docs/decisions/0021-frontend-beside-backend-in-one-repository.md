@@ -2,19 +2,19 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. There is no `frontend/` directory.
 
 ## Context
 
-The repository location of the Next.js app affects layout, CI and setup docs. The owner chose the recommended option, labelled provisional.
+The repository location of the Next.js app affects layout, CI and setup docs. The owner chose the recommended option, first provisionally and then, on 2026-11-08, as accepted. The Next.js app is a member of the root pnpm workspace ([ADR 0040](0040-local-development-topology-and-setup.md)).
 
 ## Decision
 
-Provisional: the Next.js app lives in `frontend/` next to `backend/` in the same repository.
+The Next.js app lives in `frontend/` next to `backend/` in the same repository.
 
 ## Alternatives considered
 
@@ -29,7 +29,7 @@ One clone, one Compose environment, shared docs and CI. Backend and frontend rel
 
 ## Status
 
-draft (provisional; listed in [open questions](open-questions.md))
+accepted. Confirmed by the owner on 2026-11-08; resolves OQ-05.
 
 ## Related
 

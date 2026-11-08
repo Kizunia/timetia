@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned.
+
+> **Extended by [ADR 0044](0044-authorization-enforcement-conventions.md)**: checks on use cases, permission names, `scopeFor` for lists, no permission cache, machine clients rejected. This decision still holds.
 
 ## Context
 
@@ -38,7 +40,7 @@ Adds a permission model and a decision point to the foundation. A complete attri
 
 ## Status
 
-accepted. Extends [ADR 0009](0009-role-based-authorization-first.md), which stays accepted.
+accepted. Extends [ADR 0009](0009-role-based-authorization-first.md), which stays accepted. Extended by [ADR 0044](0044-authorization-enforcement-conventions.md).
 
 ## Related
 

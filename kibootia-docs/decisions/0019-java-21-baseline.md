@@ -2,11 +2,13 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** accepted
+- **Status:** deprecated
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. `backend/pom.xml` still sets `java.version` to 17.
+
+> **Superseded by [ADR 0048](0048-java-25-baseline-on-temurin.md)** (Java 25 on Eclipse Temurin).
 
 ## Context
 
@@ -29,7 +31,7 @@ The supported Java baseline is Java 21 (LTS).
 
 ## Status
 
-accepted
+deprecated. Superseded by [ADR 0048](0048-java-25-baseline-on-temurin.md).
 
 ## Related
 

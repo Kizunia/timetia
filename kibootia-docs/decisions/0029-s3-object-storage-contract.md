@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. There is no storage service or storage code.
+
+> **Extended by [ADR 0041](0041-user-lifecycle-and-account-model.md)**: viewing another user's avatar also requires the `identity.profiles.view` permission; same-tenant remains the outer limit. This decision still holds.
 
 ## Context
 
@@ -46,7 +48,7 @@ RustFS reached version 1.0 only in September 2026, so it is young; the pin, the 
 
 ## Status
 
-accepted (the verification gate is open).
+accepted (the verification gate is open). Avatar visibility extended by [ADR 0041](0041-user-lifecycle-and-account-model.md).
 
 ## Related
 

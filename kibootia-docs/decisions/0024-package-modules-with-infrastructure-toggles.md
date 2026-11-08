@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. The repository has one package and no modules.
+
+> **Extended by [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md)**, which fixes the module map, package layout and Spring Modulith verification. "Mail" is no longer an example of an infrastructure-backed module: Keycloak sends identity mail and the backend has no mail module ([ADR 0041](0041-user-lifecycle-and-account-model.md)).
 
 ## Context
 
@@ -43,7 +45,7 @@ The deletable example feature (working name "Notes") is a default-on module that
 
 ## Status
 
-accepted. Resolves part of OQ-21; the package names are still open.
+accepted. Resolves part of OQ-21; the package names are still open. The package names were decided in [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md), which resolves the rest of OQ-21.
 
 ## Related
 

@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned.
+
+> **Tightened by [ADR 0047](0047-health-exposure-and-container-images.md)**: the health check moves to an internal management port, so no endpoint on the API port is public. This decision still holds.
 
 ## Context
 
@@ -29,7 +31,7 @@ The realm must define the audience mapper, so the imported development realm ([A
 
 ## Status
 
-accepted. Resolves OQ-02. The security baseline around it (realm hardening, cookie and CSRF rules, behavior when signing keys are unavailable) is in [token validation](../architecture/identity/token-validation.md).
+accepted. Resolves OQ-02. The security baseline around it (realm hardening, cookie and CSRF rules, behavior when signing keys are unavailable) is in [token validation](../architecture/identity/token-validation.md). Tightened by [ADR 0047](0047-health-exposure-and-container-images.md) (no public endpoint on the API port).
 
 ## Related
 

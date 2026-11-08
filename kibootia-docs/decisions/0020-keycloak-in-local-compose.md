@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. `compose.yaml` has only MySQL and Adminer.
+
+> **Partly superseded by [ADR 0045](0045-keycloak-operations.md)**: the version-controlled realm is applied by OpenTofu instead of a first-start import. Running Keycloak in local Compose with a realm that holds no real secrets still holds.
 
 ## Context
 
@@ -29,7 +31,7 @@ A realm file must be maintained and must include whatever the token rules need (
 
 ## Status
 
-accepted
+accepted. The import mechanism is superseded by [ADR 0045](0045-keycloak-operations.md); the rest stays accepted.
 
 ## Related
 

@@ -4,9 +4,11 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. There is no ArchUnit dependency.
+
+> **Extended by [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md)**: Spring Modulith verifies module boundaries; ArchUnit keeps the layer rules inside modules. This decision still holds.
 
 ## Context
 
@@ -26,7 +28,7 @@ Package naming must support selectors for the rules ([package structure](../engi
 
 ## Status
 
-accepted
+accepted. Extended by [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md).
 
 ## Related
 
