@@ -4,28 +4,60 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. The repository has the single package `com.kibootia.backend` containing `BackendApplication`.
 
-## Purpose
+Decisions: [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 
-Hold the package rules once they exist. At present only the constraints are decided; the layout is not.
+## Root package
 
-## Decided constraints (from the architecture decisions)
+`com.kibootia.backend` is fixed. Applications built on Kibootia never rename it, because renaming would make every upstream merge conflict ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)). They add their own modules beside the foundation modules.
 
-- One Maven module for the backend. Separate Maven modules per feature are not an initial requirement ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)).
-- Packages express [features](../../shared/glossary/feature.md) and [shared platform capability](../../shared/glossary/platform-package.md), not technical layers across the whole application.
-- Shared packages stay narrow; no catch-all utility package.
-- Package names must make the rules in [architecture enforcement](../../architecture/architecture-enforcement.md) expressible as ArchUnit tests.
-- The layering in [layers and boundaries](../../architecture/layers-and-boundaries.md) applies inside each feature.
-- A module that depends on infrastructure keeps its migrations in its own Flyway folder and has a configuration property that switches it off.
-- Foundation modules and the example feature sit in stable, predictable locations, because applications merge upstream releases ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)).
-- The frontend mirrors the backend with one feature folder per module.
+## Modules
 
-## Not decided
+Each direct sub-package of the root is a module, verified by Spring Modulith.
 
-- The names of the top-level packages and how a module separates its public contract from its internals.
-- Where ports and adapters live inside a module.
+```text
+com.kibootia.backend
+├─ platform/   shared plumbing: security configuration, error handling, tenancy,
+│              persistence base types, job and event configuration, observability
+├─ identity/   profiles, /me, user administration (Keycloak Admin API port), avatar use case
+├─ access/     permissions, roles, assignments, decision point
+├─ audit/      append-only audit log and viewer
+├─ files/      S3 port, file metadata, validation, image processing, reconciliation job
+└─ notes/      deletable example feature (working name)
+```
 
-These block [milestone 0](../../product/roadmap/milestone-0-hygiene-and-guardrails.md) and are tracked in [open questions](../../decisions/open-questions.md).
+- Every module may depend on `platform`. `platform` holds no business logic.
+- Modules depend on each other only through public contracts, and without cycles.
+
+## Inside a module
+
+```text
+identity/
+├─ IdentityApi.java, *.java      public contract: interfaces, records, events
+├─ application/                  use cases (transaction and authorization boundary), outbound ports
+├─ domain/                       only where business rules warrant a domain model
+├─ web/                          controllers and HTTP DTOs
+├─ persistence/                  JPA entities, repositories, port adapters
+└─ keycloak/                     adapter named after the external system it talks to
+```
+
+- Types in the module's top-level package are its **public contract**. Sub-packages are private; a sub-package is exposed only through an explicit named interface.
+- Ports needed by the module live in `application/`; adapters implementing them live in the adapter packages.
+- Authorization checks sit on use-case methods in `application/` ([authorization](../../architecture/identity/authorization.md)).
+- Permissions are declared as constants in the module, named `<module>.<resource>.<action>`.
+- Not every module needs every package; add one only when it has content.
+
+## Infrastructure-backed modules
+
+A module that depends on infrastructure (today `files` and the observability configuration) also has an on/off property `kibootia.<module>.enabled`, its own Flyway migration folder and a Compose profile ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)). Every module keeps its migrations in its own folder.
+
+## Frontend
+
+The Next.js application mirrors the backend with one feature folder per module ([frontend](../../architecture/frontend.md)).
+
+## Enforcement
+
+Module boundaries: Spring Modulith. Layer and convention rules inside modules: ArchUnit ([architecture enforcement](../../architecture/architecture-enforcement.md)).

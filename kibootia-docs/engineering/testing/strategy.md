@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** observed (one `contextLoads` test, not run for this document) and otherwise planned.
 
@@ -16,7 +16,7 @@ Testing is part of the architecture (owner direction). Verification rules: [veri
 |---|---|---|
 | Unit | Domain and application logic in isolation | JUnit (via Spring Boot starters) |
 | Integration | Wiring of beans and adapters | Spring Boot test support |
-| Architecture | Dependency and package rules | ArchUnit ([ADR 0013](../../decisions/0013-archunit-architecture-enforcement.md)); not yet a dependency |
+| Architecture | Module boundaries; dependency, package and authorization-check rules | Spring Modulith verification and ArchUnit ([ADR 0013](../../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md)); neither is a dependency yet |
 | API | Endpoints, validation, error behavior | Spring MVC test support (`spring-boot-starter-webmvc-test` present) |
 | Security | Token validation, authentication and authorization outcomes | Spring Security test support (security and OAuth2 resource server test starters present) |
 | Persistence and migration | Entities, repositories, Flyway scripts on real MySQL | Testcontainers MySQL ([ADR 0017](../../decisions/0017-testcontainers-mysql-for-persistence-tests.md)); not yet a dependency; `spring-boot-starter-flyway-test` present |
@@ -36,6 +36,10 @@ Test starters listed as present are in `pom.xml`. Their presence says nothing ab
 
 Real MySQL through Testcontainers, not an in-memory substitute, so MySQL-specific behavior and Flyway scripts are exercised. This requires Docker wherever tests run, including CI.
 
-## Open points
+## Naming, layout and test data (owner decision of 2026-11-08)
 
-Test naming and layout conventions and the test data approach are undecided ([open questions](../../decisions/open-questions.md)).
+- Fast tests without containers are named `*Test` and run by Maven Surefire; tests that start Spring, Testcontainers or other infrastructure are named `*IT` and run by Maven Failsafe.
+- Test methods have readable names through `@DisplayName`.
+- Tests live in the same module package as the code they test.
+- Test data comes from small builder classes per module. There are no shared SQL fixtures; local seed data is for demos, not tests.
+- Coverage is reported in CI but no percentage gate fails a build; the required tests are listed in the [definition of done](verification-standard.md#definition-of-done-for-a-feature).

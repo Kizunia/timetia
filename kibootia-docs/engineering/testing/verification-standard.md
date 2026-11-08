@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. There is no CI pipeline, so no behavior in the repository can currently be called verified.
 
@@ -40,6 +40,20 @@ A milestone is complete when each of its criteria is verified under this rule. C
 - **Dependencies:** automated grouped update pull requests, with security updates first ([ADR 0035](../../decisions/0035-version-adoption-policy.md)).
 - **End-to-end tests:** nightly, before release tags, and on pull requests labelled `e2e`.
 - **Workflow:** trunk-based, with short-lived branches and pull requests into `main`. Commit messages follow Conventional Commits, which generates the changelog. Releases are SemVer tags ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)).
+
+## Definition of done for a feature
+
+Owner decision of 2026-11-08. A feature is done when CI is green on its pull request and:
+
+1. **Authorization:** every protected use case has an allowed and a denied test; list endpoints test their scope ([authorization](../../architecture/identity/authorization.md)).
+2. **Backend tests:** unit tests for logic; Testcontainers integration tests for persistence, including tenant isolation and soft-delete filtering where the module has tables; API tests for every endpoint, including its error cases. Spring Modulith and ArchUnit verification pass.
+3. **Migrations** live in the module's folder, and the migrate-from-empty test passes.
+4. **Contract:** `openapi.json` is updated and committed, and the frontend client is regenerated ([API conventions](../../architecture/api/conventions.md)).
+5. **Frontend:** permission-aware UI; Vitest tests for non-trivial logic; for user-facing features, a Playwright happy path and one denied path with an automated accessibility (axe) check.
+6. **Safety:** no secrets or personal data in logs; a [threat model](../../operations/security/threat-model.md) entry for any new trust boundary; rate limiting for sensitive actions.
+7. **Documentation:** affected documents, the [configuration catalogue](../../operations/configuration/application-configuration.md) and [implementation status](../../product/roadmap/implementation-status.md) are updated, and an ADR exists for any architectural choice.
+
+Coverage is reported, with no percentage gate.
 
 ## Not decided
 
