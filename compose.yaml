@@ -21,7 +21,7 @@ services:
       start_period: 30s
 
   adminer:
-    image: adminer:latest
+    image: adminer:6.3.0
     container_name: kibootia-adminer
     restart: unless-stopped
     ports:

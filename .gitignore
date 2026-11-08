@@ -1,1 +1,6 @@
+# Local secrets and configuration: never commit. Create it with: pnpm setup
 .env
+.env.*
+!.env.example
+
+node_modules/

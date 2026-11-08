@@ -1,0 +1,12 @@
+{
+  "name": "kibootia",
+  "private": true,
+  "description": "Root scripts for local development of Kibootia.",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "infra:up": "docker compose up -d"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
