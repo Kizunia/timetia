@@ -3,7 +3,7 @@
   "private": true,
   "description": "Root scripts for local development of Kibootia.",
   "scripts": {
-    "setup": "node scripts/setup.mjs",
+    "bootstrap": "node scripts/bootstrap.mjs",
     "infra:up": "docker compose up -d"
   },
   "engines": {

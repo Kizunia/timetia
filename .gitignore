@@ -1,4 +1,4 @@
-# Local secrets and configuration: never commit. Create it with: pnpm setup
+# Local secrets and configuration: never commit. Create it with: pnpm bootstrap
 .env
 .env.*
 !.env.example

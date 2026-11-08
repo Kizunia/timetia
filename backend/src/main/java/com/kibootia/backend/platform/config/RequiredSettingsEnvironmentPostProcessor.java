@@ -16,7 +16,7 @@ class RequiredSettingsEnvironmentPostProcessor implements EnvironmentPostProcess
 	/** Required setting mapped to the hint shown to the developer. */
 	static final Map<String, String> REQUIRED = Map.of(
 			"spring.datasource.password",
-			"Set MYSQL_PASSWORD (run 'pnpm setup' to create .env from .env.example, or export the variable).");
+			"Set MYSQL_PASSWORD (run 'pnpm bootstrap' to create .env from .env.example, or export the variable).");
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
