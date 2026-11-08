@@ -6,14 +6,14 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** partly observed. The hardcoded password is removed, `.env` is ignored, `.env.example` and `pnpm setup` exist, and a missing required setting stops startup with a message. Credentials that were ever committed are not yet rotated (owner task); see Known limitations.
+> **Implementation:** partly observed. The hardcoded password is removed, `.env` is ignored, `.env.example` and `pnpm bootstrap` exist, and a missing required setting stops startup with a message. Credentials that were ever committed are not yet rotated (owner task); see Known limitations.
 
 Decisions: [ADR 0015](../../decisions/0015-vault-for-production-secrets.md) (accepted, partly superseded), [ADR 0016](../../decisions/0016-platform-injected-secrets.md) (accepted), [ADR 0032](../../decisions/0032-secrets-from-environment-and-files.md) (accepted).
 
 ## Rules (owner decisions)
 
 - Secrets are never committed to version control.
-- Local development reads secrets from environment variables (a root `.env` that is not tracked), generated per developer by `pnpm setup` from `.env.example` ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)).
+- Local development reads secrets from environment variables (a root `.env` that is not tracked), generated per developer by `pnpm bootstrap` from `.env.example` ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)).
 - In production the application reads secrets only from environment variables or mounted files. It has no Vault client.
 - Production configuration never silently falls back to development credentials, and startup fails if development defaults are detected (demo realm, demo passwords, development client secrets, seed data).
 - Documentation names variables and never records values.

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** the steps under "Current steps" were run on a Windows machine on 2026-11-08 for the tests, `pnpm setup` and `docker compose config`; a full clean-clone run (start Compose, start the backend against it) was **not** recorded, and nothing is **verified** because there is no CI run. The "Target fresh-clone journey" is planned.
+> **Implementation:** the steps under "Current steps" were run on a Windows machine on 2026-11-08 for the tests, `pnpm bootstrap` and `docker compose config`; a full clean-clone run (start Compose, start the backend against it) was **not** recorded, and CI does not cover this guide. The "Target fresh-clone journey" is planned.
 
 ## Current steps
 
@@ -18,7 +18,7 @@ Start the local database and the backend application.
 
 - Docker with Compose.
 - A Java 25 JDK, Eclipse Temurin recommended ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)); `pom.xml` sets `java.version` 25.
-- Node 22 or later, for `pnpm setup`.
+- Node 22 or later, for `pnpm bootstrap`.
 - Docker must be running to run the backend tests (Testcontainers starts MySQL).
 - No separate Maven install is needed; `backend/` has the Maven wrapper.
 
@@ -33,7 +33,7 @@ Keycloak is decided for the local environment ([ADR 0020](../../decisions/0020-k
 
 ### Environment variables (names only)
 
-Compose requires both variables and refuses to start without them; the backend reads `MYSQL_PASSWORD` and stops with a message naming the setting if it is missing. `pnpm setup` creates `.env` at the repository root from `.env.example` with generated random values, and does not overwrite an existing `.env`. **Never commit values.**
+Compose requires both variables and refuses to start without them; the backend reads `MYSQL_PASSWORD` and stops with a message naming the setting if it is missing. `pnpm bootstrap` creates `.env` at the repository root from `.env.example` with generated random values, and does not overwrite an existing `.env`. **Never commit values.**
 
 | Variable | Used for |
 |---|---|
@@ -42,7 +42,7 @@ Compose requires both variables and refuses to start without them; the backend r
 
 ### Steps
 
-1. From the repository root, run `node scripts/setup.mjs` (or `pnpm setup`) to create `.env`.
+1. From the repository root, run `node scripts/bootstrap.mjs` (or `pnpm bootstrap`) to create `.env`.
 2. Start the infrastructure: `docker compose up -d` (or `pnpm infra:up`).
 3. Run the backend from `backend/` with `./mvnw spring-boot:run` (`mvnw.cmd` on Windows). It imports the root `.env` automatically.
 4. Run the tests with `./mvnw verify` from `backend/` (Docker required).
@@ -62,7 +62,7 @@ What must work for the foundation to count as usable by a new developer (set by 
 **Prerequisites:** Docker with Compose; a Java 25 JDK (Eclipse Temurin); Node LTS with pnpm; about 8 GB of RAM (the infrastructure uses roughly 3 to 4 GB). Windows, macOS and Linux are supported the same way.
 
 1. Clone the repository and add Kibootia as the `upstream` remote if you want release merges ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)).
-2. Run `pnpm setup`. It copies `.env.example` to `.env` and generates random local secrets. Configuration is validated at startup with a clear failure when something is missing.
+2. Run `pnpm bootstrap`. It copies `.env.example` to `.env` and generates random local secrets. Configuration is validated at startup with a clear failure when something is missing.
 3. Run `pnpm infra:up`. Compose starts MySQL, Keycloak with its PostgreSQL, a one-shot OpenTofu step that applies the realm (base plus local overlay), the object storage server, the mail catcher, Grafana LGTM and Adminer. Health checks and startup ordering are in place, and service URLs are documented.
 4. Run `pnpm dev` to start the backend and the Next.js server on the host. Flyway migrations and local seed data run at startup. Alternatively, the `apps` Compose profile runs both applications in containers for a demo without a local JDK or Node.
 5. Sign in with a documented demo account, including a demo administrator.

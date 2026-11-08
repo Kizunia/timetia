@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** partly observed. `pnpm setup` and `pnpm infra:up` exist, `.env.example` exists and Adminer is pinned to 6.3.0. `pnpm dev`, `pnpm reset`, the `apps` profile and the Dockerfiles do not exist yet.
+> **Implementation:** partly observed. `pnpm bootstrap` and `pnpm infra:up` exist, `.env.example` exists and Adminer is pinned to 6.3.0. `pnpm dev`, `pnpm reset`, the `apps` profile and the Dockerfiles do not exist yet.
 
 ## Context
 
@@ -25,7 +25,7 @@ The fresh-clone journey ([local setup](../engineering/getting-started/local-setu
 
 | Script | Does |
 |---|---|
-| `pnpm setup` | Copies `.env.example` to `.env` and fills it with freshly generated random local secrets (database passwords, Keycloak client secrets, the session-cookie key) |
+| `pnpm bootstrap` | Copies `.env.example` to `.env` and fills it with freshly generated random local secrets (database passwords, Keycloak client secrets, the session-cookie key) |
 | `pnpm infra:up` | Starts the infrastructure |
 | `pnpm dev` | Starts the backend and the Next.js server on the host |
 | `pnpm reset` | Removes local volumes and seeds again |

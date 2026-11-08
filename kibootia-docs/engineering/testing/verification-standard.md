@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. There is no CI pipeline, so no behavior in the repository can currently be called verified.
+> **Implementation:** partly observed. `.github/workflows/ci.yml` runs the backend build and tests and a secret scan, and has passed (milestone 0, 2026-11-08). The frontend, image, module-removal and end-to-end jobs do not exist yet.
 
 Decision: [ADR 0018](../../decisions/0018-ci-as-verification-standard.md).
 
@@ -32,7 +32,7 @@ When a capability becomes verified, update its row in [implementation status](..
 
 A milestone is complete when each of its criteria is verified under this rule. Criteria are listed in the [milestone files](../../product/roadmap/README.md).
 
-## CI pipeline (owner decisions of 2026-10-28; none of it exists yet)
+## CI pipeline (owner decisions of 2026-10-28; backend build and secret scan exist, the rest is planned)
 
 - **Platform:** GitHub Actions.
 - **On every pull request:** backend build with unit, ArchUnit and Testcontainers integration tests (including migrate-from-empty, tenant isolation and soft-delete filtering); frontend lint, type check and unit tests; the module-removal job ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)); secret scanning.

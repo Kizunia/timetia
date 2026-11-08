@@ -12,9 +12,9 @@
 
 The thinnest end-to-end chain that works on a fresh clone: a user signs in through the Next.js server, which calls a protected Spring endpoint, and the request shows up in logs and traces. Decisions: [ADR 0020](../../decisions/0020-keycloak-in-local-compose.md), [ADR 0026](../../decisions/0026-nextjs-bff-session.md), [ADR 0030](../../decisions/0030-otlp-telemetry-and-local-lgtm.md), [ADR 0040](../../decisions/0040-local-development-topology-and-setup.md), [ADR 0042](../../decisions/0042-bff-api-proxy-and-csrf.md), [ADR 0045](../../decisions/0045-keycloak-operations.md), [ADR 0047](../../decisions/0047-health-exposure-and-container-images.md).
 
-## Completion criteria (proposed; rewritten on 2026-11-08 after the second decision round, awaiting owner approval)
+## Completion criteria (approved by the owner on 2026-11-08)
 
-- `pnpm setup`, `pnpm infra:up` and `pnpm dev` work on Windows, macOS and Linux from a clean clone ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)).
+- `pnpm bootstrap`, `pnpm infra:up` and `pnpm dev` work on Windows, macOS and Linux from a clean clone ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)).
 - Compose starts MySQL, Keycloak on its own PostgreSQL, a one-shot OpenTofu step that applies the realm (base plus local overlay), Mailpit, Adminer and the Grafana LGTM container. The OpenTofu Keycloak provider works with the pinned Keycloak, which runs on the pinned PostgreSQL (check OQ-46).
 - The Spring resource server rejects missing, expired, wrongly signed, wrong-issuer, wrong-audience and service-account tokens, and requires authentication on every endpoint; the API port has no public endpoint. Each case has an automated test ([ADR 0008](../../decisions/0008-audience-validation-and-deny-by-default.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md)).
 - The Next.js BFF signs a user in, refreshes the session and signs out, with tests for the callback, refresh failure, logout and CSRF cases ([ADR 0026](../../decisions/0026-nextjs-bff-session.md)).
