@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** not applicable (index).
 
@@ -35,7 +35,8 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 - Wondering what works today: [implementation status](product/roadmap/implementation-status.md).
 - Why something is the way it is: [ADR index](decisions/INDEX.md).
 - What is still undecided: [open questions](decisions/open-questions.md).
+- Whether implementation can start: [implementation readiness review](temp/kibootia-implementation-readiness.md).
 
 ## Non-authoritative material
 
-`temp/` holds working material: [`kibootia-project-definition.md`](temp/kibootia-project-definition.md) is the source of the first version of these docs, [`kibootia-ideation-decisions.md`](temp/kibootia-ideation-decisions.md) is the brief that started the 2026-10-28 interview, and [`kibootia-decision-log.md`](temp/kibootia-decision-log.md) records the decisions taken in it. None is part of the permanent set or kept in step with changes. When one of them and a document here disagree, the document here, together with the ADRs, wins. The project definition predates those decisions; its exclusions of object storage, a full observability stack and user administration no longer apply.
+`temp/` holds working material: [`kibootia-project-definition.md`](temp/kibootia-project-definition.md) is the source of the first version of these docs (marked historical), [`kibootia-ideation-decisions.md`](temp/kibootia-ideation-decisions.md) is the brief that started the 2026-10-28 interview, [`kibootia-decision-log.md`](temp/kibootia-decision-log.md) records the decisions of both interview rounds, and [`kibootia-implementation-readiness.md`](temp/kibootia-implementation-readiness.md) assesses whether implementation planning can start. None is part of the permanent set or kept in step with changes. When one of them and a document here disagree, the document here, together with the ADRs, wins. The project definition predates those decisions; its exclusions of object storage, a full observability stack and user administration no longer apply.

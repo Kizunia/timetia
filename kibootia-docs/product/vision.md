@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** not applicable (vision). The starter is at the very beginning; see [implementation status](roadmap/implementation-status.md).
 
@@ -36,7 +36,7 @@ An application clones the repository, keeps Kibootia as an `upstream` remote, ow
 
 The target, not the present state, is that a developer can clone the repository, follow guided startup instructions, bring up the local infrastructure with Docker Compose, sign in, manage users and roles in an administration interface, change a profile photo, and see logs, metrics and traces for what they just did. The detailed steps belong in [local setup](../engineering/getting-started/local-setup.md), and what exists today is in [implementation status](roadmap/implementation-status.md).
 
-A reference application demonstrates the foundation: sign-in, user and role administration, avatars, an audit log, invitations and API documentation, plus one deletable example feature that shows how to add a business feature. Business-domain assumptions never enter the foundation modules.
+A reference application demonstrates the foundation: sign-in through invitation or self-registration, user and role administration, avatars, an audit log and API documentation, plus one deletable example feature that shows how to add a business feature. The interface is in English. Business-domain assumptions never enter the foundation modules.
 
 ## What a successful start looks like
 
@@ -44,7 +44,7 @@ A developer starts a new application and inherits clear package conventions, exp
 
 ## Where it may go later
 
-Possible future capabilities are notifications beyond email, search, caching, feature flags, live multi-tenancy with organization management, a shipped policy engine and a shipped message broker. These are possibilities, not commitments, and are added only when a concrete requirement appears. Several are planned as documented recipes; see the [technology catalogue](../technology/README.md).
+Possible future capabilities are application notifications, interface translations, machine-to-machine clients, search, caching, feature flags, live multi-tenancy with organization management, a shipped policy engine and a shipped message broker. These are possibilities, not commitments, and are added only when a concrete requirement appears. Several are planned as documented recipes; see the [technology catalogue](../technology/README.md).
 
 ## Related
 

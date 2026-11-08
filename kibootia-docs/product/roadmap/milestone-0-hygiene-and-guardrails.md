@@ -4,23 +4,24 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** planned. The repository has a bare Spring Boot application, no CI and no architecture tests; see [implementation status](implementation-status.md).
 
-## Scope (owner decision, [ADR 0023](../../decisions/0023-template-fork-adoption-model.md), [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md))
+## Scope
 
-Make the repository safe and checkable before features are added: clean up known deviations, externalise configuration, establish the module skeleton with enforced boundaries, and start CI.
+Make the repository safe and checkable before features are added: clean up known deviations, settle the Java baseline, externalise configuration, create the module skeleton with enforced boundaries, and start CI. Decisions: [ADR 0023](../../decisions/0023-template-fork-adoption-model.md), [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md).
 
-**This milestone is blocked until the Java version is decided** (deferred by the owner; see [open questions](../../decisions/open-questions.md)).
+The Java decision that blocked this milestone is made ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)). Before it starts, the owner approves these criteria and rotates the credentials that were committed to git history ([open questions](../../decisions/open-questions.md)).
 
-## Completion criteria (proposed, not yet approved)
+## Completion criteria (proposed; rewritten on 2026-11-08 after the second decision round, awaiting owner approval)
 
-- `spring-boot-admin-starter-server` is removed ([open questions](../../decisions/open-questions.md)), and `adminer` is pinned or removed.
-- No secret value is in version control or in `application.properties`; required settings are validated at startup and a missing one fails with a clear message.
-- The credentials that were ever committed are rotated (owner task).
-- The package layout and module skeleton are decided ([package structure](../../engineering/conventions/package-structure.md)), and ArchUnit tests exist for the rules in [architecture enforcement](../../architecture/architecture-enforcement.md).
-- A GitHub Actions pipeline builds and tests the backend, scans for secrets, and runs Renovate ([verification standard](../../engineering/testing/verification-standard.md)).
-- The Java baseline in `pom.xml` matches the decision.
+- `spring-boot-admin-starter-server` is removed; `adminer` is pinned to an exact version.
+- Java 25 (Eclipse Temurin) is set in `pom.xml`, CI and local guidance, and the whole toolchain builds and tests on it. If it cannot, Java 21 is adopted through a new ADR (check OQ-44).
+- Spring Modulith 2.1.x builds with the pinned Spring Boot 4.1.x, including the event publication registry on MySQL through a Flyway migration; otherwise the hand-written outbox fallback is chosen through a new ADR (check OQ-43).
+- The module skeleton exists under `com.kibootia.backend` (`platform`, `identity`, `access`, `audit`, `files`, `notes`) as in [package structure](../../engineering/conventions/package-structure.md), with Spring Modulith verification and the ArchUnit rules of [architecture enforcement](../../architecture/architecture-enforcement.md) that can be meaningful at this stage.
+- No secret value is in version control or in `application.properties`. Required settings are validated at startup with a clear message. `.env.example` exists and `pnpm setup` generates local secrets ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)).
+- A GitHub Actions pipeline builds and tests the backend, scans for secrets and runs Renovate ([verification standard](../../engineering/testing/verification-standard.md)).
 - [Application configuration](../../operations/configuration/application-configuration.md) and [local setup](../../engineering/getting-started/local-setup.md) are accurate and work from a clean clone.
-- All of the above pass in CI.
+- Owner task, outside the repository: the credentials that were ever committed are rotated.
+- All of the above pass in CI ([verification standard](../../engineering/testing/verification-standard.md)).

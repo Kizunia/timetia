@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-08
 
 > **Implementation:** not applicable (scope statement). Progress per capability: [implementation status](roadmap/implementation-status.md).
 
@@ -52,7 +52,10 @@ Not part of the foundation, and not initial requirements:
 - universal mapping or repository frameworks;
 - separate Maven modules for every feature;
 - published libraries or a project generator ([ADR 0023](../decisions/0023-template-fork-adoption-model.md));
-- business-domain models that do not belong to a generic starter.
+- business-domain models that do not belong to a generic starter;
+- a backend mail module and application notifications (Keycloak sends identity email, [ADR 0041](../decisions/0041-user-lifecycle-and-account-model.md));
+- interface translations (the reference application is English only);
+- machine-to-machine API clients ([ADR 0044](../decisions/0044-authorization-enforcement-conventions.md)).
 
 Each may be reconsidered when a concrete requirement appears, through a new ADR.
 
