@@ -4,7 +4,7 @@
 - **Module:** lecture-rescheduling
 - **Status:** review
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-06
+- **Last updated:** 2026-11-09
 
 The states a [ticket](../../../shared/glossary/ticket.md) moves through. Original design: [module spec](../_archive/original-spec.md), section 9. Where this file differs from the spec, this file wins. The audit log and notifications per transition are at the end of this file.
 
@@ -15,7 +15,7 @@ The states a [ticket](../../../shared/glossary/ticket.md) moves through. Origina
 | Draft | Being filled in, not visible to others. |
 | In review | Sent for review. Waiting on one or more requested reviewers. |
 | Applied | Written to the change overlay. Final for the ticket. |
-| Rejected | A reviewer rejected it, with a mandatory reason. Final. |
+| Rejected | A reviewer rejected it, with a mandatory reason. The author can edit and resubmit it ([0006](../decisions/0006-rejected-tickets-edit-and-resubmit.md)). |
 | Withdrawn | The author took it back before it was applied. |
 | Expired | The lecture started before the ticket was applied. |
 | Reverted | An applied change was undone. |
@@ -36,13 +36,14 @@ stateDiagram-v2
     Draft --> Expired: lecture starts
     InReview --> Expired: lecture starts
     Applied --> Reverted: revert
-    Rejected --> [*]
+    Rejected --> Draft: author edits to resubmit
+    Rejected --> InReview: escalated to the HOD
     Withdrawn --> [*]
     Expired --> [*]
     Reverted --> [*]
 ```
 
-Rejected is final. Expiry applies to Draft and In review tickets (see below).
+Rejected is not final. Withdrawn, Expired and Reverted are. Expiry applies to Draft and In review tickets (see below).
 
 ## Conflicts and the lifecycle
 
@@ -63,7 +64,12 @@ Rejected is final. Expiry applies to Draft and In review tickets (see below).
 
 ## Rejected tickets
 
-**Rejected is final.** The author raises a new ticket, which copies the details of the rejected one. The rejected ticket stays visible, and a rejection can still be escalated to the HOD ([approval model](approval-model.md)).
+The author **edits and resubmits the same ticket** ([ADR 0006](../decisions/0006-rejected-tickets-edit-and-resubmit.md)): Rejected, then Draft, then In review.
+
+- Each resubmission raises the ticket's **revision number** by one. Only approvals for the current revision count; earlier rejections stay in the history.
+- Conflicts are checked again on resubmission.
+- A rejection can be escalated to the HOD, who becomes a reviewer and sends the ticket back to In review ([approval model](approval-model.md)).
+- If the lecture has started, the ticket can no longer be resubmitted and stays Rejected.
 
 ## Withdrawal
 
@@ -89,7 +95,7 @@ Draft and In review tickets **expire when the earliest occurrence they involve s
 | Extra lecture | The extra lecture's own slot starts. |
 | Exchange | The first of the two occurrences starts. |
 
-Expired tickets stay visible in history. A ticket that is Applied, Rejected, Withdrawn or Reverted never expires.
+Expired tickets stay visible in history. A ticket that is Applied, Rejected, Withdrawn or Reverted never expires; a Rejected ticket just cannot be resubmitted once the lecture has started.
 
 ## Audit log
 

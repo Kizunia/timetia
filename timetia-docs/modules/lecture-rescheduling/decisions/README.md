@@ -9,3 +9,4 @@ Decisions of the lecture-rescheduling module. The project-wide index is [decisio
 | [0003-self-approval-with-optional-review.md](0003-self-approval-with-optional-review.md) | Self-approval with an optional reviewer checklist |
 | [0004-change-overlay-on-base-timetable.md](0004-change-overlay-on-base-timetable.md) | Changes are stored as an overlay on the base timetable |
 | [0005-students-read-only.md](0005-students-read-only.md) | Students have read-only access |
+| [0006-rejected-tickets-edit-and-resubmit.md](0006-rejected-tickets-edit-and-resubmit.md) | Rejected tickets are edited and resubmitted |

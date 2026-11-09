@@ -4,7 +4,7 @@
 - **Module:** lecture-rescheduling
 - **Status:** review
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-11-09
 
 How a ticket gets approved. Original design: [module spec](../_archive/original-spec.md), section 9. Where this file differs from the spec, this file wins.
 
@@ -38,7 +38,7 @@ There is **no escalation**. If a requested reviewer does not respond, the ticket
 ## Rejection
 
 - A faculty reviewer, the HOD, and a CR or BR within their scope ([permissions](permissions.md)) can reject. A rejection needs a reason.
-- The author can escalate a rejection to the HOD, or raise a new ticket that copies the rejected one. A rejected ticket is final ([ticket lifecycle](ticket-lifecycle.md)).
+- The author can escalate a rejection to the HOD, or edit and resubmit the same ticket ([ticket lifecycle](ticket-lifecycle.md), [ADR 0006](../decisions/0006-rejected-tickets-edit-and-resubmit.md)).
 
 ## Always logged
 

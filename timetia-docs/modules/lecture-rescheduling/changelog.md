@@ -57,3 +57,8 @@ History of business-logic decisions, in the order they were taken with the owner
 ## 2026-11-08 Revert right
 
 - An exchange or substitute can be reverted before the lecture starts by its author, the affected faculty or the HOD, not only the affected faculty.
+
+## 2026-11-09 Rejection and data model audit
+
+- A rejected ticket is edited and resubmitted on the same ticket, with a revision number; Rejected is no longer final ([ADR 0006](decisions/0006-rejected-tickets-edit-and-resubmit.md), [ticket lifecycle](rules/ticket-lifecycle.md)).
+- The scraped data model was audited against these docs and standalone version 1 was confirmed ([ADR 0001](decisions/0001-standalone-version-1.md)). Findings and fixes: [audit](../../research/data-model-audit.md), [fixes](../../research/data-model-fixes.md).
