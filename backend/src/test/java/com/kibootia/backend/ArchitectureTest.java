@@ -58,6 +58,21 @@ class ArchitectureTest {
 	}
 
 	@Test
+	void rule9_everyScheduledMethodTakesALock() {
+		EventAndJobRules.scheduledMethodsTakeALock().check(classes);
+	}
+
+	@Test
+	void rule10_listenersDoNotUseApplicationModuleListener() {
+		EventAndJobRules.durableListenersReplaceApplicationModuleListener().check(classes);
+	}
+
+	@Test
+	void rule11_durableListenersTakeADomainEvent() {
+		EventAndJobRules.durableListenersTakeADomainEvent().check(classes);
+	}
+
+	@Test
 	void rule8_platformDependsOnNoOtherModule() {
 		ArchRule rule = noClasses().that().resideInAPackage(ROOT + ".platform..")
 				.should().dependOnClassesThat().resideInAnyPackage(

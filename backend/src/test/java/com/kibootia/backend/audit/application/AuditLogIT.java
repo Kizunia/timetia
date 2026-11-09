@@ -218,7 +218,7 @@ class AuditLogIT {
 		insertEntry(TenantContext.DEFAULT_TENANT, 29);
 		insertEntry(TenantContext.DEFAULT_TENANT, 1);
 
-		int removed = inTransaction(() -> authorization.runAsSystem("test: purge", purge::purgeExpired));
+		int removed = inTransaction(() -> authorization.runAsSystem("test: purge", purge::purge));
 
 		assertThat(removed).isEqualTo(2);
 		assertThat(entryCount()).isEqualTo(2);
@@ -230,7 +230,7 @@ class AuditLogIT {
 		insertEntry(TenantContext.DEFAULT_TENANT, 40);
 		insertEntry(OTHER_TENANT, 40);
 
-		int removed = inTransaction(() -> authorization.runAsSystem("test: purge", purge::purgeExpired));
+		int removed = inTransaction(() -> authorization.runAsSystem("test: purge", purge::purge));
 
 		assertThat(removed).isEqualTo(1);
 		assertThat(jdbc.queryForObject("select hex(tenant_id) from audit_entry", String.class))
@@ -242,7 +242,7 @@ class AuditLogIT {
 	void purgeIsDeniedToOrdinaryUsers() {
 		insertEntry(TenantContext.DEFAULT_TENANT, 40);
 
-		assertThatThrownBy(() -> inTransaction(purge::purgeExpired)).isInstanceOf(AccessDeniedException.class);
+		assertThatThrownBy(() -> inTransaction(purge::purge)).isInstanceOf(AccessDeniedException.class);
 		assertThat(entryCount()).isEqualTo(1);
 	}
 

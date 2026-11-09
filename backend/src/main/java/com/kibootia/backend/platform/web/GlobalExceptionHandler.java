@@ -35,6 +35,10 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.kibootia.backend.platform.errors.ApiException;
+import com.kibootia.backend.platform.errors.ApiFieldError;
+import com.kibootia.backend.platform.errors.ProblemCodes;
+
 /**
  * Turns every failure into the Problem Details shape of ADR 0043 and the status table of the API conventions. Spring's
  * own exceptions (wrong method, unreadable body, unknown path) pass through {@link #handleExceptionInternal} so they get
@@ -60,7 +64,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpStatusCode statusCode, WebRequest request) {
 		ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, statusCode, request);
 		if (response != null && response.getBody() instanceof ProblemDetail problem) {
-			this.problems.decorate(problem, ProblemCodes.forStatus(statusCode));
+			this.problems.decorate(problem, StatusCodes.forStatus(statusCode));
 			this.problems.setInstance(problem, ((ServletWebRequest) request).getRequest());
 		}
 		return response;

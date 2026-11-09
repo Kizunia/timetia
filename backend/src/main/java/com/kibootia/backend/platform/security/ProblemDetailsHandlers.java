@@ -5,7 +5,7 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
-import com.kibootia.backend.platform.web.ProblemCodes;
+import com.kibootia.backend.platform.errors.ProblemCodes;
 import com.kibootia.backend.platform.web.ProblemFactory;
 
 /**

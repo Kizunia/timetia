@@ -1,7 +1,4 @@
-package com.kibootia.backend.platform.web;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+package com.kibootia.backend.platform.errors;
 
 /**
  * Stable machine-readable error codes, {@code <module>.<reason>} (ADR 0043). The frontend chooses its message from the
@@ -40,26 +37,6 @@ public final class ProblemCodes {
 	public static final String INTERNAL_ERROR = "platform.internal_error";
 
 	private ProblemCodes() {
-	}
-
-	/** The code for a status when nothing more specific applies. */
-	static String forStatus(HttpStatusCode status) {
-		HttpStatus known = HttpStatus.resolve(status.value());
-		if (known == null) {
-			return status.is5xxServerError() ? INTERNAL_ERROR : BAD_REQUEST;
-		}
-		return switch (known) {
-			case UNAUTHORIZED -> UNAUTHENTICATED;
-			case FORBIDDEN -> FORBIDDEN;
-			case NOT_FOUND -> NOT_FOUND;
-			case METHOD_NOT_ALLOWED -> METHOD_NOT_ALLOWED;
-			case NOT_ACCEPTABLE -> NOT_ACCEPTABLE;
-			case UNSUPPORTED_MEDIA_TYPE -> UNSUPPORTED_MEDIA_TYPE;
-			case PAYLOAD_TOO_LARGE -> PAYLOAD_TOO_LARGE;
-			case CONFLICT -> CONCURRENT_MODIFICATION;
-			case TOO_MANY_REQUESTS -> RATE_LIMITED;
-			default -> known.is5xxServerError() ? INTERNAL_ERROR : BAD_REQUEST;
-		};
 	}
 
 }

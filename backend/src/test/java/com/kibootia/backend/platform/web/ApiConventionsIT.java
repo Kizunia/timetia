@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.kibootia.backend.TestcontainersConfiguration;
+import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.persistence.TestWidget;
 import com.kibootia.backend.platform.persistence.TestWidgetRepository;
 

@@ -1,4 +1,4 @@
-package com.kibootia.backend.platform.web;
+package com.kibootia.backend.platform.errors;
 
 import java.time.Duration;
 import java.util.List;

@@ -19,6 +19,9 @@ import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.stereotype.Component;
 
+import com.kibootia.backend.platform.errors.ApiFieldError;
+import com.kibootia.backend.platform.errors.ProblemCodes;
+
 /**
  * Builds the one error shape of the API (ADR 0043, RFC 9457): {@code type}, {@code title}, {@code status},
  * {@code detail}, {@code instance} and the Kibootia members {@code code}, {@code traceId} and {@code errors}. Both the

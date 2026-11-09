@@ -17,11 +17,12 @@ import com.kibootia.backend.audit.AuditPermissions;
 import com.kibootia.backend.platform.authorization.Authorization;
 import com.kibootia.backend.platform.authorization.NoAuthorization;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
+import com.kibootia.backend.platform.jobs.RetentionPurgeable;
 import com.kibootia.backend.platform.observability.CurrentTrace;
 
 /** Writes audit entries and removes expired ones (ADR 0046). */
 @Service
-class AuditService implements AuditLog {
+class AuditService implements AuditLog, RetentionPurgeable {
 
 	private static final Logger log = LoggerFactory.getLogger(AuditService.class);
 
@@ -56,10 +57,17 @@ class AuditService implements AuditLog {
 				this.trace.traceId().orElse(null)));
 	}
 
+	@Override
+	@NoAuthorization("returns a constant label for the logs")
+	public String name() {
+		return "audit-entries";
+	}
+
 	/** Removes the tenant's entries older than the retention period and returns how many. */
+	@Override
 	@Transactional
 	@RequiresPermission(AuditPermissions.PURGE_ENTRIES)
-	public int purgeExpired() {
+	public int purge() {
 		Instant cutoff = this.clock.instant().minus(Duration.ofDays(this.properties.retentionDays()));
 		int removed = this.store.deleteOccurredBefore(cutoff);
 		log.info("Removed {} audit entries older than {} days", removed, this.properties.retentionDays());

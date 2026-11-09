@@ -10,6 +10,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import com.kibootia.backend.platform.errors.ApiException;
+import com.kibootia.backend.platform.errors.ApiFieldError;
+import com.kibootia.backend.platform.errors.ProblemCodes;
+
 /**
  * The paging and sorting parameters of a list endpoint (ADR 0043): {@code page} (from 0), {@code size} (default 20,
  * at most 100) and {@code sort=field,asc|desc}. Declare it as {@code @Valid PageQuery query}; out-of-range values then

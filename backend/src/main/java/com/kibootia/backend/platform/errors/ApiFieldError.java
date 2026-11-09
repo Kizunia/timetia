@@ -1,4 +1,4 @@
-package com.kibootia.backend.platform.web;
+package com.kibootia.backend.platform.errors;
 
 /**
  * One invalid field in a validation failure (ADR 0043).
