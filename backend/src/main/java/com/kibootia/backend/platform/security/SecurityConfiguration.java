@@ -1,8 +1,5 @@
 package com.kibootia.backend.platform.security;
 
-import io.micrometer.tracing.Tracer;
-
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.kibootia.backend.platform.tenancy.TenantContextFilter;
 import com.kibootia.backend.platform.tenancy.TenantResolver;
+import com.kibootia.backend.platform.web.ProblemFactory;
 
 import java.time.Duration;
 
@@ -55,9 +53,9 @@ class SecurityConfiguration {
 	}
 
 	@Bean
-	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ObjectProvider<Tracer> tracer,
+	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ProblemFactory problemFactory,
 			TenantResolver tenantResolver) throws Exception {
-		ProblemDetailsHandlers problems = new ProblemDetailsHandlers(tracer);
+		ProblemDetailsHandlers problems = new ProblemDetailsHandlers(problemFactory);
 		http
 			// Binds the tenant once the bearer token has authenticated the caller (ADR 0028).
 			.addFilterAfter(new TenantContextFilter(tenantResolver), BearerTokenAuthenticationFilter.class)

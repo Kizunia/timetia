@@ -7,7 +7,7 @@ import jakarta.persistence.Table;
 /** A test-only entity that exercises the persistence base types. */
 @Entity
 @Table(name = "test_widget")
-class TestWidget extends SoftDeletableEntity {
+public class TestWidget extends SoftDeletableEntity {
 
 	@Column(name = "name", nullable = false)
 	private String name;
@@ -15,15 +15,15 @@ class TestWidget extends SoftDeletableEntity {
 	protected TestWidget() {
 	}
 
-	TestWidget(String name) {
+	public TestWidget(String name) {
 		this.name = name;
 	}
 
-	String getName() {
+	public String getName() {
 		return this.name;
 	}
 
-	void setName(String name) {
+	public void setName(String name) {
 		this.name = name;
 	}
 

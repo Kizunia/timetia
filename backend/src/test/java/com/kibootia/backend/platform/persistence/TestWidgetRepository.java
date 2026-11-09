@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-interface TestWidgetRepository extends JpaRepository<TestWidget, UUID> {
+public interface TestWidgetRepository extends JpaRepository<TestWidget, UUID> {
 
 	@Query("select w from TestWidget w where w.name like :prefix%")
 	List<TestWidget> findByPrefix(String prefix);
