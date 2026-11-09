@@ -1,0 +1,101 @@
+package com.kibootia.backend.platform.persistence;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Version;
+
+import org.hibernate.annotations.TenantId;
+import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.kibootia.backend.platform.tenancy.TenantContext;
+
+/**
+ * Columns every foundation table has: a UUIDv7 key stored as {@code BINARY(16)} (ADR 0033), the tenant (ADR 0028),
+ * audit columns filled by Spring Data auditing and a version for optimistic locking, whose conflict surfaces as 409
+ * (ADR 0043). Persistence entities stay inside their module and are never returned from an API (ADR 0004).
+ */
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+public abstract class BaseEntity {
+
+	@Id
+	@UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+	@Column(name = "id", nullable = false, updatable = false, columnDefinition = "binary(16)")
+	private UUID id;
+
+	@TenantId
+	@Column(name = "tenant_id", nullable = false, updatable = false, columnDefinition = "binary(16)")
+	private UUID tenantId;
+
+	@Version
+	@Column(name = "version", nullable = false)
+	private long version;
+
+	@CreatedDate
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private Instant createdAt;
+
+	@CreatedBy
+	@Column(name = "created_by", nullable = false, updatable = false, columnDefinition = "binary(16)")
+	private UUID createdBy;
+
+	@LastModifiedDate
+	@Column(name = "updated_at", nullable = false)
+	private Instant updatedAt;
+
+	@LastModifiedBy
+	@Column(name = "updated_by", nullable = false, columnDefinition = "binary(16)")
+	private UUID updatedBy;
+
+	/**
+	 * Writes need a tenant. Reads without one find nothing; refusing the write here means no row can be created that
+	 * belongs to nobody.
+	 */
+	@PrePersist
+	void requireTenant() {
+		if (TenantContext.current().isEmpty()) {
+			throw new IllegalStateException(
+					"Refusing to persist " + getClass().getSimpleName() + ": no tenant is bound to this thread");
+		}
+	}
+
+	public UUID getId() {
+		return this.id;
+	}
+
+	public UUID getTenantId() {
+		return this.tenantId;
+	}
+
+	public long getVersion() {
+		return this.version;
+	}
+
+	public Instant getCreatedAt() {
+		return this.createdAt;
+	}
+
+	public UUID getCreatedBy() {
+		return this.createdBy;
+	}
+
+	public Instant getUpdatedAt() {
+		return this.updatedAt;
+	}
+
+	public UUID getUpdatedBy() {
+		return this.updatedBy;
+	}
+
+}

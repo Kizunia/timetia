@@ -19,8 +19,12 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.client.RestTemplate;
+
+import com.kibootia.backend.platform.tenancy.TenantContextFilter;
+import com.kibootia.backend.platform.tenancy.TenantResolver;
 
 import java.time.Duration;
 
@@ -51,9 +55,12 @@ class SecurityConfiguration {
 	}
 
 	@Bean
-	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ObjectProvider<Tracer> tracer) throws Exception {
+	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ObjectProvider<Tracer> tracer,
+			TenantResolver tenantResolver) throws Exception {
 		ProblemDetailsHandlers problems = new ProblemDetailsHandlers(tracer);
 		http
+			// Binds the tenant once the bearer token has authenticated the caller (ADR 0028).
+			.addFilterAfter(new TenantContextFilter(tenantResolver), BearerTokenAuthenticationFilter.class)
 			.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated())
 			.sessionManagement((sessions) -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			// Bearer tokens in a header are not sent by browsers on their own, so there is no cookie to forge.
