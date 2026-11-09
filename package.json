@@ -6,9 +6,11 @@
     "bootstrap": "node scripts/bootstrap.mjs",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
+    "dev": "node scripts/dev.mjs",
     "reset": "node scripts/reset.mjs"
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "packageManager": "pnpm@11.12.0"
 }

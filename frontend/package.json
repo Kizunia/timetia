@@ -1,0 +1,42 @@
+{
+  "name": "kibootia-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Kibootia web application: Next.js server with the backend-for-frontend session and API proxy.",
+  "scripts": {
+    "dev": "next dev --port 3470",
+    "build": "next build",
+    "start": "next start --port 3470",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.10.0",
+    "@vercel/otel": "2.3.0",
+    "jose": "6.2.15",
+    "next": "16.4.5",
+    "openid-client": "6.8.9",
+    "pino": "10.4.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.0",
+    "@tailwindcss/postcss": "4.3.5",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.5",
+    "tailwindcss": "4.3.5",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
