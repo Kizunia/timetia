@@ -1,0 +1,7 @@
+# Reviewed gitleaks false positives (generic-api-key). One fingerprint per line.
+
+# compose.yaml: the Keycloak JDBC URL (no credential in it).
+9c0bd2f672b2b9a9b8bad1cfe4b38435af0a98c4:compose.yaml:generic-api-key:65
+
+# frontend unit tests: a fake session secret used only as a test fixture.
+01491e8694c4e9e21a97f32d392eb13c46db3f21:frontend/tests/unit/helpers.ts:generic-api-key:18
