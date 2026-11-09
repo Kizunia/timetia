@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-09
 
-> **Implementation:** observed (dependency only). Flyway starters and `flyway-mysql` are in `pom.xml`; there are no migration scripts. The conventions below are planned.
+> **Implementation:** verified (CI run 42605511477, 2026-11-09). Migrations live in one folder per module (`platform`, `audit`, `notes`) and follow the naming below; `BackendApplicationIT` applies all of them to an empty MySQL and lets Hibernate validate the schema. Test-only tables live in `src/test/resources/db/migration/test-fixtures` and are never part of the application.
 
 Decision: [ADR 0012](../../decisions/0012-flyway-managed-schema-evolution.md).
 
@@ -28,4 +28,4 @@ Decision: [ADR 0012](../../decisions/0012-flyway-managed-schema-evolution.md).
 
 ## Testing
 
-A migration test applies all migrations to an empty MySQL started by Testcontainers and then lets the application validate the schema ([ADR 0017](../../decisions/0017-testcontainers-mysql-for-persistence-tests.md)). This is the intended design; no such test exists.
+A migration test applies all migrations to an empty MySQL started by Testcontainers and then lets the application validate the schema ([ADR 0017](../../decisions/0017-testcontainers-mysql-for-persistence-tests.md)). `BackendApplicationIT` is that test; every integration test also starts from an empty database.

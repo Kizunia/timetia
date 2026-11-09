@@ -4,13 +4,13 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-09
 
 > **Implementation:** this document is the reference for implementation status. The rows were first written from a snapshot of 2026-10-27 and updated on 2026-11-08 after milestone 0 was implemented.
 
 The one place that compares what is intended with what exists. Values follow the [vocabulary](../../meta/living-documentation.md): planned, observed, verified. The [technology catalogue](../../technology/README.md) lists what is selected and links here for status.
 
-**Milestone 0 is verified.** Its 13 tests and the secret scan passed in CI on Eclipse Temurin 25 on pull request #2 (run 42477195261, 2026-11-08) and again on `main` after the merge (run 42477240084), as the [verification standard](../../engineering/testing/verification-standard.md) requires. Milestone 1 is built and passes local runs (2026-11-09) but nothing from it has run in CI, so none of it is verified; milestones 2 to 6 are unbuilt. The container image scan (part of OQ-44) has not run.
+**Milestone 0 is verified.** Its 13 tests and the secret scan passed in CI on Eclipse Temurin 25 on pull request #2 (run 42477195261, 2026-11-08) and again on `main` after the merge (run 42477240084), as the [verification standard](../../engineering/testing/verification-standard.md) requires. Milestones 1 and 2 are built, and their CI jobs (backend, frontend, image scan, end-to-end sign-in, secret scan) passed on pull request #4 (run 42605511477, 2026-11-09). Rows below that still say "no CI run yet" were written earlier and are not yet re-marked. Milestones 3 to 6 are unbuilt. The container image scan (part of OQ-44) has not run.
 
 ## Existing capabilities
 
@@ -45,11 +45,11 @@ The Level column was added on 2026-11-09.
 | Next.js backend-for-frontend sign-in and encrypted cookie session | [ADR 0026](../../decisions/0026-nextjs-bff-session.md) | [1](milestone-1-walking-skeleton.md) | observed (local run on 2026-11-09; no CI run yet) |
 | Local Keycloak with an imported realm, hardened | [ADR 0020](../../decisions/0020-keycloak-in-local-compose.md) | [1](milestone-1-walking-skeleton.md) | observed (local run on 2026-11-09; no CI run yet); the realm is applied by OpenTofu, not imported |
 | OTLP telemetry and the local Grafana LGTM container | [ADR 0030](../../decisions/0030-otlp-telemetry-and-local-lgtm.md) | [1](milestone-1-walking-skeleton.md) | partly observed (traces yes, log export no: OQ-42) |
-| UUIDv7 identifiers, audit columns, optimistic locking | [ADR 0033](../../decisions/0033-uuidv7-identifiers.md) | [2](milestone-2-platform-conventions.md) | planned |
-| Tenant context and isolation | [ADR 0028](../../decisions/0028-tenant-ready-schema.md) | [2](milestone-2-platform-conventions.md) | planned |
-| Soft delete, restore and retention purge | [ADR 0034](../../decisions/0034-soft-delete-with-retention-purge.md) | [2](milestone-2-platform-conventions.md) | planned |
-| Outbox and lock-protected jobs | [ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md) | [2](milestone-2-platform-conventions.md) | planned |
-| Generated OpenAPI description and client | [ADR 0038](../../decisions/0038-frontend-stack.md) | [2](milestone-2-platform-conventions.md) | planned |
+| UUIDv7 identifiers, audit columns, optimistic locking | [ADR 0033](../../decisions/0033-uuidv7-identifiers.md) | [2](milestone-2-platform-conventions.md) | verified (CI run 42605511477, 2026-11-09) |
+| Tenant context and isolation | [ADR 0028](../../decisions/0028-tenant-ready-schema.md) | [2](milestone-2-platform-conventions.md) | verified (CI run 42605511477, 2026-11-09) |
+| Soft delete, restore and retention purge | [ADR 0034](../../decisions/0034-soft-delete-with-retention-purge.md) | [2](milestone-2-platform-conventions.md) | verified (CI run 42605511477, 2026-11-09); stored-object cleanup waits for milestone 4 |
+| Outbox and lock-protected jobs | [ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md) | [2](milestone-2-platform-conventions.md) | verified (CI run 42605511477, 2026-11-09) |
+| Generated OpenAPI description and client | [ADR 0038](../../decisions/0038-frontend-stack.md) | [2](milestone-2-platform-conventions.md) | verified (CI run 42605511477, 2026-11-09) |
 | User profile, roles, permissions and decision point | [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md) | [3](milestone-3-identity-and-access-administration.md) | planned |
 | User and role administration UI, invitations, audit log viewer, rate limiter | [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md) | [3](milestone-3-identity-and-access-administration.md) | planned |
 | Object storage module and avatar flow | [ADR 0029](../../decisions/0029-s3-object-storage-contract.md) | [4](milestone-4-files.md) | planned |
@@ -67,14 +67,15 @@ The Level column was added on 2026-11-09.
 | Setup scripts (`pnpm bootstrap`, `infra:up`, `dev`, `reset`) and the `apps` Compose profile | [ADR 0040](../../decisions/0040-local-development-topology-and-setup.md) | [0](milestone-0-hygiene-and-guardrails.md), [1](milestone-1-walking-skeleton.md) | observed (local run on 2026-11-09; no CI run yet) |
 | Invitations, self-registration, default `user` role, email verification in the decision point | [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md) | [3](milestone-3-identity-and-access-administration.md) | planned |
 | Generic `/api` proxy and CSRF rule in the Next.js server | [ADR 0042](../../decisions/0042-bff-api-proxy-and-csrf.md) | [1](milestone-1-walking-skeleton.md) | observed (local run on 2026-11-09; no CI run yet) |
-| Problem Details errors, `/api/v1`, committed `openapi.json` with drift check | [ADR 0043](../../decisions/0043-http-api-conventions.md) | [2](milestone-2-platform-conventions.md) | planned (401 and 403 from the security filter chain already use Problem Details) |
+| Problem Details errors, `/api/v1`, committed `openapi.json` with drift check | [ADR 0043](../../decisions/0043-http-api-conventions.md) | [2](milestone-2-platform-conventions.md) | verified (CI run 42605511477, 2026-11-09) |
 | `scopeFor`, `@RequiresPermission`, `@NoAuthorization` and its ArchUnit rule | [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md) | [2](milestone-2-platform-conventions.md), [3](milestone-3-identity-and-access-administration.md) | planned |
 | Keycloak on PostgreSQL, realm applied by OpenTofu, `auth.<domain>` exposure | [ADR 0045](../../decisions/0045-keycloak-operations.md) | [1](milestone-1-walking-skeleton.md), [6](milestone-6-production-readiness.md) | observed (local run on 2026-11-09; no CI run yet) (`auth.<domain>` exposure is milestone 6) |
-| Audit module with user-ID-only entries and a 365-day default retention | [ADR 0046](../../decisions/0046-audit-log-design.md) | [2](milestone-2-platform-conventions.md), [3](milestone-3-identity-and-access-administration.md) | planned |
+| Audit module with user-ID-only entries and a 365-day default retention | [ADR 0046](../../decisions/0046-audit-log-design.md) | [2](milestone-2-platform-conventions.md), [3](milestone-3-identity-and-access-administration.md) | verified (CI run 42605511477, 2026-11-09) for writing and purging; the viewer is milestone 3 |
 | Health on the management port, multi-stage Dockerfiles | [ADR 0047](../../decisions/0047-health-exposure-and-container-images.md) | [1](milestone-1-walking-skeleton.md) | observed (local run on 2026-11-09; no CI run yet) (the CI image scan has not run) |
 
 ## Deviations the owner has called out
 
+- Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)).
 - `spring-boot-admin-starter-server` was removed from `pom.xml` on 2026-11-08.
 - Java 17 in the pom versus the decided Java 25: resolved on 2026-11-08 ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)).
 - Secrets handling meets the target convention in the repository, and the owner rotated the credentials that were committed to git history.

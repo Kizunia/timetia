@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-09
 
-> **Implementation:** planned.
+> **Implementation:** verified (CI run 42605511477, 2026-11-09). The `notes` module is the reference example (backend only).
 
 Decisions: [ADR 0004](../../decisions/0004-separate-api-application-and-persistence-models.md), [ADR 0005](../../decisions/0005-hand-written-model-mappers.md).
 
@@ -29,7 +29,15 @@ Hand-written mapper classes or methods owned by the adapter or layer that needs 
 
 ## Examples
 
-No example exists yet. [Milestone 2](../../product/roadmap/milestone-2-platform-conventions.md) proposes a reference example.
+The `notes` module ([milestone 2](../../product/roadmap/milestone-2-platform-conventions.md)) keeps the four kinds apart:
+
+| Type | Class | Package |
+|---|---|---|
+| API DTO | `CreateNoteRequest`, `UpdateNoteRequest`, `NoteResponse` | `notes.web` |
+| Application model | `Note`, `NewNote`, `NoteChanges`, `NoteFilter` | `notes.application` |
+| Persistence entity | `NoteEntity` | `notes.persistence` |
+
+`NoteMapper` (web) and `NoteEntityMapper` (persistence) convert by hand, one test each. The use cases depend on the `NoteStore` port, never on JPA.
 
 ## Related
 

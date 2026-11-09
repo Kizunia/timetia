@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-09
 
-> **Implementation:** planned.
+> **Implementation:** verified (CI run 42605511477, 2026-11-09). Use cases in `notes` and `audit` own their transactions, write audit entries and publish events inside them, and are tested against MySQL.
 
 ## Transactions (owner direction)
 

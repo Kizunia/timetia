@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-09
 
-> **Implementation:** partly observed: MySQL 8.4 runs from `compose.yaml` (host port 3307) and the MySQL driver is in `pom.xml`. Spring Data JPA/Hibernate is **not** a dependency yet. Everything under "Conventions" is planned.
+> **Implementation:** verified (CI run 42605511477, 2026-11-09). Spring Data JPA, Hibernate 7.4, Flyway and MySQL 8.4 are in use. `BaseEntity` and `SoftDeletableEntity` (package `platform.persistence`) give every table a UUIDv7 key in `BINARY(16)`, the tenant, audit columns and a version; `notes` is the reference table. `PersistenceConventionsIT` runs the conventions on a real MySQL. Decisions made while building: [ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md).
 
 Decisions: [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md), [ADR 0028](../../decisions/0028-tenant-ready-schema.md), [ADR 0033](../../decisions/0033-uuidv7-identifiers.md), [ADR 0034](../../decisions/0034-soft-delete-with-retention-purge.md).
 
@@ -21,8 +21,9 @@ Decisions: [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md), 
 
 ## Observations from the repository
 
-- `application.properties` points at the local Compose database and sets `spring.jpa.hibernate.ddl-auto=validate`. Without a JPA dependency this property has no effect (inference); it will once JPA is added. `validate` is consistent with [Flyway-only schema evolution](schema-migrations.md).
-- The datasource password is hardcoded in that file; see [secrets management](../../operations/security/secrets-management.md).
+- `spring.jpa.hibernate.ddl-auto=validate` is in effect: Hibernate checks the schema against the entities at startup and never creates or alters it. Flyway applies one migration folder per module (`db/migration/platform`, `audit`, `notes`).
+- The datasource password is read from the environment or the local `.env` ([secrets management](../../operations/security/secrets-management.md)).
+- Timestamps are `DATETIME(6)` columns holding UTC (`spring.jpa.properties.hibernate.jdbc.time_zone=UTC`), so the session time zone cannot shift them.
 
 ## Conventions (owner decisions of 2026-10-28)
 
@@ -38,7 +39,15 @@ Decisions: [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md), 
 | Pagination | Offset paging with a maximum page size by default; keyset paging documented for large tables |
 | Seed data | A migration location loaded only in the local profile; production refuses to start with it |
 
-Hibernate support for UUIDv7 generation and soft delete in the version in use is unchecked ([open questions](../../decisions/open-questions.md)).
+Checked on Hibernate 7.4 with MySQL 8.4 (OQ-41, closed): `@UuidGenerator(style = VERSION_7)`, `@TenantId`, `@Version` and `@SoftDelete(strategy = TIMESTAMP)` work together on a mapped superclass and pass `ddl-auto=validate`, so no fallback was needed.
+
+How the conventions look in code:
+
+- **Tenancy.** `TenantContext` is bound by a filter after bearer authentication, and by `runAs` for jobs and event handlers. Hibernate reads it when a session opens, so it must be bound before a transaction starts. With no tenant bound, entity queries find nothing and persisting is refused.
+- **Soft delete.** `delete` sets `deleted_at`; entity queries skip those rows. Restoring and purging use native SQL with an explicit `tenant_id` condition, because native queries bypass both the tenant filter and the soft-delete filter.
+- **Unique keys.** A generated `active_marker` column (1 while live, NULL once deleted) is part of the key, so a deleted row's value can be used again.
+- **Locking.** The `version` column; a stale update fails and the API answers 409 `platform.concurrent_modification`.
+- **Audit columns.** `created_by` and `updated_by` hold the signed-in user's ID, or the nil UUID for the system.
 
 ## Responsibilities and limits
 
@@ -46,4 +55,4 @@ JPA entities and repositories are infrastructure details owned by a module and m
 
 ## Testing
 
-Persistence tests run against a real MySQL via Testcontainers ([ADR 0017](../../decisions/0017-testcontainers-mysql-for-persistence-tests.md)), including tenant isolation and soft-delete filter tests. None exist yet.
+Persistence tests run against a real MySQL via Testcontainers ([ADR 0017](../../decisions/0017-testcontainers-mysql-for-persistence-tests.md)). `PersistenceConventionsIT` covers identifiers, audit columns, locking, tenant isolation on reads and bulk writes, the native-query gap and soft delete with the active-marker key, using a test-only table; `NotesApiIT` repeats the important ones on a real resource.
