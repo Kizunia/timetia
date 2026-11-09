@@ -14,6 +14,8 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q -DskipTests package \
  && java -Djarmode=tools -jar target/backend-*.jar extract --layers --launcher --destination /build/layers
 
 FROM eclipse-temurin:25-jre AS runtime
+# Pick up OS security fixes that the upstream base image has not rebuilt for yet (Trivy gate in CI, ADR 0047).
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 10001 kibootia && useradd --system --uid 10001 --gid kibootia --no-create-home kibootia
 WORKDIR /app
 # Least-changing layers first, so a code-only change rebuilds only the last one.
