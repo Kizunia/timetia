@@ -11,8 +11,8 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
  * ArchUnit rules from kibootia-docs/architecture/architecture-enforcement.md that can be meaningful before the first
- * feature module exists. Rules 1, 4 and 6 hold vacuously until module code exists; rule 8 is checked against real
- * classes. Rules 5 and 7 wait for the code they constrain; rules 2 and 3 are covered by Spring Modulith.
+ * feature module exists. Rules 1, 4, 6 and 7 hold vacuously until a module has an application package; rule 8 is
+ * checked against real classes. Rule 5 waits for the optional modules; rules 2 and 3 are covered by Spring Modulith.
  */
 class ArchitectureTest {
 
@@ -50,6 +50,11 @@ class ArchitectureTest {
 				.should().dependOnClassesThat().areAnnotatedWith("jakarta.persistence.Entity")
 				.allowEmptyShould(true);
 		rule.check(classes);
+	}
+
+	@Test
+	void rule7_everyPublicUseCaseMethodHasAnAuthorizationCheckOrAnExplicitMarker() {
+		AuthorizationRules.useCaseMethodsAreChecked("..application..").check(classes);
 	}
 
 	@Test

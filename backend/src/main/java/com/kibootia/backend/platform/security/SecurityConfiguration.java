@@ -1,5 +1,6 @@
 package com.kibootia.backend.platform.security;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -54,11 +55,11 @@ class SecurityConfiguration {
 
 	@Bean
 	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ProblemFactory problemFactory,
-			TenantResolver tenantResolver) throws Exception {
+			ObjectProvider<TenantResolver> tenantResolver) throws Exception {
 		ProblemDetailsHandlers problems = new ProblemDetailsHandlers(problemFactory);
 		http
 			// Binds the tenant once the bearer token has authenticated the caller (ADR 0028).
-			.addFilterAfter(new TenantContextFilter(tenantResolver), BearerTokenAuthenticationFilter.class)
+			.addFilterAfter(new TenantContextFilter(tenantResolver.getIfAvailable(TenantResolver::singleTenant)), BearerTokenAuthenticationFilter.class)
 			.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated())
 			.sessionManagement((sessions) -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			// Bearer tokens in a header are not sent by browsers on their own, so there is no cookie to forge.
