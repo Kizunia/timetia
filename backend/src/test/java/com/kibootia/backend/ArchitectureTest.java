@@ -14,7 +14,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * feature module exists. Rules 1, 4 and 6 hold vacuously until module code exists; rule 8 is checked against real
  * classes. Rules 5 and 7 wait for the code they constrain; rules 2 and 3 are covered by Spring Modulith.
  */
-class ArchitectureTests {
+class ArchitectureTest {
 
 	static final String ROOT = "com.kibootia.backend";
 

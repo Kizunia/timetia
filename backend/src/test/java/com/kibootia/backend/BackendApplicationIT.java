@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
-class BackendApplicationTests {
+class BackendApplicationIT {
 
 	@Autowired
 	JdbcTemplate jdbc;

@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class RequiredSettingsTests {
+class RequiredSettingsTest {
 
 	private final RequiredSettingsEnvironmentPostProcessor processor = new RequiredSettingsEnvironmentPostProcessor();
 

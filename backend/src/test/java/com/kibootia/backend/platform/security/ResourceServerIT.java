@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		properties = "management.server.port=0")
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
-class ResourceServerTests {
+class ResourceServerIT {
 
 	@DynamicPropertySource
 	static void tokenValidation(DynamicPropertyRegistry registry) {

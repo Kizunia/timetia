@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Spring Modulith verification: no cycles between modules, no access to the internals of another module.
  */
-class ModularityTests {
+class ModularityTest {
 
 	static final ApplicationModules MODULES = ApplicationModules.of(BackendApplication.class);
 

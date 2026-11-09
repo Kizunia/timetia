@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * published in a transaction is stored, delivered to its listener and marked completed.
  */
 @SpringBootTest
-@Import({ TestcontainersConfiguration.class, EventPublicationRegistryTests.Listener.class })
-class EventPublicationRegistryTests {
+@Import({ TestcontainersConfiguration.class, EventPublicationRegistryIT.Listener.class })
+class EventPublicationRegistryIT {
 
 	record Ping(String name) {
 	}

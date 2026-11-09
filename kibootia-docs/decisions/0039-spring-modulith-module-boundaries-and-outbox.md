@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** observed. Spring Modulith 2.1.2 is on Spring Boot 4.1.1; the six modules exist as skeletons, `ModularityTests` verifies them, and `EventPublicationRegistryTests` shows the registry working on MySQL 8.4 through a Flyway migration (passing locally on 2026-11-08). No CI run yet, so the milestone 0 gate is not yet closed.
+> **Implementation:** observed. Spring Modulith 2.1.2 is on Spring Boot 4.1.1; the six modules exist as skeletons, `ModularityTest` verifies them, and `EventPublicationRegistryIT` shows the registry working on MySQL 8.4 through a Flyway migration (passing locally on 2026-11-08). No CI run yet, so the milestone 0 gate is not yet closed.
 
 ## Context
 

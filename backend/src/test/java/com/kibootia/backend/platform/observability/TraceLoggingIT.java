@@ -21,9 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @ExtendWith(OutputCaptureExtension.class)
-class TraceLoggingTests {
+class TraceLoggingIT {
 
-	private static final Logger log = LoggerFactory.getLogger(TraceLoggingTests.class);
+	private static final Logger log = LoggerFactory.getLogger(TraceLoggingIT.class);
 
 	@Autowired
 	Tracer tracer;

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** partly observed, not verified in CI. Actuator exposes only `health` with liveness and readiness (MySQL only) on port 8090 bound to loopback; `ResourceServerTests` check it answers without a token there and not on the API port. `backend/Dockerfile` (Maven build, Temurin 25 JRE, layered jar, non-root user) and `frontend/Dockerfile` (standalone output on Node 24, non-root) built, and both containers became healthy locally on 2026-11-09. **Not done:** the CI image build and vulnerability scan (the `images` job is written but has not run), so the image scan part of OQ-44 is open.
+> **Implementation:** partly observed, not verified in CI. Actuator exposes only `health` with liveness and readiness (MySQL only) on port 8090 bound to loopback; `ResourceServerIT` check it answers without a token there and not on the API port. `backend/Dockerfile` (Maven build, Temurin 25 JRE, layered jar, non-root user) and `frontend/Dockerfile` (standalone output on Node 24, non-root) built, and both containers became healthy locally on 2026-11-09. **Not done:** the CI image build and vulnerability scan (the `images` job is written but has not run), so the image scan part of OQ-44 is open.
 
 ## Context
 

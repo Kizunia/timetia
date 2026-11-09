@@ -30,7 +30,7 @@ Test starters listed as present are in `pom.xml`. Their presence says nothing ab
 
 ## Observed tests
 
-`BackendApplicationTests.contextLoads` starts the Spring context. Whether it passes was not checked. It would need a reachable database and the security starters' defaults; this is an inference, not a measurement.
+`BackendApplicationIT.contextLoads` starts the Spring context. Whether it passes was not checked. It would need a reachable database and the security starters' defaults; this is an inference, not a measurement.
 
 ## Database for tests
 

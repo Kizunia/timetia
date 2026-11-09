@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** partly observed. Spring Modulith verification (`ModularityTests`) and ArchUnit rules 1, 4, 6 and 8 (`ArchitectureTests`) exist and pass locally (2026-11-08); rules 1, 4 and 6 are vacuous until module code exists. Rules 5 and 7 are not implemented. No CI run yet.
+> **Implementation:** partly observed. Spring Modulith verification (`ModularityTest`) and ArchUnit rules 1, 4, 6 and 8 (`ArchitectureTest`) exist and pass locally (2026-11-08); rules 1, 4 and 6 are vacuous until module code exists. Rules 5 and 7 are not implemented. No CI run yet.
 
 Decisions: [ADR 0013](../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../decisions/0044-authorization-enforcement-conventions.md).
 
@@ -21,7 +21,7 @@ Record the architecture rules that are meant to be enforced by automated tests, 
 
 ## Rules
 
-Decided rules. Rules 1, 4, 6 and 8 are implemented in `ArchitectureTests`, rules 2 and 3 are covered by `ModularityTests` (meaningful once two modules have code), rules 5 and 7 are not implemented. Package selectors follow [package structure](../engineering/conventions/package-structure.md).
+Decided rules. Rules 1, 4, 6 and 8 are implemented in `ArchitectureTest`, rules 2 and 3 are covered by `ModularityTest` (meaningful once two modules have code), rules 5 and 7 are not implemented. Package selectors follow [package structure](../engineering/conventions/package-structure.md).
 
 | # | Rule |
 |---|---|
