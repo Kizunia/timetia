@@ -2,7 +2,7 @@
 # slim Node image as a non-root user. Build context: the repository root (the pnpm workspace and lock file live there).
 
 FROM node:24-slim AS build
-RUN npm install --global pnpm@11.12.0
+RUN npm install --global pnpm@11.28.11
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/package.json frontend/package.json
@@ -11,6 +11,10 @@ COPY frontend frontend
 RUN pnpm --filter kibootia-frontend build
 
 FROM node:24-slim AS runtime
+# The server only needs `node`. Dropping the npm that ships in the base image removes its bundled (and often
+# vulnerable) dependencies from the final image; Trivy gates on them in CI (ADR 0047).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production \
     PORT=3470 \
     HOSTNAME=0.0.0.0 \

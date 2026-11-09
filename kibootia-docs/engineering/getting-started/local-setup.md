@@ -14,7 +14,7 @@ Get from a clone to a signed-in user whose request shows up as one trace across 
 
 - Docker with Compose, running. About 8 GB of RAM is enough (the infrastructure uses roughly 3 to 4 GB).
 - A Java 25 JDK, Eclipse Temurin recommended ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)). No separate Maven install is needed; `backend/` has the Maven wrapper.
-- Node 22 or later and pnpm 11 (`corepack enable` or `npm install --global pnpm@11.12.0`).
+- Node 22 or later and pnpm 11 (`corepack enable` or `npm install --global pnpm@11.28.11`).
 
 ## Steps
 
