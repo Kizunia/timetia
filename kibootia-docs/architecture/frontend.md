@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. There is no `frontend/` directory.
+> **Implementation:** partly observed. `frontend/` holds a Next.js 16 App Router application with the BFF session, the `/api/*` proxy, `/healthz`, a home page and a `/me` page; lint, type check, 83 unit tests and the build passed locally on 2026-11-09. **Not built yet:** shadcn/ui components, TanStack Query, React Hook Form with Zod, the feature folders and the generated API client (milestone 2). A temporary hand-written client for `GET /api/v1/me` stands in until then.
 
 Decisions: [ADR 0021](../decisions/0021-frontend-beside-backend-in-one-repository.md), [ADR 0026](../decisions/0026-nextjs-bff-session.md), [ADR 0038](../decisions/0038-frontend-stack.md), [ADR 0042](../decisions/0042-bff-api-proxy-and-csrf.md), [ADR 0043](../decisions/0043-http-api-conventions.md).
 

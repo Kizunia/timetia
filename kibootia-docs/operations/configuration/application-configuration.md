@@ -32,6 +32,35 @@ Names only; values are not documented here.
 | `spring.flyway.locations` | `application.properties` | One folder per module (`db/migration/<module>`); a module is added here with its first migration |
 | `spring.config.import` | `application.properties` | Optionally imports the root `.env` so a backend started from `backend/` or the repository root finds it; real environment variables win |
 
+## Settings added by milestone 1 (observed)
+
+Names only. Defaults are local-development values; production values come from the environment ([secrets management](../security/secrets-management.md)).
+
+| Setting | Read by | Default and notes | Secret |
+|---|---|---|---|
+| `KEYCLOAK_DB_PASSWORD` | Compose | Generated into `.env`; Keycloak's PostgreSQL password | Yes |
+| `KEYCLOAK_ADMIN_PASSWORD` | Compose, OpenTofu | Generated; password of Keycloak's bootstrap administrator, used by the one-shot realm step | Yes |
+| `KEYCLOAK_WEB_CLIENT_SECRET` | Compose, OpenTofu, Next.js | Generated; secret of the `kibootia-web` client | Yes |
+| `KEYCLOAK_ADMIN_CLIENT_SECRET` | Compose, OpenTofu | Generated; secret of the `kibootia-admin` service-account client (unused by the applications until milestone 3) | Yes |
+| `DEMO_USER_PASSWORD` | Compose, OpenTofu, Playwright | Generated; password of the local `demo` user. Local overlay only | Yes |
+| `SESSION_SECRET` | Next.js | Generated; at least 32 characters; the session cookie key is derived from it | Yes |
+| `COMPOSE_PROFILES` | Compose | `observability`; remove it to leave out the Grafana LGTM container | No |
+| `kibootia.security.issuer` (`KIBOOTIA_SECURITY_ISSUER`) | Backend | The public Keycloak realm URL; the exact `iss` of tokens | No |
+| `kibootia.security.jwk-set-uri` (`KIBOOTIA_SECURITY_JWK_SET_URI`) | Backend | Where signing keys are fetched; internal in the `apps` profile | No |
+| `kibootia.security.audience` (`KIBOOTIA_SECURITY_AUDIENCE`) | Backend | `kibootia-api` | No |
+| `management.server.port` | Backend | 8090, bound to loopback; health only | No |
+| `kibootia.observability.enabled` (`KIBOOTIA_OBSERVABILITY_ENABLED`) | Backend, Next.js | `true`; `false` stops the OTLP export (trace IDs are still created and logged) | No |
+| `management.opentelemetry.tracing.export.otlp.endpoint` | Backend | The local LGTM traces endpoint | No |
+| `PUBLIC_BASE_URL` | Next.js | `http://localhost:3470`; the web app's public origin, used for redirect URIs and the CSRF Origin check | No |
+| `KEYCLOAK_ISSUER` | Next.js | Public realm URL; browsers are sent here | No |
+| `KEYCLOAK_INTERNAL_ISSUER` | Next.js | Realm URL for the server's own token and key requests; defaults to `KEYCLOAK_ISSUER` | No |
+| `KEYCLOAK_WEB_CLIENT_ID` | Next.js | `kibootia-web` | No |
+| `API_BASE_URL` | Next.js | `http://localhost:8080`; the fixed upstream of the `/api` proxy | No |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Next.js | `http://localhost:4318` (set by `pnpm dev`) | No |
+| `LOG_LEVEL` | Next.js | `info` | No |
+
+The Next.js server fails a request with a message naming the setting when `SESSION_SECRET` or `KEYCLOAK_WEB_CLIENT_SECRET` is missing (unit-tested).
+
 ## Naming (owner decision of 2026-11-08)
 
 - Kibootia's own settings are named `kibootia.<module>.<setting>` and bound to typed configuration classes with validation. A missing or invalid required setting stops startup with a message naming the setting.
@@ -42,7 +71,7 @@ Names only; values are not documented here.
 
 ## Variable catalogue
 
-The one list of every setting. Rows are added in the same change that introduces the setting; names only, never values. Planned entries, none implemented:
+The one list of every setting. Rows are added in the same change that introduces the setting; names only, never values. Entries not listed in the tables above are planned, none implemented:
 
 | Area | Planned settings | Secrets among them |
 |---|---|---|

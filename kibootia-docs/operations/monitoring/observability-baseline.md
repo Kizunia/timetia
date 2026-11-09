@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. No actuator dependency, logging configuration or telemetry exists.
+> **Implementation:** partly observed, not verified in CI. Both applications export traces over OTLP to Grafana LGTM; a single trace was seen in Tempo covering the Next.js proxy call and the Spring request, with the Spring span as a child of the Next.js `fetch` span (locally, 2026-11-09). Both print JSON logs carrying the trace ID. **Gap:** OTLP log export is not wired, in Spring or Next.js, so logs reach Grafana only through the console (OQ-42). Metrics from Spring are exported over OTLP; nothing is scraped.
 
 Decision: [ADR 0030](../../decisions/0030-otlp-telemetry-and-local-lgtm.md).
 
@@ -43,11 +43,11 @@ The application emits OTLP only. Where it goes is deployment configuration, so t
 
 - Logs and traces must not contain secrets, tokens or other sensitive data ([API conventions](../../architecture/api/conventions.md)).
 - Health endpoints are never public: the management port is not exposed by the reverse proxy ([ADR 0047](../../decisions/0047-health-exposure-and-container-images.md)).
-- OTLP log export in the Spring Boot version in use needs extra wiring that must be verified ([open questions](../../decisions/open-questions.md)).
+- OTLP log export is not wired. Boot 4.1.1's exporter needs OpenTelemetry's Logback appender (`opentelemetry-logback-appender-1.0`, an alpha-versioned artifact), which `spring-boot-starter-opentelemetry` does not include ([open questions](../../decisions/open-questions.md)).
 
-## Observed deviation
+## Resolved deviation
 
-`spring-boot-admin-starter-server` is in `pom.xml`. The owner states it is unintended; it is removed in milestone 0 and is not part of this baseline ([open questions](../../decisions/open-questions.md)).
+`spring-boot-admin-starter-server` was unintended and was removed from `pom.xml` in milestone 0. It is not part of this baseline.
 
 ## Related
 

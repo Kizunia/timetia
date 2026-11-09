@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-28
 
-> **Implementation:** planned. The repository has no actuator, logging or telemetry configuration.
+> **Implementation:** partly observed, not verified in CI. Spring and Next.js export traces over OTLP to the Grafana LGTM container, which `COMPOSE_PROFILES=observability` in `.env` starts by default; one trace covering both applications was seen in Tempo on 2026-11-09. Both applications print JSON console logs with the trace ID (Spring's is tested). **Not wired:** OTLP log export (OQ-42). `kibootia.observability.enabled` switches the Spring export off; `KIBOOTIA_OBSERVABILITY_ENABLED=false` does the same for Next.js.
 
 ## Context
 

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. No Keycloak service is in `compose.yaml`, no issuer is configured and there is no `frontend/` directory.
+> **Implementation:** observed, not verified in CI. Keycloak 26.8.2 on PostgreSQL 17.11 runs in `compose.yaml`; OpenTofu applies the realm (`infra/keycloak`); the Next.js server signs a user in with Authorization Code and PKCE, refreshes the session and signs out. A Playwright test against real Keycloak passed locally on 2026-11-09. Registration is enabled in the realm but no registration flow, email-verification enforcement or invitation exists yet (milestone 3).
 
 Decisions: [ADR 0006](../../decisions/0006-keycloak-oidc-identity.md), [ADR 0007](../../decisions/0007-spring-security-resource-server.md), [ADR 0020](../../decisions/0020-keycloak-in-local-compose.md), [ADR 0026](../../decisions/0026-nextjs-bff-session.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0042](../../decisions/0042-bff-api-proxy-and-csrf.md), [ADR 0045](../../decisions/0045-keycloak-operations.md).
 

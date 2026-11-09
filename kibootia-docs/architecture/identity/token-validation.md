@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. Resource-server starters are in `pom.xml`; no issuer property or security configuration exists.
+> **Implementation:** observed, not verified in CI. `platform/security` validates signature, expiry, issuer, audience and rejects service-account tokens; deny-by-default, stateless, no CORS; 401 and 403 from the filter chain are Problem Details. `ResourceServerTests` (14 tests) cover each rejection case and passed locally on 2026-11-09. The service-account check was confirmed against a real Keycloak token (it carries `client_id` and a `service-account-` username). **Not yet implemented:** the 403 rows (permission, disabled or deleted profile) wait for milestones 2 and 3, and the "Keycloak down, keys cached" rows are untested (the key cache is the decoder's default, about five minutes).
 
 ## Required checks (owner decision, [ADR 0007](../../decisions/0007-spring-security-resource-server.md))
 

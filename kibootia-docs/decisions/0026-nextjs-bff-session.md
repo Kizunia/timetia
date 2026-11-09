@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. There is no `frontend/` directory.
+> **Implementation:** observed, not verified in CI. `/auth/login`, `/auth/callback` and `POST /auth/logout` use `openid-client` 6; the session is a JWE (A256GCM, HKDF-derived key) in chunked HttpOnly SameSite=Lax cookies named `kibootia_session.<n>`; refresh is single-flight per refresh token and runs in `proxy.ts` and the API proxy; a failed refresh forces sign-in. Unit tests cover the callback, refresh failure, logout and CSRF cases. Choices the decision left open: the ID token is kept in the cookie so sign-out needs no confirmation page; the session ends at most ten hours after sign-in however often it is refreshed.
 
 > **Extended by [ADR 0042](0042-bff-api-proxy-and-csrf.md)**, which re-examined this decision against RFC 10017, reaffirmed it, and adds the generic API proxy and the CSRF rule.
 

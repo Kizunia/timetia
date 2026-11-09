@@ -4,75 +4,67 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-09
 
-> **Implementation:** the steps under "Current steps" were run on a Windows machine on 2026-11-08 for the tests, `pnpm bootstrap` and `docker compose config`; a full clean-clone run (start Compose, start the backend against it) was **not** recorded, and CI does not cover this guide. The "Target fresh-clone journey" is planned.
+> **Implementation:** the steps below were run on a Windows machine on 2026-11-09 with the host-run applications (`pnpm infra:up`, `pnpm dev`) and a Playwright sign-in test. They were **not** run on macOS or Linux, **not** run from a fresh clone (see the status of the `apps` profile below), and CI does not run this guide. Nothing here is **verified** in the sense of the [verification standard](../testing/verification-standard.md) until the pipeline has run it.
 
-## Current steps
+Get from a clone to a signed-in user whose request shows up as one trace across the web app and the API. Local demo credentials, exposed ports and permissive settings apply to local development only and never carry into production ([container deployment](../../operations/deployment/container-deployment.md)).
 
-### Goal
+## Prerequisites
 
-Start the local database and the backend application.
+- Docker with Compose, running. About 8 GB of RAM is enough (the infrastructure uses roughly 3 to 4 GB).
+- A Java 25 JDK, Eclipse Temurin recommended ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)). No separate Maven install is needed; `backend/` has the Maven wrapper.
+- Node 22 or later and pnpm 11 (`corepack enable` or `npm install --global pnpm@11.12.0`).
 
-### Prerequisites
+## Steps
 
-- Docker with Compose.
-- A Java 25 JDK, Eclipse Temurin recommended ([ADR 0048](../../decisions/0048-java-25-baseline-on-temurin.md)); `pom.xml` sets `java.version` 25.
-- Node 22 or later, for `pnpm bootstrap`.
-- Docker must be running to run the backend tests (Testcontainers starts MySQL).
-- No separate Maven install is needed; `backend/` has the Maven wrapper.
+Run these from the repository root.
 
-### What the Compose file provides (observed)
+1. `pnpm install` installs the web app's dependencies.
+2. `pnpm bootstrap` creates `.env` from `.env.example` with freshly generated secrets. Running it again only adds variables that `.env.example` has gained since; it never changes a value you already have. (The script is named `bootstrap` because `pnpm setup` is pnpm's own built-in command.)
+3. `pnpm infra:up` starts MySQL, Keycloak with its PostgreSQL, the one-shot OpenTofu step that applies the realm, Mailpit, Adminer and Grafana LGTM. The first start downloads several images and takes a few minutes.
+4. `pnpm dev` starts the backend and the Next.js server on the host. Stop it with Ctrl+C.
+5. Open <http://localhost:3470>, choose **Sign in**, and use the username `demo` with the password in `DEMO_USER_PASSWORD` in `.env`.
 
-| Service | Purpose | Local access |
-|---|---|---|
-| `mysql` (MySQL 8.4) | Application database, database name `kibootia`, application user `kibootia_app` | Host port 3307 |
-| `adminer` | Web database browser | Host port 8081 |
+After signing in, **See who the API thinks you are** shows the same identity twice: once rendered on the server from a direct call to Spring, and once fetched by the browser through the `/api` proxy.
 
-Keycloak is decided for the local environment ([ADR 0020](../../decisions/0020-keycloak-in-local-compose.md)) but is **not** in the Compose file yet.
+To start again from nothing, `pnpm reset` removes every local volume (databases, the realm state, Grafana data) and starts the infrastructure again. Your `.env` is kept.
 
-### Environment variables (names only)
+### Addresses
 
-Compose requires both variables and refuses to start without them; the backend reads `MYSQL_PASSWORD` and stops with a message naming the setting if it is missing. `pnpm bootstrap` creates `.env` at the repository root from `.env.example` with generated random values, and does not overwrite an existing `.env`. **Never commit values.**
-
-| Variable | Used for |
+| What | Address |
 |---|---|
-| `MYSQL_ROOT_PASSWORD` | Root password of the local MySQL |
-| `MYSQL_PASSWORD` | Password of the `kibootia_app` database user |
+| Web app | <http://localhost:3470> (`/healthz` for liveness) |
+| API | <http://localhost:8080> (every endpoint needs a token) |
+| API health | <http://127.0.0.1:8090/actuator/health> (management port, this machine only) |
+| Keycloak | <http://localhost:8180> (realm `kibootia`; administrator `admin`, password `KEYCLOAK_ADMIN_PASSWORD`) |
+| Grafana | <http://localhost:3001> (traces in Tempo; the default login is `admin` / `admin`) |
+| Mailpit | <http://localhost:8025> |
+| Adminer | <http://localhost:8081> (server `mysql`) |
+| MySQL | `localhost:3307` |
 
-### Steps
+These ports were chosen to avoid the ones other local projects commonly use. If one is taken, the corresponding service fails to start rather than moving to another port, because the sign-in redirect URIs depend on the web app's port.
 
-1. From the repository root, run `node scripts/bootstrap.mjs` (or `pnpm bootstrap`) to create `.env`.
-2. Start the infrastructure: `docker compose up -d` (or `pnpm infra:up`).
-3. Run the backend from `backend/` with `./mvnw spring-boot:run` (`mvnw.cmd` on Windows). It imports the root `.env` automatically.
-4. Run the tests with `./mvnw verify` from `backend/` (Docker required).
+### Running the applications in containers
 
-### Known gap
+`pnpm apps:up` builds the two images and starts both applications in the `apps` Compose profile; `pnpm apps:down` stops them. Stop `pnpm dev` first, because both use ports 8080 and 3470. Inside Compose the applications reach Keycloak as `http://keycloak:8080`, while browsers and tokens use `http://localhost:8180`.
 
-If you have a `.env` from before milestone 0, its `MYSQL_PASSWORD` must match the password your MySQL volume was created with; delete the volume (`docker compose down -v`) to start over with generated values.
+### Tests
 
-### Verifying the result
+| Command | What it runs | Needs |
+|---|---|---|
+| `./mvnw verify` in `backend/` | Unit, ArchUnit, Modulith and Testcontainers tests | Docker |
+| `pnpm --filter kibootia-frontend lint`, `typecheck`, `test` | Lint, type check and the Vitest unit tests | Nothing running |
+| `pnpm --filter kibootia-frontend test:e2e` | The Playwright sign-in test | Infrastructure and the applications running (`pnpm dev` or `pnpm apps:up`); first run `pnpm --filter kibootia-frontend exec playwright install chromium` |
 
-Not yet defined. There is no health endpoint ([observability baseline](../../operations/monitoring/observability-baseline.md)), and a clean-clone run has not been recorded.
+## Troubleshooting
 
-## Target fresh-clone journey (planned)
-
-What must work for the foundation to count as usable by a new developer (set by the owner on 2026-10-28, refined on 2026-11-08 by [ADR 0040](../../decisions/0040-local-development-topology-and-setup.md) and [ADR 0045](../../decisions/0045-keycloak-operations.md); none of it exists yet).
-
-**Prerequisites:** Docker with Compose; a Java 25 JDK (Eclipse Temurin); Node LTS with pnpm; about 8 GB of RAM (the infrastructure uses roughly 3 to 4 GB). Windows, macOS and Linux are supported the same way.
-
-1. Clone the repository and add Kibootia as the `upstream` remote if you want release merges ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)).
-2. Run `pnpm bootstrap`. It copies `.env.example` to `.env` and generates random local secrets. Configuration is validated at startup with a clear failure when something is missing.
-3. Run `pnpm infra:up`. Compose starts MySQL, Keycloak with its PostgreSQL, a one-shot OpenTofu step that applies the realm (base plus local overlay), the object storage server, the mail catcher, Grafana LGTM and Adminer. Health checks and startup ordering are in place, and service URLs are documented.
-4. Run `pnpm dev` to start the backend and the Next.js server on the host. Flyway migrations and local seed data run at startup. Alternatively, the `apps` Compose profile runs both applications in containers for a demo without a local JDK or Node.
-5. Sign in with a documented demo account, including a demo administrator.
-6. In the reference application: manage users, roles and invitations, view the audit log, edit a profile and upload an avatar, and try the example feature.
-7. See logs, metrics and traces for those actions in Grafana, and open the generated API documentation.
-8. Troubleshooting notes cover the common failures.
-9. `pnpm reset` removes local volumes (databases, storage, OpenTofu state) and seeds again.
-
-Local demo credentials, exposed ports and permissive settings apply to local development only and never carry into production ([container deployment](../../operations/deployment/container-deployment.md)). Roadmap: [milestone 1](../../product/roadmap/milestone-1-walking-skeleton.md) delivers the first working chain.
+- **A port is already in use.** Find what holds it before stopping anything: it may belong to another project.
+- **`MYSQL_PASSWORD` or another setting is missing.** Run `pnpm bootstrap`.
+- **Your `.env` is from before milestone 0** and its `MYSQL_PASSWORD` no longer matches the password your MySQL volume was created with: run `pnpm reset`.
+- **Sign-in says the attempt expired.** The sign-in cookie lives ten minutes and only works in the browser that started it; start again from the home page.
+- **Docker is not running.** `pnpm infra:up` and the backend tests need it.
 
 ## Related
 
-[Application configuration](../../operations/configuration/application-configuration.md).
+[Application configuration](../../operations/configuration/application-configuration.md), [milestone 1](../../product/roadmap/milestone-1-walking-skeleton.md), [ADR 0040](../../decisions/0040-local-development-topology-and-setup.md).

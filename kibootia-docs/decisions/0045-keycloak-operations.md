@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. Keycloak is not in `compose.yaml`; no realm configuration exists.
+> **Implementation:** observed, not verified in CI. Keycloak 26.8.2 runs on PostgreSQL 17.11, and a one-shot OpenTofu 1.13.9 container with the `keycloak/keycloak` provider 5.10.0 applied the realm (8 resources) and re-applied a change in place, locally on 2026-11-09 (OQ-46). The layout is `infra/keycloak/base` plus `overlays/local`; there is no production overlay yet (milestone 6).
 
 ## Context
 
