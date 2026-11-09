@@ -4,7 +4,9 @@
   "description": "Root scripts for local development of Kibootia.",
   "scripts": {
     "bootstrap": "node scripts/bootstrap.mjs",
-    "infra:up": "docker compose up -d"
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "reset": "node scripts/reset.mjs"
   },
   "engines": {
     "node": ">=22"
