@@ -130,6 +130,75 @@ services:
     volumes:
       - kibootia_lgtm_data:/data
 
+  # --- The applications in containers (the `apps` profile): `pnpm apps:up`. Stop `pnpm dev` first; both use these ports.
+  # Inside Compose the applications reach Keycloak as http://keycloak:8080, while browsers and tokens use the public
+  # http://localhost:8180. The backend checks the public issuer and fetches keys from the internal address (OQ-45).
+
+  backend:
+    build:
+      context: ./backend
+    image: kibootia-backend:local
+    container_name: kibootia-backend
+    profiles: ["apps"]
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/kibootia
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      KIBOOTIA_SECURITY_ISSUER: http://localhost:8180/realms/kibootia
+      KIBOOTIA_SECURITY_JWK_SET_URI: http://keycloak:8080/realms/kibootia/protocol/openid-connect/certs
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://lgtm:4318/v1/traces
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://lgtm:4318/v1/metrics
+      KIBOOTIA_OBSERVABILITY_ENABLED: ${KIBOOTIA_OBSERVABILITY_ENABLED:-true}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      # No curl in the JRE image; the readiness probe on the loopback-only management port is read with bash.
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "exec 3<>/dev/tcp/127.0.0.1/8090 && printf 'GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"UP\"' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: kibootia-frontend:local
+    container_name: kibootia-frontend
+    profiles: ["apps"]
+    restart: unless-stopped
+    environment:
+      PUBLIC_BASE_URL: http://localhost:3470
+      KEYCLOAK_ISSUER: http://localhost:8180/realms/kibootia
+      KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8080/realms/kibootia
+      KEYCLOAK_WEB_CLIENT_SECRET: ${KEYCLOAK_WEB_CLIENT_SECRET:?Set KEYCLOAK_WEB_CLIENT_SECRET in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      API_BASE_URL: http://backend:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
+      KIBOOTIA_OBSERVABILITY_ENABLED: ${KIBOOTIA_OBSERVABILITY_ENABLED:-true}
+    ports:
+      - "3470:3470"
+    depends_on:
+      backend:
+        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3470/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
 volumes:
   kibootia_mysql_data:
   kibootia_keycloak_db_data:

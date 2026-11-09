@@ -7,6 +7,8 @@
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "dev": "node scripts/dev.mjs",
+    "apps:up": "node scripts/apps.mjs up",
+    "apps:down": "node scripts/apps.mjs down",
     "reset": "node scripts/reset.mjs"
   },
   "engines": {

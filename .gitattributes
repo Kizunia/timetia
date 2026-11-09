@@ -1,0 +1,5 @@
+# Files that Linux containers and CI execute must keep LF line endings, whatever the checkout's autocrlf setting.
+mvnw text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.mjs text eol=lf
