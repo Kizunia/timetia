@@ -46,7 +46,10 @@ describe("session cookie", () => {
 
   it("rejects a tampered cookie", async () => {
     const header = cookieHeaderFrom(await writeSession(newSession(tokens, Date.now()), config.sessionSecret, false));
-    const tampered = header.replace(/.$/, (c) => (c === "A" ? "B" : "A"));
+    // Change a character in the middle of the ciphertext. The last base64 character can carry unused padding bits, so
+    // altering it sometimes leaves the decoded bytes (and therefore the cookie) valid, which made this test flaky.
+    const middle = Math.floor((header.indexOf("=") + 1 + header.length) / 2);
+    const tampered = header.slice(0, middle) + (header[middle] === "A" ? "B" : "A") + header.slice(middle + 1);
     expect(await readSession(tampered, config.sessionSecret)).toBeNull();
   });
 
