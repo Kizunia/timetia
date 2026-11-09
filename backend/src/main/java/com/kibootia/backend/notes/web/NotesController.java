@@ -7,6 +7,8 @@ import java.util.UUID;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +50,7 @@ class NotesController {
 	}
 
 	@PostMapping
+	@ApiResponse(responseCode = "201", description = "The note was created; `Location` is its URL.")
 	ResponseEntity<NoteResponse> create(@Valid @RequestBody CreateNoteRequest request) {
 		NoteResponse created = NoteMapper.toResponse(this.notes.create(NoteMapper.toNewNote(request)));
 		return ResponseEntity.created(URI.create("/api/v1/notes/" + created.id())).body(created);
@@ -74,8 +77,8 @@ class NotesController {
 	 * @param owner only this user's notes; a caller who may see only their own gets an empty page for anyone else
 	 */
 	@GetMapping
-	PageResponse<NoteResponse> list(@Valid PageQuery query, @RequestParam(required = false) @Size(max = 100) String q,
-			@RequestParam(required = false) UUID owner) {
+	PageResponse<NoteResponse> list(@ParameterObject @Valid PageQuery query,
+			@RequestParam(required = false) @Size(max = 100) String q, @RequestParam(required = false) UUID owner) {
 		return PageResponse.of(this.notes.list(new NoteFilter(q, owner), query.toPageable(SORTABLE, NEWEST_FIRST)),
 				NoteMapper::toResponse);
 	}

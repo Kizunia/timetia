@@ -29,6 +29,9 @@ const env = {
   ...process.env, // real environment variables win over .env, as for the backend
   // Tracing goes to the local Grafana LGTM container (ADR 0030). Exporting fails quietly when it is not running.
   OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? "http://localhost:4318",
+  // Local development also serves the OpenAPI description and Swagger UI, on the internal management port only
+  // (http://localhost:8090/actuator/swagger-ui). Production exposes health alone (ADR 0043, ADR 0047).
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: process.env.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE ?? "health,openapi,swaggerui",
 };
 
 const children = [];

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { ApiError, getMe, type Me } from "@/lib/api/me";
+import { browserApi, type Me, unwrap } from "@/lib/api/client";
+import { ApiError, messageFor } from "@/lib/api/problem";
 
 import { IdentityList } from "./IdentityList";
 
@@ -12,11 +13,14 @@ export function MeViaProxy() {
 
   useEffect(() => {
     let active = true;
-    getMe("")
-      .then((me) => active && setState({ me }))
+    browserApi()
+      .GET("/api/v1/me")
+      .then((result) => active && setState({ me: unwrap(result) }))
       .catch((error: unknown) => {
         if (!active) return;
-        setState({ error: error instanceof ApiError && error.status === 401 ? "Your session has ended. Sign in again." : "The request failed." });
+        // A 401 may come from the proxy without a problem body; it still means the session ended.
+        const ended = error instanceof ApiError && error.status === 401;
+        setState({ error: ended ? "Your session has ended. Sign in again." : messageFor(error) });
       });
     return () => {
       active = false;

@@ -31,6 +31,7 @@
 		<spring-modulith.version>2.1.2</spring-modulith.version>
 		<archunit.version>1.5.1</archunit.version>
 		<shedlock.version>7.11.0</shedlock.version>
+		<springdoc.version>3.2.0</springdoc.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -76,6 +77,12 @@
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-mysql</artifactId>
+		</dependency>
+		<!-- The OpenAPI description, generated from the controllers and committed as openapi.json (ADR 0043). -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 		<!-- Scheduled jobs take a database lock so that only one application instance runs them (ADR 0031). -->
 		<dependency>

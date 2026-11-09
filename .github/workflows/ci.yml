@@ -33,6 +33,15 @@ jobs:
       - name: Build and test
         working-directory: backend
         run: ./mvnw -B verify
+      # OpenApiContractIT rewrites backend/openapi.json from the controllers. A change here means the committed file is
+      # stale: run `./mvnw verify` in backend/ and commit it (ADR 0043).
+      - name: Check the OpenAPI description is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- backend/openapi.json)" ]; then
+            git --no-pager diff -- backend/openapi.json
+            echo "::error file=backend/openapi.json::The committed OpenAPI description is out of date. Run ./mvnw verify in backend/ and commit the result."
+            exit 1
+          fi
 
   frontend:
     name: Frontend lint, type check, test and build
@@ -46,6 +55,16 @@ jobs:
           node-version: "24"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The client is generated from backend/openapi.json (ADR 0038). A change here means schema.gen.ts is stale: run
+      # `pnpm --filter kibootia-frontend api:generate` and commit it.
+      - name: Check the generated API client is up to date
+        run: |
+          pnpm --filter kibootia-frontend api:generate
+          if [ -n "$(git status --porcelain -- frontend/src/lib/api/schema.gen.ts)" ]; then
+            git --no-pager diff -- frontend/src/lib/api/schema.gen.ts
+            echo "::error file=frontend/src/lib/api/schema.gen.ts::The generated API client is out of date. Run pnpm --filter kibootia-frontend api:generate and commit the result."
+            exit 1
+          fi
       - name: Lint
         run: pnpm --filter kibootia-frontend lint
       - name: Type check

@@ -1,9 +1,13 @@
 package com.kibootia.backend.identity.web;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 /**
  * Returns the identity of the signed-in user, read from the validated access token. Milestone 1 adds no profile
@@ -19,7 +23,13 @@ class MeController {
 				token.getClaimAsString("name"));
 	}
 
-	record MeResponse(String id, String username, String email, boolean emailVerified, String name) {
+	record MeResponse(
+			@Schema(requiredMode = REQUIRED) String id,
+			@Schema(nullable = true) String username,
+			@Schema(nullable = true) String email,
+			@Schema(requiredMode = REQUIRED) boolean emailVerified,
+			@Schema(nullable = true) String name) {
+
 	}
 
 }

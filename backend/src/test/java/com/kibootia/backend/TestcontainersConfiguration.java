@@ -15,7 +15,9 @@ public class TestcontainersConfiguration {
 	@Bean
 	@ServiceConnection
 	MySQLContainer mysql() {
-		return new MySQLContainer("mysql:8.4");
+		// The performance schema is diagnostics tooling that tests do not read; leaving it off saves a few hundred MB
+		// per container, which matters because several run at once (see spring.properties).
+		return new MySQLContainer("mysql:8.4").withCommand("--performance-schema=OFF", "--innodb-buffer-pool-size=64M");
 	}
 
 }

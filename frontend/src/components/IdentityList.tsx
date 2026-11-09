@@ -1,4 +1,4 @@
-import type { Me } from "@/lib/api/me";
+import type { Me } from "@/lib/api/client";
 
 /** Shared by the server-rendered card and the browser card, so both show exactly the same fields. */
 export function IdentityList({ me, testId }: { me: Me; testId: string }) {

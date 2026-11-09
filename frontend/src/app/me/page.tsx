@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { IdentityList } from "@/components/IdentityList";
 import { MeViaProxy } from "@/components/MeViaProxy";
 import { SignOutButton } from "@/components/SignOutButton";
-import { ApiError, getMe, type Me } from "@/lib/api/me";
+import { type Me, serverApi, unwrap } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/problem";
 import { config } from "@/lib/config";
 import { getSession } from "@/lib/server-session";
 
@@ -19,7 +20,7 @@ export default async function MePage() {
   let serverMe: Me | null = null;
   let serverError: string | null = null;
   try {
-    serverMe = await getMe(config().apiBaseUrl, { headers: { Authorization: `Bearer ${session.accessToken}` } });
+    serverMe = unwrap(await serverApi(config().apiBaseUrl, session.accessToken).GET("/api/v1/me"));
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) redirect("/auth/login?returnTo=/me");
     serverError = "The API could not be reached.";

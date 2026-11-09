@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +32,7 @@ class FailedEventsController {
 
 	/** Oldest first. The order is fixed, so no sort field is accepted. */
 	@GetMapping
-	PageResponse<FailedEventResponse> list(@Valid PageQuery query) {
+	PageResponse<FailedEventResponse> list(@ParameterObject @Valid PageQuery query) {
 		return PageResponse.of(this.service.list(query.toPageable(Map.of(), Sort.unsorted())),
 				FailedEventMapper::toResponse);
 	}

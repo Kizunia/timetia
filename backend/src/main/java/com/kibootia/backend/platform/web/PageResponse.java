@@ -3,12 +3,21 @@ package com.kibootia.backend.platform.web;
 import java.util.List;
 import java.util.function.Function;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.springframework.data.domain.Page;
 
-/** The body of every list endpoint (ADR 0043): {@code {items, page: {number, size, totalElements, totalPages}}}. */
-public record PageResponse<T>(List<T> items, PageInfo page) {
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
-	public record PageInfo(int number, int size, long totalElements, int totalPages) {
+/** The body of every list endpoint (ADR 0043): {@code {items, page: {number, size, totalElements, totalPages}}}. */
+public record PageResponse<T>(@Schema(requiredMode = REQUIRED) List<T> items,
+		@Schema(requiredMode = REQUIRED) PageInfo page) {
+
+	public record PageInfo(
+			@Schema(requiredMode = REQUIRED) int number,
+			@Schema(requiredMode = REQUIRED) int size,
+			@Schema(requiredMode = REQUIRED) long totalElements,
+			@Schema(requiredMode = REQUIRED) int totalPages) {
 
 	}
 

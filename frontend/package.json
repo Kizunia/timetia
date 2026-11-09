@@ -10,13 +10,15 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "api:generate": "openapi-typescript ../backend/openapi.json --output src/lib/api/schema.gen.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "1.10.0",
     "@vercel/otel": "2.3.0",
     "jose": "6.2.15",
     "next": "16.4.5",
+    "openapi-fetch": "0.17.0",
     "openid-client": "6.8.9",
     "pino": "10.4.0",
     "react": "19.3.1",
@@ -32,6 +34,7 @@
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.5",
+    "openapi-typescript": "7.13.0",
     "tailwindcss": "4.3.5",
     "typescript": "5.9.3",
     "vitest": "5.1.0"
