@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InviteDialog } from "@/features/identity/InviteDialog";
-import { Can } from "@/features/identity/permissions";
+import { Can, usePermissions } from "@/features/identity/permissions";
+import { UserAvatar } from "@/features/identity/UserAvatar";
 import { useUsers, type UserState } from "@/features/identity/api";
 
 const STATES: { value: "ALL" | UserState; label: string }[] = [
@@ -32,6 +33,7 @@ export function StateBadge({ state }: { state: UserState }) {
 
 /** The list of users, with search, a filter by state and paging. Needs identity.profiles.view; the API enforces it. */
 export function UsersScreen() {
+  const { me } = usePermissions();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
@@ -112,9 +114,12 @@ export function UsersScreen() {
                 {users.data.items.map((user) => (
                   <TableRow key={user.id} data-testid="user-row">
                     <TableCell>
-                      <Link href={`/admin/users/${user.id}`} className="font-medium text-primary underline underline-offset-2">
-                        {user.name}
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <UserAvatar userId={user.id} name={user.name} version={me.avatarsEnabled ? user.avatarVersion : null} />
+                        <Link href={`/admin/users/${user.id}`} className="font-medium text-primary underline underline-offset-2">
+                          {user.name}
+                        </Link>
+                      </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>

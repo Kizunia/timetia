@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { SignOutButton } from "@/components/SignOutButton";
+import { UserAvatar } from "@/features/identity/UserAvatar";
 import type { Me } from "@/lib/api/client";
 
 /** The sections of the administration area and the permission that shows each one. */
@@ -39,6 +40,7 @@ export function SiteHeader({ me }: { me: Me | null }) {
         </nav>
         {me && (
           <div className="flex items-center gap-3">
+            <UserAvatar userId={me.id} name={me.name} version={me.avatarsEnabled ? me.avatarVersion : null} />
             <span className="text-sm text-muted-foreground" data-testid="header-name">
               {me.name}
             </span>

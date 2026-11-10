@@ -11,6 +11,7 @@ import { UserRolesEditor } from "@/features/access/UserRolesEditor";
 import { type UserAction, useUser, useUserAction } from "@/features/identity/api";
 import { usePermissions } from "@/features/identity/permissions";
 import { UserActions } from "@/features/identity/UserActions";
+import { UserAvatar } from "@/features/identity/UserAvatar";
 import { StateBadge } from "@/features/identity/UsersScreen";
 
 const DONE: Record<UserAction, string> = {
@@ -42,6 +43,12 @@ export function UserDetailScreen({ id }: { id: string }) {
       {user.data && (
         <>
           <div className="flex flex-wrap items-center gap-3">
+            <UserAvatar
+              userId={user.data.id}
+              name={user.data.name}
+              version={me.avatarsEnabled ? user.data.avatarVersion : null}
+              size="large"
+            />
             <h1 id="user-heading" className="text-2xl font-semibold tracking-tight">
               {user.data.name}
             </h1>

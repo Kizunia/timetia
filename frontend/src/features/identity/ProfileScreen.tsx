@@ -1,15 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ErrorAlert } from "@/components/ErrorAlert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUpdateTheme } from "@/features/identity/api";
+import { useRemoveAvatar, useUpdateTheme, useUploadAvatar } from "@/features/identity/api";
+import { AVATAR_TYPES, checkAvatarFile } from "@/features/identity/avatar";
 import { usePermissions } from "@/features/identity/permissions";
+import { UserAvatar } from "@/features/identity/UserAvatar";
 import type { Me } from "@/lib/api/client";
 
 const THEMES: { value: Me["theme"]; label: string }[] = [
@@ -20,8 +24,8 @@ const THEMES: { value: Me["theme"]; label: string }[] = [
 
 /**
  * The signed-in user's own profile (ADR 0041). Name, email and password belong to Keycloak and are changed in its account
- * console, which is linked; what Kibootia keeps is the preferences. Viewing it works before the email address is verified,
- * changing a preference does not.
+ * console, which is linked; what Kibootia keeps is the photo and the preferences. Viewing it works before the email
+ * address is verified, changing the photo or a preference does not.
  */
 export function ProfileScreen({ accountUrl }: { accountUrl: string }) {
   const { me } = usePermissions();
@@ -68,6 +72,8 @@ export function ProfileScreen({ accountUrl }: { accountUrl: string }) {
         </CardContent>
       </Card>
 
+      {me.avatarsEnabled && <PhotoCard />}
+
       <Card>
         <CardHeader>
           <CardTitle>Preferences</CardTitle>
@@ -104,5 +110,101 @@ export function ProfileScreen({ accountUrl }: { accountUrl: string }) {
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+/**
+ * The user's photo (ADR 0029). The browser only checks type and size so that an obvious mistake is answered at once; the
+ * API decides from the file's bytes and always checks again. The photo is resized and stripped of its metadata on the
+ * server, which the text says so nobody wonders where their location went.
+ *
+ * Saving awaits the call instead of passing callbacks, because the refresh that follows replaces this screen's data and
+ * TanStack Query drops the callbacks of a mutation whose component has been remounted (ADR 0050).
+ */
+function PhotoCard() {
+  const { me } = usePermissions();
+  const router = useRouter();
+  const upload = useUploadAvatar();
+  const remove = useRemoveAvatar();
+  const input = useRef<HTMLInputElement>(null);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const busy = upload.isPending || remove.isPending;
+  const hasPhoto = Boolean(me.avatarVersion);
+
+  async function choose(file: File | undefined) {
+    if (!file) return;
+    const problem = checkAvatarFile(file);
+    setRefusal(problem);
+    remove.reset();
+    if (problem) return;
+    try {
+      await upload.mutateAsync(file);
+      toast.success("Photo saved");
+      router.refresh();
+    } catch {
+      // The reason is shown below, from the mutation's error.
+    }
+  }
+
+  async function removePhoto() {
+    setRefusal(null);
+    upload.reset();
+    try {
+      await remove.mutateAsync();
+      toast.success("Photo removed");
+      router.refresh();
+    } catch {
+      // The reason is shown below, from the mutation's error.
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Photo</CardTitle>
+        <CardDescription>
+          JPEG, PNG or WebP, up to 5 MB. It is cut to a square and resized, and what the camera recorded in it, such as the
+          location, is removed.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <UserAvatar userId={me.id} name={me.name} version={me.avatarVersion} size="large" label="Your photo" />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" disabled={busy || !me.emailVerified} onClick={() => input.current?.click()}>
+              {upload.isPending ? "Uploading…" : hasPhoto ? "Replace photo" : "Upload a photo"}
+            </Button>
+            {hasPhoto && (
+              <Button type="button" variant="outline" disabled={busy || !me.emailVerified} onClick={() => void removePhoto()}>
+                Remove photo
+              </Button>
+            )}
+            <input
+              ref={input}
+              type="file"
+              accept={AVATAR_TYPES.join(",")}
+              className="hidden"
+              data-testid="avatar-input"
+              aria-label="Photo file"
+              tabIndex={-1}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                // Cleared so that choosing the same file again, after a failure, still counts as a choice.
+                event.target.value = "";
+                void choose(file);
+              }}
+            />
+          </div>
+        </div>
+        {!me.emailVerified && <p className="text-sm text-muted-foreground">Verify your email address to change your photo.</p>}
+        {refusal && (
+          <p role="alert" className="text-sm text-destructive" data-testid="avatar-refusal">
+            {refusal}
+          </p>
+        )}
+        {upload.isError && <ErrorAlert error={upload.error} title="The photo was not saved" />}
+        {remove.isError && <ErrorAlert error={remove.error} title="The photo was not removed" />}
+      </CardContent>
+    </Card>
   );
 }

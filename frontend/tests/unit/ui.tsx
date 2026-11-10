@@ -17,6 +17,8 @@ export function meWith(permissions: string[], overrides: Partial<Me> = {}): Me {
     theme: "SYSTEM",
     permissions,
     roles: [{ id: "r-user", name: "User", builtIn: true }],
+    avatarVersion: null,
+    avatarsEnabled: true,
     ...overrides,
   };
 }
@@ -44,6 +46,16 @@ export function problem(status: number, code: string, extra: Record<string, unkn
   return json({ type: "about:blank", title: "Problem", status, code, ...extra }, status);
 }
 
+/** JSON bodies are parsed; anything else, such as an upload, is kept as text. */
+function parseBody(text: string): unknown {
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 export interface Call {
   method: string;
   path: string;
@@ -65,7 +77,7 @@ export function stubApi(handler: (call: Call) => Response | Promise<Response>) {
     const call: Call = {
       method: request.method,
       path: new URL(request.url, "http://localhost").pathname,
-      body: text ? JSON.parse(text) : undefined,
+      body: parseBody(text),
       headers: request.headers,
     };
     calls.push(call);

@@ -86,6 +86,43 @@ export function useUserAction(id: string) {
   });
 }
 
+/** What changes when the user's avatar does: their profile, which the server renders from, and what shows it. */
+function useRefreshMe() {
+  const client = useQueryClient();
+  return () => client.invalidateQueries({ queryKey: ["me"] });
+}
+
+/** Uploads the file as the user's own avatar. The API checks the type from the bytes, so the browser's word is not relied on. */
+export function useUploadAvatar() {
+  const refresh = useRefreshMe();
+  return useMutation({
+    mutationFn: async (file: File) =>
+      unwrap(
+        await browserApi().PUT("/api/v1/me/avatar", {
+          // The generated type of a file part is a string; the body is sent as multipart form data.
+          body: { file: file as unknown as string },
+          bodySerializer: () => {
+            const form = new FormData();
+            form.append("file", file);
+            return form;
+          },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+}
+
+/** Removes the user's own avatar. */
+export function useRemoveAvatar() {
+  const refresh = useRefreshMe();
+  return useMutation({
+    mutationFn: async (): Promise<void> => {
+      unwrap(await browserApi().DELETE("/api/v1/me/avatar"));
+    },
+    onSuccess: refresh,
+  });
+}
+
 /** Changes the colour scheme on the user's own profile. */
 export function useUpdateTheme() {
   const client = useQueryClient();
