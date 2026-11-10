@@ -52,6 +52,12 @@ const MODULES = {
       "db/migration/notes",
     ],
     scan: ["backend/src", "frontend/src", "frontend/tests"],
+    // Files that mention the module on purpose, because they are written to work whether or not it is there. Comments in
+    // any file are never checked.
+    allowed: {
+      "backend/src/test/java/com/kibootia/backend/ModuleStartupIT.java": "checks that the endpoints are served or absent",
+      "backend/src/test/java/com/kibootia/backend/platform/web/OpenApiContractIT.java": "leaves the module's paths out of the core list",
+    },
   },
 };
 
@@ -170,11 +176,16 @@ if (!dryRun) {
   const problems = [];
   for (const folder of module.scan) {
     for (const path of walk(abs(folder))) {
-      if (/\.(java|ts|tsx|properties|sql|json|mjs)$/.test(path) && !path.endsWith("schema.gen.ts")) {
-        const content = readFileSync(path, "utf8");
+      const shown = relative(root, path).split("\\").join("/");
+      if (/\.(java|ts|tsx|properties|sql|json|mjs)$/.test(path) && !path.endsWith("schema.gen.ts") && !(shown in module.allowed)) {
+        // A comment may name the module; code, paths and configuration may not.
+        const code = readFileSync(path, "utf8")
+          .split("\n")
+          .filter((line) => !/^\s*(\*|\/\*|\/\/)/.test(line))
+          .join("\n");
         for (const leftover of module.leftovers) {
-          if (content.includes(leftover)) {
-            problems.push(`${relative(root, path)} still contains "${leftover}"`);
+          if (code.includes(leftover)) {
+            problems.push(`${shown} still contains "${leftover}"`);
           }
         }
       }
