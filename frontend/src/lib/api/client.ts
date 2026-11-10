@@ -35,8 +35,17 @@ export function serverApi(baseUrl: string, accessToken: string, fetchImpl: Fetch
  * For code running in the browser: calls the same-origin `/api` proxy, which adds the token from the session cookie and
  * checks the CSRF header (ADR 0042).
  */
-export function browserApi(origin: string = "", fetchImpl: FetchLike = noStore): Api {
+export function browserApi(origin: string = pageOrigin(), fetchImpl: FetchLike = noStore): Api {
   return createClient<paths>({ baseUrl: origin, fetch: fetchImpl, headers: { [CSRF_HEADER]: CSRF_HEADER_VALUE } });
+}
+
+/**
+ * The origin of the page the code runs on. A browser resolves a relative address by itself, but the Fetch API's `Request`
+ * outside a browser (and in a test) cannot, so the client is given the origin explicitly. On a server there is no page
+ * and the address stays relative.
+ */
+function pageOrigin(): string {
+  return typeof window === "undefined" ? "" : window.location.origin;
 }
 
 /** What openapi-fetch returns for a call: the parsed body on success, or the parsed error body on failure. */

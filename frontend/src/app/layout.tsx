@@ -1,25 +1,32 @@
 import type { Metadata } from "next";
+import { ThemeProvider } from "next-themes";
 
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/lib/query";
 
 export const metadata: Metadata = {
   title: "Kibootia",
-  description: "Kibootia walking skeleton",
+  description: "Kibootia application starter",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
+    // The theme class is set on <html> before hydration, so the first paint already has the right colours.
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-neutral-900"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-background focus:px-3 focus:py-2 focus:text-foreground"
         >
           Skip to content
         </a>
-        <main id="main" className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-          {children}
-        </main>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

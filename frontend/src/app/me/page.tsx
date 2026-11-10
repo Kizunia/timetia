@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { PageShell } from "@/components/PageShell";
 import { IdentityList } from "@/components/IdentityList";
 import { MeViaProxy } from "@/components/MeViaProxy";
-import { SignOutButton } from "@/components/SignOutButton";
 import { type Me, serverApi, unwrap } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/problem";
 import { config } from "@/lib/config";
@@ -23,11 +23,12 @@ export default async function MePage() {
     serverMe = unwrap(await serverApi(config().apiBaseUrl, session.accessToken).GET("/api/v1/me"));
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) redirect("/auth/login?returnTo=/me");
+    if (error instanceof ApiError && error.code === "identity.account_disabled") redirect("/account-disabled");
     serverError = "The API could not be reached.";
   }
 
   return (
-    <>
+    <PageShell>
       <h1 className="text-3xl font-semibold tracking-tight">Who am I</h1>
 
       <section aria-labelledby="server-heading" className="mt-8">
@@ -37,7 +38,7 @@ export default async function MePage() {
         {serverMe ? (
           <IdentityList me={serverMe} testId="me-server" />
         ) : (
-          <p role="alert" className="text-red-700 dark:text-red-400">
+          <p role="alert" className="text-destructive">
             {serverError}
           </p>
         )}
@@ -50,12 +51,11 @@ export default async function MePage() {
         <MeViaProxy />
       </section>
 
-      <div className="mt-10 flex items-center gap-6">
-        <Link href="/" className="font-medium text-blue-800 underline underline-offset-2 dark:text-blue-300">
+      <div className="mt-10">
+        <Link href="/" className="font-medium text-primary underline underline-offset-2">
           Home
         </Link>
-        <SignOutButton />
       </div>
-    </>
+    </PageShell>
   );
 }

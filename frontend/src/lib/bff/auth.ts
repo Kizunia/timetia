@@ -4,6 +4,7 @@ import { logger } from "../logger";
 import { problem } from "../problem";
 import { LOGIN_COOKIE, newSession, readSession, seal, unseal, writeSession, clearSessionCookies } from "../session";
 import { isSecure, type Deps } from "./deps";
+import { currentSession } from "./refresh";
 
 const LOGIN_TTL_SECONDS = 600;
 
@@ -101,4 +102,26 @@ export async function logout(request: Request, deps: Deps): Promise<Response> {
   for (const cookie of clearSessionCookies(cookieHeader, isSecure(config))) headers.append("Set-Cookie", cookie);
   logger.info("user signed out");
   return new Response(JSON.stringify({ redirectTo: deps.oidc.endSessionUrl(session?.idToken) }), { status: 200, headers });
+}
+
+/**
+ * POST /auth/refresh: refreshes the tokens now and stores them, so the next API call carries what Keycloak says today.
+ * The one use is the "I have verified my email" button: the address becomes verified at Keycloak at once, but the access
+ * token still says otherwise until it is refreshed. A state-changing request, so the CSRF rule applies.
+ */
+export async function refreshNow(request: Request, deps: Deps): Promise<Response> {
+  const rejected = checkCsrf(request, deps.config.publicBaseUrl);
+  if (rejected) return rejected;
+
+  const result = await currentSession(request.headers.get("cookie"), deps, { force: true });
+  const headers = new Headers({ "Cache-Control": "no-store" });
+  for (const cookie of result.setCookies) headers.append("Set-Cookie", cookie);
+  if (result.status !== "ok") {
+    headers.set("Content-Type", "application/problem+json");
+    return new Response(
+      JSON.stringify({ type: "about:blank", title: "Unauthorized", status: 401, detail: "There is no session to refresh", code: "bff.unauthenticated" }),
+      { status: 401, headers },
+    );
+  }
+  return new Response(null, { status: 204, headers });
 }

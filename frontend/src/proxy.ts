@@ -10,7 +10,9 @@ import { SESSION_COOKIE } from "@/lib/session";
  * here, where the new session can be written to the response and handed on to the page that renders next (ADR 0026).
  * Pages that need a signed-in user send everyone else to the sign-in route.
  */
-const SIGNED_IN_ONLY = ["/me"];
+function needsSignIn(pathname: string): boolean {
+  return pathname === "/me" || pathname === "/profile" || pathname === "/admin" || pathname.startsWith("/admin/");
+}
 
 /** Replaces the session chunks in a Cookie header with the ones just written, so the page sees the new session. */
 function withNewSession(cookieHeader: string | null, setCookies: string[]): string {
@@ -32,10 +34,10 @@ export async function proxy(request: NextRequest) {
   const deps = defaultDeps();
   const cookieHeader = request.headers.get("cookie");
   const result = await currentSession(cookieHeader, deps);
-  const needsSignIn = SIGNED_IN_ONLY.includes(request.nextUrl.pathname);
+  const signInRequired = needsSignIn(request.nextUrl.pathname);
 
   if (result.status !== "ok") {
-    if (!needsSignIn) {
+    if (!signInRequired) {
       const response = NextResponse.next();
       for (const cookie of result.setCookies) response.headers.append("Set-Cookie", cookie);
       return response;
@@ -57,5 +59,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/me"],
+  matcher: ["/", "/me", "/profile", "/admin", "/admin/:path*"],
 };

@@ -15,11 +15,20 @@ export type SessionResult =
 /** One refresh per refresh token at a time, so concurrent requests do not each spend (and invalidate) the same token. */
 const inFlight = new Map<string, Promise<Session>>();
 
+export interface SessionOptions {
+  /**
+   * Refresh now, even though the access token is not close to expiry. Used when something the token says has changed
+   * on the identity provider's side, such as an email address that was just verified, and the user should not wait up to
+   * five minutes for the next scheduled refresh.
+   */
+  force?: boolean;
+}
+
 /**
  * Reads the session from the request and refreshes the access token when it is close to expiry (single-flight per
  * refresh token). Never throws: a failed refresh is reported so the caller can force a new sign-in.
  */
-export async function currentSession(cookieHeader: string | null, deps: Deps): Promise<SessionResult> {
+export async function currentSession(cookieHeader: string | null, deps: Deps, options: SessionOptions = {}): Promise<SessionResult> {
   const { config } = deps;
   const secure = isSecure(config);
   const session = await readSession(cookieHeader, config.sessionSecret);
@@ -28,7 +37,7 @@ export async function currentSession(cookieHeader: string | null, deps: Deps): P
     return { status: "none", setCookies: clearSessionCookies(cookieHeader, secure) };
   }
   const nowSeconds = Math.floor(deps.now() / 1000);
-  if (session.accessExpiresAt - nowSeconds > REFRESH_MARGIN_SECONDS) {
+  if (!options.force && session.accessExpiresAt - nowSeconds > REFRESH_MARGIN_SECONDS) {
     return { status: "ok", session, setCookies: [] };
   }
 

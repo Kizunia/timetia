@@ -11,7 +11,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Logic tests run on plain Node. A test of a component starts with `// @vitest-environment jsdom`.
     environment: "node",
-    include: ["tests/unit/**/*.test.ts"],
+    include: ["tests/unit/**/*.test.{ts,tsx}"],
+    setupFiles: ["tests/setup.ts"],
   },
 });
