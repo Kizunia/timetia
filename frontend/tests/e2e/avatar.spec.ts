@@ -190,9 +190,13 @@ test("an administrator sees the user's photo on the user's page, and the page ha
 
   await expect(admin.getByRole("heading", { name: "Demo User" })).toBeVisible();
   await expectLoaded(admin.getByTestId("avatar").locator("img").first(), 256);
+  // The list shows it too, found by search so that it does not matter how many other users the stack holds.
   await admin.goto("/admin/users");
-  await expect(admin.getByTestId("user-row").first()).toBeVisible();
-  await expect(admin.getByTestId("user-row").filter({ hasText: "demo@" }).getByTestId("avatar").locator("img")).toHaveCount(1);
+  await admin.getByLabel("Search").fill("demo@kibootia.localhost");
+  await admin.getByRole("button", { name: "Search" }).click();
+  const row = admin.getByTestId("user-row").filter({ hasText: "demo@kibootia.localhost" });
+  await expect(row).toHaveCount(1);
+  await expect(row.getByTestId("avatar").locator("img")).toHaveCount(1);
   await expectNoAccessibilityViolations(admin);
 });
 
