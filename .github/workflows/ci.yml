@@ -74,6 +74,79 @@ jobs:
       - name: Build
         run: pnpm --filter kibootia-frontend build
 
+  # Proves that a fork can remove or switch off a default-on module (ADR 0024, verification standard). Each row builds
+  # and starts what is left: the notes module is deleted with the same script the removal recipe describes, the others
+  # are switched off by their property. Rows that switch a module off run the tests tagged `startup` (the application
+  # starts against MySQL, the core API answers, the module's endpoints answer 404 `<module>.disabled`); the row that
+  # deletes code runs every backend test, which must still pass without it.
+  module-removal:
+    name: Without ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: notes (removed)
+            remove: notes
+            files: "true"
+            observability: "true"
+            tests: all
+          - name: files (switched off)
+            remove: ""
+            files: "false"
+            observability: "true"
+            tests: startup
+          - name: observability (switched off)
+            remove: ""
+            files: "true"
+            observability: "false"
+            tests: startup
+          - name: notes, files and observability (all)
+            remove: notes
+            files: "false"
+            observability: "false"
+            tests: startup
+    env:
+      KIBOOTIA_FILES_ENABLED: ${{ matrix.files }}
+      KIBOOTIA_OBSERVABILITY_ENABLED: ${{ matrix.observability }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Remove the module
+        if: matrix.remove != ''
+        run: node scripts/remove-module.mjs "${{ matrix.remove }}"
+      # Testcontainers starts MySQL on the runner's Docker daemon. The build rewrites backend/openapi.json, which is
+      # expected to change in the rows that remove a module, so it is not compared here.
+      - name: Build and test the backend
+        working-directory: backend
+        run: |
+          if [ "${{ matrix.tests }}" = "startup" ]; then
+            ./mvnw -B verify -Dgroups=startup
+          else
+            ./mvnw -B verify
+          fi
+      - name: Generate the client from the remaining API
+        if: matrix.remove != ''
+        run: pnpm --filter kibootia-frontend api:generate
+      - name: Lint, type check, test and build the frontend
+        if: matrix.remove != ''
+        run: |
+          pnpm --filter kibootia-frontend lint
+          pnpm --filter kibootia-frontend typecheck
+          pnpm --filter kibootia-frontend test
+          pnpm --filter kibootia-frontend build
+
   images:
     name: Build and scan container images
     runs-on: ubuntu-latest
