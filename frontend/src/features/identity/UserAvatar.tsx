@@ -62,7 +62,7 @@ export function UserAvatar({
       aria-label={label}
       aria-hidden={label ? undefined : true}
       className={cn(
-        "relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-muted font-medium text-muted-foreground",
+        "relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-muted font-medium text-foreground",
         SIZES[size],
         className,
       )}
