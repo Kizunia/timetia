@@ -1,12 +1,9 @@
-/** What an avatar may be, for a quick answer in the browser. The backend decides from the bytes and always checks again. */
-export const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+import { IMAGE_MAX_BYTES, IMAGE_TYPES, checkImageFile } from "@/lib/images";
 
-export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+/** What an avatar may be: the same as any picture the files module accepts (ADR 0029). */
+export const AVATAR_TYPES = IMAGE_TYPES;
+
+export const AVATAR_MAX_BYTES = IMAGE_MAX_BYTES;
 
 /** Why the browser would not even send this file, or null when it may be sent. */
-export function checkAvatarFile(file: Pick<File, "type" | "size">): string | null {
-  if (!(AVATAR_TYPES as readonly string[]).includes(file.type)) return "Choose a JPEG, PNG or WebP image.";
-  if (file.size > AVATAR_MAX_BYTES) return "Choose an image smaller than 5 MB.";
-  if (file.size === 0) return "That file is empty.";
-  return null;
-}
+export const checkAvatarFile = checkImageFile;

@@ -79,8 +79,8 @@ const MESSAGES: Record<string, string> = {
   "access.role_in_use": "Users still hold this role. Take it away from them first.",
   "access.last_administrator": "This is the last administrator who can sign in. Make someone else an administrator first.",
   "access.user_not_found": "That user could not be found.",
-  "notes.not_found": "That note could not be found.",
-  "notes.duplicate_title": "You already have a note with this title.",
+  "notes.not_found": "That note could not be found.", // module:notes
+  "notes.duplicate_title": "You already have a note with this title.", // module:notes
 };
 
 export const GENERIC_MESSAGE = "The request failed.";

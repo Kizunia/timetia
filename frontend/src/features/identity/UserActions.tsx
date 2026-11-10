@@ -83,7 +83,7 @@ const ACTIONS: readonly ActionSpec[] = [
     label: "Erase for good",
     title: "Erase this user for good?",
     description:
-      "Their account, profile, roles and notes are removed and cannot be brought back. The audit log keeps only their ID, shown as a deleted user.",
+      "Their account, profile, roles and everything they own are removed and cannot be brought back. The audit log keeps only their ID, shown as a deleted user.",
     confirm: "Erase for good",
     permission: "identity.users.erase",
     destructive: true,

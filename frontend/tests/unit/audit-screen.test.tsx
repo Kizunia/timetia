@@ -40,8 +40,8 @@ describe("people in the audit log (ADR 0046)", () => {
             id: "e2",
             occurredAt: "2026-11-10T09:00:00Z",
             actor: { id: "s", kind: "SYSTEM" },
-            action: "notes.note.deleted",
-            targetType: "note",
+            action: "identity.user.deleted",
+            targetType: "user",
             targetId: "1234567890",
             changes: {},
             outcome: "forbidden",
@@ -60,7 +60,7 @@ describe("people in the audit log (ADR 0046)", () => {
     expect(within(rows[0]!).getByText("Deleted user")).toBeInTheDocument();
     expect(within(rows[0]!).getByText("role: Reviewers")).toBeInTheDocument();
     expect(within(rows[1]!).getByText("System")).toBeInTheDocument();
-    expect(within(rows[1]!).getByText("note 12345678")).toBeInTheDocument();
+    expect(within(rows[1]!).getByText("user 12345678")).toBeInTheDocument();
     expect(within(rows[1]!).getByText("forbidden")).toBeInTheDocument();
   });
 

@@ -37,27 +37,27 @@ describe("serverApi", () => {
   it("sends the path and query of a list call as the description says", async () => {
     const api = recording(() => json({ items: [], page: { number: 0, size: 20, totalElements: 0, totalPages: 0 } }));
 
-    await serverApi("http://api.test", "t", api.fetch).GET("/api/v1/notes", {
-      params: { query: { page: 1, size: 5, sort: "title,asc", q: "milk" } },
+    await serverApi("http://api.test", "t", api.fetch).GET("/api/v1/users", {
+      params: { query: { page: 1, size: 5, sort: "name,asc", q: "milk" } },
     });
 
     const url = new URL(api.requests[0]!.url);
-    expect(url.pathname).toBe("/api/v1/notes");
-    expect(Object.fromEntries(url.searchParams)).toEqual({ page: "1", size: "5", sort: "title,asc", q: "milk" });
+    expect(url.pathname).toBe("/api/v1/users");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ page: "1", size: "5", sort: "name,asc", q: "milk" });
   });
 
   it("puts path parameters into the URL and the body into the request", async () => {
     const api = recording(() => json({ ...me }));
     const id = "22222222-2222-7222-8222-222222222222";
 
-    await serverApi("http://api.test", "t", api.fetch).PUT("/api/v1/notes/{id}", {
+    await serverApi("http://api.test", "t", api.fetch).PUT("/api/v1/roles/{id}", {
       params: { path: { id } },
-      body: { title: "T", body: "B", version: 3 },
+      body: { name: "T", description: "B", permissions: [], version: 3 },
     });
 
-    expect(api.requests[0]?.url).toBe(`http://api.test/api/v1/notes/${id}`);
+    expect(api.requests[0]?.url).toBe(`http://api.test/api/v1/roles/${id}`);
     expect(api.requests[0]?.method).toBe("PUT");
-    expect(await api.requests[0]?.json()).toEqual({ title: "T", body: "B", version: 3 });
+    expect(await api.requests[0]?.json()).toEqual({ name: "T", description: "B", permissions: [], version: 3 });
   });
 });
 
@@ -75,15 +75,15 @@ describe("browserApi", () => {
 
 describe("unwrap", () => {
   it("turns a problem response into an ApiError with the status, code and trace ID", async () => {
-    const problem = { title: "Conflict", status: 409, code: "notes.duplicate_title", traceId: "abc" };
+    const problem = { title: "Conflict", status: 409, code: "access.role_exists", traceId: "abc" };
     const api = recording(() => json(problem, { status: 409, headers: { "Content-Type": "application/problem+json" } }));
 
-    const result = await serverApi("http://api.test", "t", api.fetch).POST("/api/v1/notes", { body: { title: "T", body: "B" } });
+    const result = await serverApi("http://api.test", "t", api.fetch).POST("/api/v1/roles", { body: { name: "T", description: "B", permissions: [] } });
 
     const error = captured(() => unwrap(result));
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(409);
-    expect(error.code).toBe("notes.duplicate_title");
+    expect(error.code).toBe("access.role_exists");
     expect(error.traceId).toBe("abc");
   });
 
@@ -108,7 +108,7 @@ describe("unwrap", () => {
   it("returns nothing for a successful call without a body", async () => {
     const api = recording(() => new Response(null, { status: 204 }));
 
-    const result = await serverApi("http://api.test", "t", api.fetch).DELETE("/api/v1/notes/{id}", {
+    const result = await serverApi("http://api.test", "t", api.fetch).DELETE("/api/v1/roles/{id}", {
       params: { path: { id: "22222222-2222-7222-8222-222222222222" } },
     });
 

@@ -19,6 +19,7 @@ export function meWith(permissions: string[], overrides: Partial<Me> = {}): Me {
     roles: [{ id: "r-user", name: "User", builtIn: true }],
     avatarVersion: null,
     avatarsEnabled: true,
+    filesEnabled: true,
     ...overrides,
   };
 }
@@ -59,6 +60,8 @@ function parseBody(text: string): unknown {
 export interface Call {
   method: string;
   path: string;
+  /** The query string of the call, for the screens whose behaviour is a list's filters. */
+  query: URLSearchParams;
   body: unknown;
   headers: Headers;
 }
@@ -77,6 +80,7 @@ export function stubApi(handler: (call: Call) => Response | Promise<Response>) {
     const call: Call = {
       method: request.method,
       path: new URL(request.url, "http://localhost").pathname,
+      query: new URL(request.url, "http://localhost").searchParams,
       body: parseBody(text),
       headers: request.headers,
     };

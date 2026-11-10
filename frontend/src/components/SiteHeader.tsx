@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SignOutButton } from "@/components/SignOutButton";
 import { UserAvatar } from "@/features/identity/UserAvatar";
 import type { Me } from "@/lib/api/client";
+import { moduleLinks } from "@/modules";
 
 /** The sections of the administration area and the permission that shows each one. */
 export const ADMIN_SECTIONS = [
@@ -20,6 +21,7 @@ const linkClass =
  */
 export function SiteHeader({ me }: { me: Me | null }) {
   const sections = me ? ADMIN_SECTIONS.filter((section) => me.permissions.includes(section.permission)) : [];
+  const links = me ? moduleLinks(me.permissions) : [];
   return (
     <header className="border-b">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
@@ -32,6 +34,11 @@ export function SiteHeader({ me }: { me: Me | null }) {
               Profile
             </Link>
           )}
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className={linkClass}>
+              {link.label}
+            </Link>
+          ))}
           {sections.length > 0 && (
             <Link href={sections[0]!.href} className={linkClass}>
               Administration

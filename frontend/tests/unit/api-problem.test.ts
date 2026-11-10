@@ -18,7 +18,7 @@ const validation: Problem = {
 describe("isProblem", () => {
   it("accepts a body with a code, a status and a title", () => {
     expect(isProblem(validation)).toBe(true);
-    expect(isProblem({ code: "notes.not_found", status: 404, title: "Not Found" })).toBe(true);
+    expect(isProblem({ code: "access.user_not_found", status: 404, title: "Not Found" })).toBe(true);
   });
 
   it("rejects anything else", () => {
@@ -69,9 +69,9 @@ describe("fieldErrors", () => {
 
 describe("messageFor", () => {
   it("chooses its own words from the code, not the backend's detail", () => {
-    const error = new ApiError(409, { title: "Conflict", status: 409, code: "notes.duplicate_title", detail: "internal text" });
+    const error = new ApiError(409, { title: "Conflict", status: 409, code: "access.last_administrator", detail: "internal text" });
 
-    expect(messageFor(error)).toBe("You already have a note with this title.");
+    expect(messageFor(error)).toBe("This is the last administrator who can sign in. Make someone else an administrator first.");
     expect(messageFor(error)).not.toContain("internal");
   });
 

@@ -17,7 +17,7 @@ const TARGETS = [
   { value: "ALL", label: "Anything" },
   { value: "user", label: "Users" },
   { value: "role", label: "Roles" },
-  { value: "note", label: "Notes" },
+  { value: "note", label: "Notes" }, // module:notes
 ];
 
 /**

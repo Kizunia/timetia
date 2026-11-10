@@ -4,6 +4,7 @@ import { defaultDeps } from "@/lib/bff/deps";
 import { currentSession } from "@/lib/bff/refresh";
 import { parseCookies } from "@/lib/cookies";
 import { SESSION_COOKIE } from "@/lib/session";
+import { isModulePath } from "@/modules";
 
 /**
  * Runs before page rendering. Server Components cannot set cookies, so a token that needs refreshing is refreshed
@@ -11,7 +12,13 @@ import { SESSION_COOKIE } from "@/lib/session";
  * Pages that need a signed-in user send everyone else to the sign-in route.
  */
 function needsSignIn(pathname: string): boolean {
-  return pathname === "/me" || pathname === "/profile" || pathname === "/admin" || pathname.startsWith("/admin/");
+  return (
+    pathname === "/me" ||
+    pathname === "/profile" ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    isModulePath(pathname)
+  );
 }
 
 /** Replaces the session chunks in a Cookie header with the ones just written, so the page sees the new session. */
@@ -58,6 +65,15 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// The matcher has to be a literal for Next.js to read it, so a feature module's paths are listed here as well as in
+// `modules.ts`. A line tagged with the module is taken out when the module is removed.
 export const config = {
-  matcher: ["/", "/me", "/profile", "/admin", "/admin/:path*"],
+  matcher: [
+    "/",
+    "/me",
+    "/profile",
+    "/admin",
+    "/admin/:path*",
+    "/notes", "/notes/:path*", // module:notes
+  ],
 };
