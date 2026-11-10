@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned. This document describes intended mitigations; none is implemented or verified.
+> **Implementation:** the entries for milestones 1 and 2 are verified or observed as their rows in [implementation status](../../product/roadmap/implementation-status.md) say; the entries added for milestone 3 (marked below) are verified (CI run 42780048416, 2026-11-10). Entries for later milestones are intended mitigations only.
 
 A living, short threat model organised by trust boundary (owner decision of 2026-10-28). Each capability adds its entries when it is built, and a milestone that adds a boundary is not complete until its entries exist. It lists what could go wrong and the intended mitigation, with the decision that fixes it. It is a starting point, not a completed analysis.
 
@@ -37,17 +37,21 @@ flowchart LR
 | BFF to Spring | A new endpoint is exposed unprotected | Deny-by-default; no public endpoint on the API port; health on an internal management port | [0008](../../decisions/0008-audience-validation-and-deny-by-default.md), [0047](../../decisions/0047-health-exposure-and-container-images.md) |
 | BFF to Spring | A machine token is used to act without a user | Service-account tokens are rejected | [0044](../../decisions/0044-authorization-enforcement-conventions.md) |
 | Spring to Keycloak keys | Signing keys cannot be fetched | Use cached keys; with none, refuse requests | [token validation](../../architecture/identity/token-validation.md) |
-| Spring to Keycloak Admin API | The service account is abused or leaked | Least-privilege realm-management roles, never realm-admin; secret from environment or file; administrative actions audited | [0025](../../decisions/0025-identity-and-authorization-data-split.md) |
+| Spring to Keycloak Admin API | The service account is abused or leaked | Least-privilege realm-management roles, never realm-admin (a test shows a client with fewer roles is refused); secret from environment or file and never in an error message; administrative actions audited; its tokens are rejected by the API | [0025](../../decisions/0025-identity-and-authorization-data-split.md), [0050](../../decisions/0050-milestone-3-implementation-decisions.md) |
 | Authorization | Privilege escalation through role editing | Protected admin role; last administrator cannot be removed; every change audited | [0025](../../decisions/0025-identity-and-authorization-data-split.md) |
 | Authorization | A check is missing on one operation | One decision point; checks on use cases; an ArchUnit rule requires a check or an explicit exemption; allowed and denied tests for every protected operation | [0027](../../decisions/0027-central-authorization-decision-point.md), [0044](../../decisions/0044-authorization-enforcement-conventions.md) |
 | Authorization | A disabled user keeps working with a still-valid session | Sessions ended in Keycloak; the backend checks profile status on every request | [0041](../../decisions/0041-user-lifecycle-and-account-model.md) |
+| Authorization | Someone registers with the bootstrap administrator's address and is made administrator (milestone 3) | The grant needs a verified address in the token, only while no administrator exists; it is audited | [0050](../../decisions/0050-milestone-3-implementation-decisions.md) |
+| Authorization | An administrator, or a role editor, grants more than they hold (milestone 3) | A role can only be given permissions its editor holds; only an administrator gives the administrator role; nobody changes their own account; the last administrator who can sign in cannot be removed, even concurrently | [0050](../../decisions/0050-milestone-3-implementation-decisions.md) |
+| Authorization | An unverified account does anything beyond viewing itself (milestone 3) | The decision point returns no permissions until the token says the address is verified | [0041](../../decisions/0041-user-lifecycle-and-account-model.md) |
+| Accounts | An old token of an erased user recreates their profile (milestone 3) | A user not yet known is confirmed with Keycloak first, and erasure deletes the Keycloak account before the profile | [0050](../../decisions/0050-milestone-3-implementation-decisions.md) |
 | Accounts | Mass or fake self-registration, accounts in someone else's name | Email verification required before use; Keycloak brute-force detection; rate limits; production review of bot protection; new users see no other users by default | [0041](../../decisions/0041-user-lifecycle-and-account-model.md) |
 | Data | One tenant reads another's data | `tenant_id` with a Hibernate discriminator; native queries reviewed; isolation tests in CI | [0028](../../decisions/0028-tenant-ready-schema.md) |
 | Data | Soft-deleted personal data is retained or leaks through queries | Soft-delete filtering with tests; retention purge; immediate erasure on request | [0034](../../decisions/0034-soft-delete-with-retention-purge.md) |
 | Data | Identifiers are guessed | UUIDv7 identifiers | [0033](../../decisions/0033-uuidv7-identifiers.md) |
 | Uploads | Malicious or disguised file | Type detected from bytes, per-category allow-list, size limits, re-encoding and metadata removal for images; malware scanning is a recipe | [0029](../../decisions/0029-s3-object-storage-contract.md) |
 | Storage | Files read without authorization | Storage on the private network; files streamed through the backend; access through the decision point | [0029](../../decisions/0029-s3-object-storage-contract.md) |
-| Abuse | Brute-force login, invite spam, upload floods | Keycloak brute-force detection; in-app rate limiter; edge limiting required in production | [API conventions](../../architecture/api/conventions.md) |
+| Abuse | Brute-force login, invite spam, verification-mail floods, upload floods | Keycloak brute-force detection; in-app per-user rate limiter on invitations, verification mail and administrative actions (uploads in milestone 4); edge limiting required in production | [API conventions](../../architecture/api/conventions.md) |
 | Secrets | Development credentials reach production | Generated local secrets; production refuses to start with development defaults | [0032](../../decisions/0032-secrets-from-environment-and-files.md) |
 | Secrets | Committed credentials | Secret scanning in CI; credentials ever committed are rotated | [secrets management](secrets-management.md) |
 | Operations | Sensitive data in logs or telemetry | Logs and traces exclude tokens and secrets | [observability baseline](../monitoring/observability-baseline.md) |

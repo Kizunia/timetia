@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** observed, not verified in CI. Keycloak 26.8.2 on PostgreSQL 17.11 runs in `compose.yaml`; OpenTofu applies the realm (`infra/keycloak`); the Next.js server signs a user in with Authorization Code and PKCE, refreshes the session and signs out. A Playwright test against real Keycloak passed locally on 2026-11-09. Registration is enabled in the realm but no registration flow, email-verification enforcement or invitation exists yet (milestone 3).
+> **Implementation:** verified (CI run 42780048416, 2026-11-10). Keycloak 26.8.2 on PostgreSQL 17.11 runs in `compose.yaml`; OpenTofu applies the realm (`infra/keycloak`); the Next.js server signs a user in with Authorization Code and PKCE, refreshes the session (on demand as well, through `/auth/refresh`) and signs out; Playwright tests against the real Keycloak cover sign-in, self-registration with email verification and invitations. Registration, email-verification enforcement and invitations are milestone 3; the administration client's audience scope is described below.
 
 Decisions: [ADR 0006](../../decisions/0006-keycloak-oidc-identity.md), [ADR 0007](../../decisions/0007-spring-security-resource-server.md), [ADR 0020](../../decisions/0020-keycloak-in-local-compose.md), [ADR 0026](../../decisions/0026-nextjs-bff-session.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0042](../../decisions/0042-bff-api-proxy-and-csrf.md), [ADR 0045](../../decisions/0045-keycloak-operations.md).
 
@@ -16,6 +16,10 @@ Decisions: [ADR 0006](../../decisions/0006-keycloak-oidc-identity.md), [ADR 0007
 - **The Next.js server** is the backend-for-frontend ([glossary](../../shared/glossary/backend-for-frontend.md)). It runs the login, holds the tokens, gives the browser only a session cookie and forwards browser API calls through one `/api` proxy ([frontend](../frontend.md)).
 - **The Spring backend** is a [resource server](../../shared/glossary/resource-server.md): it accepts bearer access tokens and validates them ([token validation](token-validation.md)). It does not authenticate users or store passwords.
 - **The user-administration module** calls the Keycloak Admin API to manage the user lifecycle. That requires a confidential service-account client, so the backend does hold one client secret for that purpose; the resource-server function itself still needs none.
+
+## The administration client
+
+The backend calls the Admin API with the `kibootia-admin` service-account client, which holds `view-users`, `query-users` and `manage-users` and nothing else. Keycloak 26.8 refuses an Admin API call unless the token's audience is the realm's admin API address, which the built-in `kc-admin-api` client scope adds, so that scope is a default scope of the client ([infra/keycloak/base/main.tf](../../../infra/keycloak/base/main.tf)). Without it every call is a 401, which the backend reports as 503 (administration and the first sign-in of each new user). `KeycloakAdminAdapterIT` runs against a real Keycloak and shows both the working account and the refusal of a client that holds fewer roles. See [ADR 0050](../../decisions/0050-milestone-3-implementation-decisions.md).
 
 ## Sign-in flow
 

@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned. No Keycloak service, profile table or user-administration code exists.
+> **Implementation:** verified (CI run 42780048416, 2026-11-10). Invitation, self-registration, the default `user` role, email verification in the decision point, disable, delete, restore and erase are built; see [ADR 0050](0050-milestone-3-implementation-decisions.md) for the choices made while building.
 
 ## Context
 

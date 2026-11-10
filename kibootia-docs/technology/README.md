@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
 > **Implementation:** not applicable (catalogue). Whether a technology is planned, observed or verified is **not** recorded here; see [implementation status](../product/roadmap/implementation-status.md).
 
@@ -57,7 +57,7 @@ None recorded yet. A combination is recorded here only after a passing CI run co
 | OpenTelemetry starter, Micrometer, Actuator | default-on | selected | Logs, metrics, traces over OTLP; health | [0030](../decisions/0030-otlp-telemetry-and-local-lgtm.md) |
 | Grafana LGTM container (local) | default-on | selected for local development only | Receives and shows telemetry | [0030](../decisions/0030-otlp-telemetry-and-local-lgtm.md) |
 | User and role administration with audit log | default-on | selected | Administration interface, runtime-editable roles | [0025](../decisions/0025-identity-and-authorization-data-split.md) |
-| In-app rate limiter | default-on | selected; library not chosen | Throttle sensitive endpoints | [API conventions](../architecture/api/conventions.md) |
+| Bucket4j 8.16.1 with Caffeine (in-app rate limiter) | default-on | selected | Per-user token buckets in a size-bounded cache; 8.16.1 is the newest line with a patch release | [0050](../decisions/0050-milestone-3-implementation-decisions.md) |
 | Object storage module (S3 API) | default-on | selected | Avatars and uploads | [0029](../decisions/0029-s3-object-storage-contract.md) |
 | RustFS (local S3 server) | default-on | candidate; a verification gate is open | Local object storage | [0029](../decisions/0029-s3-object-storage-contract.md) |
 | Mailpit (local mail catcher) | default-on | selected for local development only | Receives Keycloak's identity email locally | [0041](../decisions/0041-user-lifecycle-and-account-model.md) |

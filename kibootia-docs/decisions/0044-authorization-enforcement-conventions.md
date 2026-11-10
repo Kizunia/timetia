@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned.
+> **Implementation:** the annotations, `scopeFor` and rule 7 are verified (CI run 42605511477, 2026-11-09). The per-request lookup of profile status and stored permissions is verified (CI run 42780048416, 2026-11-10); it is two indexed queries, one in each module that owns the data ([ADR 0050](0050-milestone-3-implementation-decisions.md)).
 
 ## Context
 

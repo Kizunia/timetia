@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned.
+> **Implementation:** writing and purging entries are verified (CI run 42605511477, 2026-11-09); the viewer, the administrative entries of milestone 3 and the display of erased users are verified (CI run 42780048416, 2026-11-10).
 
 ## Context
 

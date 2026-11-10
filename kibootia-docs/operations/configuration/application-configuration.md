@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
 > **Implementation:** partly observed. No secret is in version control, `.env.example` and `pnpm bootstrap` exist, and a missing required setting stops startup with a message naming it. Typed `kibootia.*` configuration classes and the production "no development defaults" guard do not exist yet. No CI run yet.
 
@@ -41,7 +41,7 @@ Names only. Defaults are local-development values; production values come from t
 | `KEYCLOAK_DB_PASSWORD` | Compose | Generated into `.env`; Keycloak's PostgreSQL password | Yes |
 | `KEYCLOAK_ADMIN_PASSWORD` | Compose, OpenTofu | Generated; password of Keycloak's bootstrap administrator, used by the one-shot realm step | Yes |
 | `KEYCLOAK_WEB_CLIENT_SECRET` | Compose, OpenTofu, Next.js | Generated; secret of the `kibootia-web` client | Yes |
-| `KEYCLOAK_ADMIN_CLIENT_SECRET` | Compose, OpenTofu | Generated; secret of the `kibootia-admin` service-account client (unused by the applications until milestone 3) | Yes |
+| `KEYCLOAK_ADMIN_CLIENT_SECRET` | Compose, OpenTofu, backend | Generated; secret of the `kibootia-admin` service-account client (the backend uses it from milestone 3) | Yes |
 | `DEMO_USER_PASSWORD` | Compose, OpenTofu, Playwright | Generated; password of the local `demo` user. Local overlay only | Yes |
 | `SESSION_SECRET` | Next.js | Generated; at least 32 characters; the session cookie key is derived from it | Yes |
 | `COMPOSE_PROFILES` | Compose | `observability`; remove it to leave out the Grafana LGTM container | No |
@@ -60,6 +60,21 @@ Names only. Defaults are local-development values; production values come from t
 | `LOG_LEVEL` | Next.js | `info` | No |
 
 The Next.js server fails a request with a message naming the setting when `SESSION_SECRET` or `KEYCLOAK_WEB_CLIENT_SECRET` is missing (unit-tested).
+
+## Settings added by milestone 3 (verified, CI run 42780048416)
+
+Names only.
+
+| Setting | Read by | Default and notes | Secret |
+|---|---|---|---|
+| `kibootia.identity.keycloak.client-secret` (`KEYCLOAK_ADMIN_CLIENT_SECRET`) | Backend | Required; startup fails naming it when missing. The secret of the `kibootia-admin` service-account client | Yes |
+| `kibootia.identity.keycloak.base-url` (`KIBOOTIA_IDENTITY_KEYCLOAK_BASE_URL`) | Backend | `http://localhost:8180`; Keycloak as the backend reaches it (`http://keycloak:8080` in Compose) | No |
+| `kibootia.identity.keycloak.realm`, `.web-client-id`, `.client-id`, `.connect-timeout`, `.read-timeout` | Backend | `kibootia`, `kibootia-web`, `kibootia-admin`, `3s`, `10s` | No |
+| `kibootia.identity.public-base-url` (`KIBOOTIA_IDENTITY_PUBLIC_BASE_URL`) | Backend | `http://localhost:3470`; where links in Keycloak's emails return | No |
+| `kibootia.identity.link-lifespan` | Backend | `P7D`; how long a link in an invitation or verification email works | No |
+| `kibootia.identity.bootstrap-admin-email` (`KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL`) | Backend, Compose | Empty by default; locally `demo-admin@kibootia.localhost`. Clear it once an administrator exists | No |
+| `kibootia.rate-limit.limits.<category>.capacity`, `.period` | Backend | Categories `invitations` (20 per hour), `admin-actions` (120 per minute), `verification-resend` (3 per hour), `uploads` (30 per 10 minutes) | No |
+| `DEMO_ADMIN_PASSWORD` | Compose, OpenTofu, Playwright | Generated; password of the local `demo-admin` user. Local overlay only | Yes |
 
 ## Naming (owner decision of 2026-11-08)
 
@@ -82,7 +97,7 @@ The one list of every setting. Rows are added in the same change that introduces
 | OpenTofu | Keycloak administrator credentials for realm configuration, state backend settings | Administrator password, storage keys |
 | Files | `kibootia.files.enabled`, endpoint, region, bucket, access key, secret key, size limits | Access and secret key |
 | Telemetry | `kibootia.observability.enabled`, OTLP endpoint | Endpoint credentials, if any |
-| Identity | `KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL` ([ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md)) | None |
+| Identity | `KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL` ([ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md)); implemented in milestone 3, see above | None |
 | Retention | Audit retention (default 365 days), soft-delete retention (default 30 days) | None |
 | Management | Management port for health ([ADR 0047](../../decisions/0047-health-exposure-and-container-images.md)) | None |
 

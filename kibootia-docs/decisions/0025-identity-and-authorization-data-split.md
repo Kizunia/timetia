@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned. No Keycloak service, realm file, user profile table or admin API client exists.
+> **Implementation:** verified (CI run 42780048416, 2026-11-10). Built in milestone 3: the profile table, stored roles, the Admin API port and its adapter, the protected administrator role, the last-administrator safeguard and the bootstrap administrator ([ADR 0050](0050-milestone-3-implementation-decisions.md)). Keycloak and the realm are from milestone 1.
 
 > **Extended by [ADR 0041](0041-user-lifecycle-and-account-model.md)** (account creation, default `user` role, profile data, email verification, disabled users) and [ADR 0044](0044-authorization-enforcement-conventions.md) (permission freshness without a cache). This decision still holds.
 

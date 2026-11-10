@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned.
+> **Implementation:** the decision point, annotations and scopes are verified (CI run 42605511477, 2026-11-09). Stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10).
 
 Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 
@@ -22,9 +22,9 @@ Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [
 - **Roles** are bundles of permissions stored in Kibootia's database. Administrators create and edit roles and assign them in the administration interface. Tokens carry identity only.
 - **Built-in roles:** a protected administrator role, and a `user` role assigned automatically at first sign-in. Administrators may change the `user` role's permissions but cannot delete it. In the reference application it does not include `identity.profiles.view`.
 - **Ownership:** actions on one's own profile and avatar are allowed to any active user by ownership rules, without a role.
-- **Email verification:** until the email address is verified, only viewing one's own profile, resending verification and signing out are allowed. Other operations are denied with `email_not_verified`. Operations can be marked as allowed before verification.
-- **Safeguards:** the last administrator cannot be removed or demoted, and every change to roles, permissions and assignments is written to the [audit log](../audit-log.md).
-- **First administrator:** a demo administrator locally; in production a one-time setting grants the role to a named user on first sign-in, only while no administrator exists, and is audited.
+- **Email verification:** until the email address is verified, only viewing one's own profile, resending verification and signing out are allowed. Other operations are denied with `platform.email_not_verified`. A module can mark a permission `beforeVerification()`; none does yet. An unverified user holds no permissions, and `GET /me` says so.
+- **Safeguards:** the last administrator who can sign in cannot be removed, demoted, disabled or deleted; a role editor can only give a role permissions they hold; only an administrator can give the administrator role; a role that is still held cannot be deleted; and every change to roles, permissions and assignments is written to the [audit log](../audit-log.md).
+- **First administrator:** `kibootia.identity.bootstrap-admin-email` grants the role to the user whose token carries that address, verified, while no administrator exists, at their first sign-in or the moment they first verify it. It is audited. Locally it names the `demo-admin` user.
 
 ## Decision point
 
@@ -48,7 +48,7 @@ An ArchUnit rule requires every public use-case method to have a check or an exp
 
 ## Freshness
 
-There is no permission cache at first. Each API request runs one indexed query that loads the caller's profile status and permission set. Role changes and disabling therefore apply on the next request, on any number of instances. If measurement shows a need, the documented upgrade is an in-memory cache checked against a per-tenant authorization version number.
+There is no permission cache at first. Each API request reads the caller's profile (the request gate, in `identity`) and each decision reads their permissions (`StoredPermissionSource`, in `access`), two indexed queries because each module owns its tables. Role changes and disabling therefore apply on the next request, on any number of instances; a test starts a second application context on the same database to show it. If measurement shows a need, the documented upgrade is an in-memory cache checked against a per-tenant authorization version number.
 
 ## Machine clients
 
@@ -60,4 +60,4 @@ An authenticated caller who lacks permission receives 403, distinct from 401 for
 
 ## Testing
 
-Every protected operation needs an allowed and a denied test, and list endpoints test their scope. None exist yet.
+Every protected operation has an allowed and a denied test, and list endpoints test their scope: `AccessApiIT` for roles and assignments, `UserAdministrationIT` and `IdentityGateIT` for users, `AuditViewerIT` for the log, `AuthorizationIT` and `DefaultDecisionPointTest` for the mechanism.

@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-09
+- **Last updated:** 2026-11-10
 
 > **Implementation:** the steps below were run on a Windows machine on 2026-11-09 with the host-run applications (`pnpm infra:up`, `pnpm dev`) and a Playwright sign-in test. They were **not** run on macOS or Linux, **not** run from a fresh clone (see the status of the `apps` profile below), and CI does not run this guide. Nothing here is **verified** in the sense of the [verification standard](../testing/verification-standard.md) until the pipeline has run it.
 
@@ -24,7 +24,7 @@ Run these from the repository root.
 2. `pnpm bootstrap` creates `.env` from `.env.example` with freshly generated secrets. Running it again only adds variables that `.env.example` has gained since; it never changes a value you already have. (The script is named `bootstrap` because `pnpm setup` is pnpm's own built-in command.)
 3. `pnpm infra:up` starts MySQL, Keycloak with its PostgreSQL, the one-shot OpenTofu step that applies the realm, Mailpit, Adminer and Grafana LGTM. The first start downloads several images and takes a few minutes.
 4. `pnpm dev` starts the backend and the Next.js server on the host. Stop it with Ctrl+C.
-5. Open <http://localhost:3470>, choose **Sign in**, and use the username `demo` with the password in `DEMO_USER_PASSWORD` in `.env`.
+5. Open <http://localhost:3470>, choose **Sign in**, and use the username `demo` with the password in `DEMO_USER_PASSWORD` in `.env`. That is an ordinary user. To try administration, sign in as `demo-admin` with `DEMO_ADMIN_PASSWORD`: the first sign-in makes this user the administrator (`KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL`), and **Administration** appears in the header. Invitation and verification emails arrive in Mailpit at <http://localhost:8025>.
 
 After signing in, **See who the API thinks you are** shows the same identity twice: once rendered on the server from a direct call to Spring, and once fetched by the browser through the `/api` proxy.
 
@@ -55,12 +55,13 @@ These ports were chosen to avoid the ones other local projects commonly use. If 
 |---|---|---|
 | `./mvnw verify` in `backend/` | Unit, ArchUnit, Modulith and Testcontainers tests | Docker |
 | `pnpm --filter kibootia-frontend lint`, `typecheck`, `test` | Lint, type check and the Vitest unit tests | Nothing running |
-| `pnpm --filter kibootia-frontend test:e2e` | The Playwright sign-in test | Infrastructure and the applications running (`pnpm dev` or `pnpm apps:up`); first run `pnpm --filter kibootia-frontend exec playwright install chromium` |
+| `pnpm --filter kibootia-frontend test:e2e` | The Playwright tests: sign-in, administration, registration and denied access | Infrastructure and the applications running (`pnpm dev` or `pnpm apps:up`); first run `pnpm --filter kibootia-frontend exec playwright install chromium` |
 
 ## Troubleshooting
 
 - **A port is already in use.** Find what holds it before stopping anything: it may belong to another project.
 - **`MYSQL_PASSWORD` or another setting is missing.** Run `pnpm bootstrap`.
+- **Keycloak or the backend is unhealthy after you made a new `.env`.** The volumes still hold databases created with the old passwords. Run `pnpm reset` to start from nothing, or restore the old `.env`.
 - **Your `.env` is from before milestone 0** and its `MYSQL_PASSWORD` no longer matches the password your MySQL volume was created with: run `pnpm reset`.
 - **Sign-in says the attempt expired.** The sign-in cookie lives ten minutes and only works in the browser that started it; start again from the home page.
 - **Docker is not running.** `pnpm infra:up` and the backend tests need it.

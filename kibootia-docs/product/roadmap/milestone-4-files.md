@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
 > **Implementation:** planned.
 
@@ -18,6 +18,7 @@ The storage module and the avatar flow, as a complete vertical slice. Decision: 
 - The storage port uses the S3 client, and contract tests run in CI against the local server.
 - A user can upload, replace, view and delete an avatar. Type is detected from the bytes, size limits apply, images are re-encoded and stripped of metadata, and files stream through the backend and the Next.js proxy.
 - Own avatars are always visible to their owner; viewing others' avatars requires `identity.profiles.view` within the tenant. Allowed and denied tests and tenant-isolation tests cover this.
-- The reconciliation job and the purge job remove orphaned objects and expired deleted data.
+- Uploads are rate limited with the `uploads` category of the limiter built in [milestone 3](milestone-3-identity-and-access-administration.md), and a test shows the 429.
+- The reconciliation job and the purge job remove orphaned objects and expired deleted data, and erasing a user (`UserErased`) removes their stored files.
 - The storage module can be switched off with `kibootia.files.enabled`, and CI proves the application still starts.
 - All of the above pass in CI ([verification standard](../../engineering/testing/verification-standard.md)).

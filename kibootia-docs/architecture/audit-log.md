@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned.
+> **Implementation:** writing and purging entries are verified (CI run 42605511477, 2026-11-09). The viewer (`GET /api/v1/audit-entries` and the Audit log screen) and the entries of milestone 3 are verified (CI run 42780048416, 2026-11-10).
 
 Decision: [ADR 0046](../decisions/0046-audit-log-design.md). Module: `audit` ([ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md)).
 
@@ -40,9 +40,9 @@ Names, email addresses, secrets and tokens are never stored.
 - Append-only: the application has no update path; only the retention purge deletes.
 - Excluded from soft delete ([ADR 0034](../decisions/0034-soft-delete-with-retention-purge.md)).
 - Retention is configurable, default 365 days.
-- The viewer shows current names by looking up user IDs through the `identity` module's public contract; erased users appear as "deleted user" with their ID.
+- The viewer shows current names by looking up user IDs through the `platform` user directory, which `identity` implements; erased users appear as "deleted user" with their ID, and work no user started appears as the system. It filters by actor, action prefix, kind of record, record and time, and pages newest first.
 - Viewing the log requires a permission of the `audit` module.
 
 ## Testing
 
-Tests show that each foundation event writes exactly one entry in the same transaction, that a rolled-back change leaves no entry, that no personal data is stored, and that the purge respects retention. None exist.
+Tests show that each foundation event writes exactly one entry in the same transaction, that a rolled-back change leaves no entry, that no personal data is stored, that the purge respects retention, and that the viewer is permission-protected and shows erased users as erased (`AuditLogIT`, `AuditViewerIT`, `UserAdministrationIT`). Role names are limited to characters that cannot form an email address, and a changed field may not be called `name`.

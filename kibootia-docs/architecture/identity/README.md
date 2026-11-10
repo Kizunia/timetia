@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
-> **Implementation:** planned (resource-server starters in `pom.xml`; no security configuration).
+> **Implementation:** sign-in and token validation are verified (CI run 42605511477, 2026-11-09); roles, profiles and administration are verified (CI run 42780048416, 2026-11-10). See the documents below for each.
 
 | Item | Summary |
 |---|---|

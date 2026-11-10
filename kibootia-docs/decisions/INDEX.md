@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
 > **Implementation:** not applicable (index).
 
@@ -63,5 +63,6 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0047 | Health exposure and container images | platform | accepted | 2026-11-08 | [0047](0047-health-exposure-and-container-images.md) |
 | 0048 | Java 25 baseline on Eclipse Temurin | platform | accepted | 2026-11-08 | [0048](0048-java-25-baseline-on-temurin.md) |
 | 0049 | Milestone 2 implementation decisions | platform | accepted | 2026-11-09 | [0049](0049-milestone-2-implementation-decisions.md) |
+| 0050 | Milestone 3 implementation decisions | platform | accepted | 2026-11-10 | [0050](0050-milestone-3-implementation-decisions.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.
