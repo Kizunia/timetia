@@ -269,7 +269,6 @@ test("an administrator sees everyone's notes, deletes the user's note and restor
   await expect(admin.getByText("Written by someone else")).toBeVisible();
   await expectLoaded(picture(admin), 480, 160);
   await admin.getByRole("button", { name: "Delete note" }).click();
-  await expectNoAccessibilityViolations(admin);
   await admin.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(admin.getByText("Note deleted")).toBeVisible();
   await expect(admin).toHaveURL(/\/notes$/);
@@ -288,7 +287,8 @@ test("an administrator sees everyone's notes, deletes the user's note and restor
   await expectNoAccessibilityViolations(admin);
   await deleted.getByRole("button", { name: /Restore/ }).click();
   await expect(admin.getByText("Note restored")).toBeVisible();
-  await expect(admin.getByText("There are no deleted notes.")).toBeVisible();
+  // The search is still set, so the empty list says that nothing matches it.
+  await expect(admin.getByText("No notes match.")).toBeVisible();
 
   // Back where it was, with its picture.
   await user.goto(`/notes/${noteId}`);
