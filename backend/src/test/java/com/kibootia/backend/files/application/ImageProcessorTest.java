@@ -27,9 +27,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * What happens to an uploaded image (ADR 0029): every rendition is a new square PNG made from the pixels, turned upright
- * by the EXIF orientation, with nothing of the original left in it, and an image too large to decode safely is refused
- * before it is decoded.
+ * What happens to an uploaded image (ADR 0029): every rendition is a new PNG made from the pixels, either the centred
+ * square or the whole image with its proportions, turned upright by the EXIF orientation, with nothing of the original
+ * left in it, and an image too large to decode safely is refused before it is decoded.
  */
 class ImageProcessorTest {
 
@@ -145,6 +145,99 @@ class ImageProcessorTest {
 		assertThat(large.getWidth()).isEqualTo(256);
 		assertThat(near(large.getRGB(20, 128), Color.RED)).isTrue();
 		assertThat(near(large.getRGB(235, 128), Color.BLUE)).isTrue();
+	}
+
+	// --- fit renditions ---------------------------------------------------------------------------------------------
+
+	private static final List<Rendition> FIT = List.of(Rendition.fit("preview", 100), Rendition.fit("full", 400));
+
+	@Test
+	@DisplayName("a fit rendition keeps a landscape image whole, with its longest side at the rendition's size")
+	void fitKeepsALandscapeImage() throws IOException {
+		Map<String, byte[]> result = ImageProcessor.render(encode(redBlue(1200, 600), "png"), FIT);
+
+		BufferedImage preview = decode(result.get("preview"));
+		BufferedImage full = decode(result.get("full"));
+		assertThat(result.keySet()).containsExactly("preview", "full");
+		assertThat(preview.getWidth()).isEqualTo(100);
+		assertThat(preview.getHeight()).isEqualTo(50);
+		assertThat(full.getWidth()).isEqualTo(400);
+		assertThat(full.getHeight()).isEqualTo(200);
+		// Nothing is cut off: the red left edge and the blue right edge are both still there.
+		assertThat(near(full.getRGB(2, 100), Color.RED)).isTrue();
+		assertThat(near(full.getRGB(397, 100), Color.BLUE)).isTrue();
+	}
+
+	@Test
+	@DisplayName("a fit rendition keeps a portrait image whole too")
+	void fitKeepsAPortraitImage() throws IOException {
+		BufferedImage preview = decode(ImageProcessor.render(encode(redBlue(300, 900), "png"), FIT).get("preview"));
+
+		assertThat(preview.getWidth()).isEqualTo(33);
+		assertThat(preview.getHeight()).isEqualTo(100);
+	}
+
+	@Test
+	@DisplayName("a fit rendition never enlarges an image that is already small")
+	void fitDoesNotEnlarge() throws IOException {
+		Map<String, byte[]> result = ImageProcessor.render(encode(redBlue(60, 40), "png"), FIT);
+
+		for (String name : List.of("preview", "full")) {
+			BufferedImage image = decode(result.get(name));
+			assertThat(image.getWidth()).as(name + " width").isEqualTo(60);
+			assertThat(image.getHeight()).as(name + " height").isEqualTo(40);
+		}
+	}
+
+	@Test
+	@DisplayName("a fit rendition turns a rotated image upright, so the long side follows the picture")
+	void fitAppliesExifOrientation() throws IOException {
+		// Stored 400x200 (landscape) with orientation 6: upright it is 200x400 (portrait), red above blue.
+		byte[] jpeg = withSegments(encode(redBlue(400, 200), "jpeg"), segment(0xE1, exifWithOrientation(6, "x")));
+
+		BufferedImage full = decode(ImageProcessor.render(jpeg, FIT).get("full"));
+
+		assertThat(full.getWidth()).isEqualTo(200);
+		assertThat(full.getHeight()).isEqualTo(400);
+		assertThat(near(full.getRGB(100, 5), Color.RED)).as("top is red").isTrue();
+		assertThat(near(full.getRGB(100, 395), Color.BLUE)).as("bottom is blue").isTrue();
+	}
+
+	@Test
+	@DisplayName("a large photograph is read with subsampling for a fit rendition and keeps its proportions")
+	void fitLargeImages() throws IOException {
+		BufferedImage full = decode(ImageProcessor.render(encode(redBlue(3000, 2000), "jpeg"), FIT).get("full"));
+
+		assertThat(full.getWidth()).isEqualTo(400);
+		assertThat(full.getHeight()).isEqualTo(267);
+		assertThat(near(full.getRGB(10, 130), Color.RED)).isTrue();
+		assertThat(near(full.getRGB(390, 130), Color.BLUE)).isTrue();
+	}
+
+	@Test
+	@DisplayName("square and fit renditions can be mixed in one category")
+	void mixedShapes() throws IOException {
+		List<Rendition> mixed = List.of(new Rendition("thumb", 64), Rendition.fit("full", 400));
+
+		Map<String, byte[]> result = ImageProcessor.render(encode(redBlue(800, 400), "png"), mixed);
+
+		assertThat(decode(result.get("thumb")).getWidth()).isEqualTo(64);
+		assertThat(decode(result.get("thumb")).getHeight()).isEqualTo(64);
+		assertThat(decode(result.get("full")).getWidth()).isEqualTo(400);
+		assertThat(decode(result.get("full")).getHeight()).isEqualTo(200);
+	}
+
+	@Test
+	@DisplayName("EXIF, a comment and trailing data are not in a fit rendition either")
+	void fitStripsMetadata() throws IOException {
+		byte[] jpeg = withSegments(encode(redBlue(300, 200), "jpeg"),
+				segment(0xE1, exifWithOrientation(1, "GPS-LATITUDE-52.5200-SECRET")),
+				segment(0xFE, "COMMENT-SECRET-OWNER-NAME".getBytes(StandardCharsets.US_ASCII)));
+
+		for (byte[] rendition : ImageProcessor.render(jpeg, FIT).values()) {
+			String text = new String(rendition, StandardCharsets.ISO_8859_1);
+			assertThat(text).doesNotContain("SECRET").doesNotContain("GPS").doesNotContain("Exif").doesNotContain("COMMENT");
+		}
 	}
 
 	// --- orientation ------------------------------------------------------------------------------------------------

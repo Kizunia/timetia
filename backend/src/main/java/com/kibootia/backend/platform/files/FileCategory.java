@@ -12,7 +12,8 @@ import java.util.regex.Pattern;
  *
  * @param name lower-case letters, digits and hyphens; part of every object key
  * @param maxBytes the largest upload accepted for this category; the module's own limit applies as well
- * @param renditions the square images made from each upload, for example a small and a large avatar
+ * @param renditions the images made from each upload, for example a small and a large square avatar, or a preview and
+ *        a full-size picture that keep their proportions
  */
 public record FileCategory(String name, long maxBytes, List<Rendition> renditions) {
 
@@ -35,9 +36,10 @@ public record FileCategory(String name, long maxBytes, List<Rendition> rendition
 	 * One size an image is kept in.
 	 *
 	 * @param name the name used to ask for it, lower-case letters and digits, for example {@code small}
-	 * @param pixels the width and the height of the square image
+	 * @param pixels for a {@link Shape#SQUARE} the width and the height; for a {@link Shape#FIT} the longest side
+	 * @param shape how the image is cut to that size
 	 */
-	public record Rendition(String name, int pixels) {
+	public record Rendition(String name, int pixels, Shape shape) {
 
 		public Rendition {
 			if (name == null || !name.matches("[a-z0-9]+")) {
@@ -46,7 +48,31 @@ public record FileCategory(String name, long maxBytes, List<Rendition> rendition
 			if (pixels < 8 || pixels > 2048) {
 				throw new IllegalArgumentException("A rendition is between 8 and 2048 pixels wide");
 			}
+			if (shape == null) {
+				throw new IllegalArgumentException("A rendition needs a shape");
+			}
 		}
+
+		/** A square rendition, cut from the centre of the image (an avatar). */
+		public Rendition(String name, int pixels) {
+			this(name, pixels, Shape.SQUARE);
+		}
+
+		/** A rendition that keeps the whole image and its proportions, its longest side at most {@code pixels}. */
+		public static Rendition fit(String name, int pixels) {
+			return new Rendition(name, pixels, Shape.FIT);
+		}
+
+	}
+
+	/** How a rendition is cut from the upright image. */
+	public enum Shape {
+
+		/** The centred square of the image, scaled to the rendition's size; a smaller image is enlarged. */
+		SQUARE,
+
+		/** The whole image with its proportions; the longest side is the rendition's size, and it is never enlarged. */
+		FIT
 
 	}
 

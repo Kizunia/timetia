@@ -27,12 +27,14 @@ import com.twelvemonkeys.imageio.metadata.tiff.TIFFReader;
 
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.files.FileCategory.Rendition;
+import com.kibootia.backend.platform.files.FileCategory.Shape;
 
 /**
  * Turns an uploaded image into the renditions of its category (ADR 0029): decoded from the bytes, turned upright by its
- * EXIF orientation, cut to the centred square, scaled to each size and written as a new PNG. A new image is drawn each
- * time, so nothing of the original carries over: no EXIF, no GPS position, no embedded thumbnail, no comment, and
- * nothing hidden after the end of the image. The original is never stored.
+ * EXIF orientation, cut to the centred square or kept whole with its proportions (the rendition's shape), scaled to
+ * each size and written as a new PNG. A new image is drawn each time, so nothing of the original carries over: no EXIF,
+ * no GPS position, no embedded thumbnail, no comment, and nothing hidden after the end of the image. The original is
+ * never stored.
  *
  * <p>The decoder is told the size first and refuses an image with too many pixels, which is the usual way a small file
  * grows into gigabytes of memory. A big image is read with subsampling, so it is never held at full size.
@@ -61,10 +63,21 @@ final class ImageProcessor {
 	 */
 	static Map<String, byte[]> render(byte[] source, List<Rendition> renditions) {
 		BufferedImage image = decode(source, renditions.stream().mapToInt(Rendition::pixels).max().orElse(1));
-		BufferedImage square = centreSquare(orient(image, exifOrientation(source)));
+		BufferedImage upright = orient(image, exifOrientation(source));
+		BufferedImage square = null;
 		Map<String, byte[]> result = new LinkedHashMap<>();
 		for (Rendition rendition : renditions) {
-			result.put(rendition.name(), png(scale(square, rendition.pixels())));
+			BufferedImage made;
+			if (rendition.shape() == Shape.FIT) {
+				made = fit(upright, rendition.pixels());
+			}
+			else {
+				if (square == null) {
+					square = centreSquare(upright);
+				}
+				made = scale(square, rendition.pixels(), rendition.pixels());
+			}
+			result.put(rendition.name(), png(made));
 		}
 		return result;
 	}
@@ -205,23 +218,46 @@ final class ImageProcessor {
 		return square;
 	}
 
-	/** Halves while the image is more than twice the target, then makes the last step, which keeps shrinking sharp. */
-	private static BufferedImage scale(BufferedImage image, int size) {
-		BufferedImage current = image;
-		while (current.getWidth() / 2 >= size) {
-			current = resize(current, current.getWidth() / 2);
+	/**
+	 * The whole image with its proportions, its longest side at most {@code longest}. An image that is already small
+	 * enough keeps its size; it is still drawn anew, so nothing of the decoded original carries over.
+	 */
+	private static BufferedImage fit(BufferedImage image, int longest) {
+		int width = image.getWidth();
+		int height = image.getHeight();
+		int side = Math.max(width, height);
+		int targetWidth = width;
+		int targetHeight = height;
+		if (side > longest) {
+			double ratio = (double) longest / side;
+			targetWidth = Math.max(1, (int) Math.round(width * ratio));
+			targetHeight = Math.max(1, (int) Math.round(height * ratio));
 		}
-		return (current.getWidth() == size) ? current : resize(current, size);
+		return scale(image, targetWidth, targetHeight);
 	}
 
-	private static BufferedImage resize(BufferedImage image, int size) {
-		BufferedImage result = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+	/**
+	 * Halves while the image is more than twice the target in both directions, then makes the last step, which keeps
+	 * shrinking sharp. The result is always an image drawn here, never the one passed in.
+	 */
+	private static BufferedImage scale(BufferedImage image, int width, int height) {
+		BufferedImage current = image;
+		while (current.getWidth() / 2 >= width && current.getHeight() / 2 >= height) {
+			current = resize(current, current.getWidth() / 2, current.getHeight() / 2);
+		}
+		boolean drawn = current != image;
+		return (drawn && current.getWidth() == width && current.getHeight() == height) ? current
+				: resize(current, width, height);
+	}
+
+	private static BufferedImage resize(BufferedImage image, int width, int height) {
+		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		java.awt.Graphics2D graphics = result.createGraphics();
 		try {
 			graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 			graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			graphics.drawImage(image, 0, 0, size, size, null);
+			graphics.drawImage(image, 0, 0, width, height, null);
 		}
 		finally {
 			graphics.dispose();
