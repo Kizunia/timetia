@@ -72,6 +72,14 @@ async function expectLoaded(image: Locator, pixels: number) {
 const photo = (page: Page) => page.getByRole("img", { name: "Your photo" });
 const headerAvatar = (page: Page) => page.getByRole("banner").getByTestId("avatar");
 
+/**
+ * Axe measures colours as they are at that moment, and a toast that is still fading in or out has a colour that is not
+ * its final one, so a check made while one is on screen fails now and then. Wait until they are gone.
+ */
+async function expectNoToasts(page: Page) {
+  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0, { timeout: 15_000 });
+}
+
 async function choose(page: Page, file: { name: string; mimeType: string; buffer: Buffer }) {
   await page.getByTestId("avatar-input").setInputFiles(file);
 }
@@ -106,6 +114,7 @@ test("uploading a JPEG shows it in the page and in the header, at the sizes the 
   await expectLoaded(headerAvatar(user).locator("img"), 64);
   await expect(user.getByRole("button", { name: "Replace photo" })).toBeVisible();
   await expect(user.getByRole("button", { name: "Remove photo" })).toBeVisible();
+  await expectNoToasts(user);
   await expectNoAccessibilityViolations(user);
 });
 
@@ -214,5 +223,6 @@ test("removing the photo brings the initials back, and the API says there is non
     return { status: response.status, code: ((await response.json()) as { code: string }).code };
   }, userId);
   expect(answer).toEqual({ status: 404, code: "identity.avatar_not_found" });
+  await expectNoToasts(user);
   await expectNoAccessibilityViolations(user);
 });
