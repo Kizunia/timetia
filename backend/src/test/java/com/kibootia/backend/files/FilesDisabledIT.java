@@ -28,8 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * The files module can be switched off with {@code kibootia.files.enabled=false} (ADR 0024): the application starts with
  * no storage setting and none of the module's beans, everything else works, and the avatar endpoints say why they do not.
- * This is the module-removal check for {@code files}; the CI job that runs the same for every module comes with
- * milestone 5.
+ * This is the detailed module-removal check for {@code files}; the CI job {@code module-removal} also starts the whole
+ * application with the module off and runs the {@code startup} test group (see {@code ModuleStartupIT}).
  */
 @TestPropertySource(properties = { "kibootia.files.enabled=false", "kibootia.files.access-key=",
 		"kibootia.files.secret-key=" })
