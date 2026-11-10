@@ -1,35 +1,74 @@
 package com.kibootia.backend.identity.web;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import java.util.Locale;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+import com.kibootia.backend.identity.application.MyProfile;
+import com.kibootia.backend.identity.application.ProfileService;
+import com.kibootia.backend.identity.application.UserProfile;
+import com.kibootia.backend.platform.errors.ApiException;
+import com.kibootia.backend.platform.errors.ApiFieldError;
+import com.kibootia.backend.platform.errors.ProblemCodes;
 
 /**
- * Returns the identity of the signed-in user, read from the validated access token. Milestone 1 adds no profile
- * data; permissions and the profile are added when the access module exists (ADR 0025).
+ * The signed-in user's own account (ADR 0041): who they are, what they may do (for the interface's sake), their
+ * preferences, and asking for the verification email again. Everything here is the caller's own, so no permission is
+ * needed; the first and last work before the email address is verified.
  */
 @RestController
+@RequestMapping("/api/v1/me")
 class MeController {
 
-	@GetMapping("/api/v1/me")
-	MeResponse me(@AuthenticationPrincipal Jwt token) {
-		return new MeResponse(token.getSubject(), token.getClaimAsString("preferred_username"),
-				token.getClaimAsString("email"), Boolean.TRUE.equals(token.getClaimAsBoolean("email_verified")),
-				token.getClaimAsString("name"));
+	private final ProfileService profiles;
+
+	MeController(ProfileService profiles) {
+		this.profiles = profiles;
 	}
 
-	record MeResponse(
-			@Schema(requiredMode = REQUIRED) String id,
-			@Schema(nullable = true) String username,
-			@Schema(nullable = true) String email,
-			@Schema(requiredMode = REQUIRED) boolean emailVerified,
-			@Schema(nullable = true) String name) {
+	@GetMapping
+	MeResponse me() {
+		return toResponse(this.profiles.me());
+	}
 
+	@PutMapping("/preferences")
+	MeResponse updatePreferences(@Valid @RequestBody UpdatePreferencesRequest request) {
+		return toResponse(this.profiles.updatePreferences(theme(request.theme())));
+	}
+
+	/** Asks Keycloak to send the verification email again. Rate limited. */
+	@PostMapping("/verification-email")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void resendVerificationEmail() {
+		this.profiles.resendVerificationEmail();
+	}
+
+	private static UserProfile.Theme theme(String value) {
+		try {
+			return UserProfile.Theme.valueOf(value.toUpperCase(Locale.ROOT));
+		}
+		catch (IllegalArgumentException ex) {
+			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.",
+					List.of(new ApiFieldError("theme", "invalid_value", "must be SYSTEM, LIGHT or DARK")));
+		}
+	}
+
+	private static MeResponse toResponse(MyProfile me) {
+		UserProfile profile = me.profile();
+		return new MeResponse(profile.id(), profile.username(), profile.email(), me.emailVerified(),
+				profile.displayName(), profile.status().name(), profile.theme().name(),
+				me.permissions().stream().sorted().toList(),
+				UserRoleResponse.of(me.roles()));
 	}
 
 }

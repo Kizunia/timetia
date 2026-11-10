@@ -78,6 +78,11 @@ class JpaNoteStore implements NoteStore {
 		return this.notes.purgeDeletedBefore(UuidBytes.toBytes(TenantContext.require()), utc(cutoff));
 	}
 
+	@Override
+	public int purgeOwnedBy(UUID owner) {
+		return this.notes.purgeOwnedBy(UuidBytes.toBytes(TenantContext.require()), UuidBytes.toBytes(owner));
+	}
+
 	/** A lower-case LIKE pattern matching the text anywhere, with the user's own % and _ made literal. */
 	private static String likePattern(String text) {
 		if (text == null || text.isBlank()) {

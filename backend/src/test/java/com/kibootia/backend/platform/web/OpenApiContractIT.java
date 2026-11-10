@@ -41,7 +41,8 @@ class OpenApiContractIT {
 	MockMvc mvc;
 
 	private JsonNode generate() throws Exception {
-		String json = mvc.perform(get("/v3/api-docs").with(jwt()))
+		String json = mvc.perform(get("/v3/api-docs").with(jwt().jwt((token) -> token.subject("11111111-1111-7111-8111-111111111111")
+				.claim("email_verified", true))))
 			.andExpect(status().isOk())
 			.andReturn()
 			.getResponse()
@@ -78,8 +79,12 @@ class OpenApiContractIT {
 		assertThat(api.at("/security/0/bearer").isArray()).isTrue();
 		Set<String> paths = new java.util.TreeSet<>();
 		api.get("paths").propertyNames().forEach(paths::add);
-		assertThat(paths).containsExactlyInAnyOrder("/api/v1/me", "/api/v1/notes", "/api/v1/notes/{id}",
-				"/api/v1/notes/{id}/restore", "/api/v1/failed-events", "/api/v1/failed-events/{id}/retry");
+		assertThat(paths).containsExactlyInAnyOrder("/api/v1/me", "/api/v1/me/preferences",
+				"/api/v1/me/verification-email", "/api/v1/notes", "/api/v1/notes/{id}", "/api/v1/notes/{id}/restore",
+				"/api/v1/failed-events", "/api/v1/failed-events/{id}/retry", "/api/v1/permissions", "/api/v1/roles",
+				"/api/v1/roles/{id}", "/api/v1/users", "/api/v1/users/{id}", "/api/v1/users/{id}/invitation",
+				"/api/v1/users/{id}/disable", "/api/v1/users/{id}/enable", "/api/v1/users/{id}/restore",
+				"/api/v1/users/{id}/erase", "/api/v1/users/{userId}/roles", "/api/v1/audit-entries");
 		assertThat(paths).allMatch((path) -> path.startsWith("/api/v1/"));
 	}
 

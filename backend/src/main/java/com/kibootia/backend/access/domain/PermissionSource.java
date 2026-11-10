@@ -5,8 +5,8 @@ import java.util.Set;
 import com.kibootia.backend.platform.authorization.Caller;
 
 /**
- * Where a caller's permissions come from. Milestone 2 reads them from the built-in {@code user} role defined in code;
- * milestone 3 replaces this with the roles stored in the database, loaded by one indexed query per request (ADR 0044).
+ * Where a caller's permissions come from: the roles stored in the database, read by one indexed query per call so a
+ * change applies on the next request on any instance (ADR 0044).
  */
 public interface PermissionSource {
 

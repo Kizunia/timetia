@@ -4,7 +4,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.kibootia.backend.access.builtin.BuiltInRolePermissionSource;
 import com.kibootia.backend.access.domain.DefaultDecisionPoint;
 import com.kibootia.backend.access.domain.PermissionRegistry;
 import com.kibootia.backend.access.domain.PermissionSource;
@@ -24,8 +23,8 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * Wires the decision point (ADR 0044): the permissions every module declares, the source of a caller's permissions
- * and the Java policies. Milestone 3 swaps {@link #permissionSource} for the stored roles.
+ * Wires the decision point (ADR 0044): the permissions every module declares and the Java policies. A caller's
+ * permissions come from the stored roles ({@code StoredPermissionSource}, found by component scanning).
  */
 @Configuration(proxyBeanMethods = false)
 class AccessConfiguration {
@@ -35,11 +34,6 @@ class AccessConfiguration {
 		List<Permission> declared = new ArrayList<>();
 		providers.orderedStream().forEach((provider) -> declared.addAll(provider.permissions()));
 		return new PermissionRegistry(declared);
-	}
-
-	@Bean
-	PermissionSource permissionSource(PermissionRegistry registry) {
-		return new BuiltInRolePermissionSource(registry);
 	}
 
 	@Bean

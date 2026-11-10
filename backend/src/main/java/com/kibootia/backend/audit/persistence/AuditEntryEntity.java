@@ -74,6 +74,42 @@ class AuditEntryEntity {
 		this.changes = changes;
 	}
 
+	UUID getId() {
+		return this.id;
+	}
+
+	Instant getOccurredAt() {
+		return this.occurredAt;
+	}
+
+	UUID getActorId() {
+		return this.actorId;
+	}
+
+	String getAction() {
+		return this.action;
+	}
+
+	String getTargetType() {
+		return this.targetType;
+	}
+
+	UUID getTargetId() {
+		return this.targetId;
+	}
+
+	String getOutcome() {
+		return this.outcome;
+	}
+
+	String getTraceId() {
+		return this.traceId;
+	}
+
+	String getChanges() {
+		return this.changes;
+	}
+
 	/** A write needs a tenant; reads without one find nothing. */
 	@PrePersist
 	void requireTenant() {

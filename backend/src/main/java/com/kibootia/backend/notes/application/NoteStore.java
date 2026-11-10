@@ -43,4 +43,7 @@ public interface NoteStore {
 	/** Permanently removes notes deleted before the cutoff and returns how many. */
 	int purgeDeletedBefore(Instant cutoff);
 
+	/** Permanently removes every note the user owns, deleted or not, when the user is erased. Returns how many. */
+	int purgeOwnedBy(UUID owner);
+
 }

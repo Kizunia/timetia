@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.stereotype.Component;
 
+import com.kibootia.backend.identity.UserErased;
 import com.kibootia.backend.notes.NoteDeleted;
 import com.kibootia.backend.platform.events.DurableEventListener;
 
@@ -18,9 +19,22 @@ class NoteEvents {
 
 	private static final Logger log = LoggerFactory.getLogger(NoteEvents.class);
 
+	private final NoteStore notes;
+
+	NoteEvents(NoteStore notes) {
+		this.notes = notes;
+	}
+
 	@DurableEventListener
 	void on(NoteDeleted event) {
 		log.info("Note {} was deleted; nothing is attached to it yet", event.noteId());
+	}
+
+	/** A user was erased (ADR 0034): the notes they wrote go with them, deleted ones included. */
+	@DurableEventListener
+	void on(UserErased event) {
+		int removed = this.notes.purgeOwnedBy(event.userId());
+		log.info("Removed {} notes of erased user {}", removed, event.userId());
 	}
 
 }

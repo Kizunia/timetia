@@ -94,6 +94,11 @@ public class Authorization {
 		return scope;
 	}
 
+	/** Whether the signed-in user's email address is verified, as the token says (ADR 0041). */
+	public boolean isEmailVerified() {
+		return caller().emailVerified();
+	}
+
 	/** The id of the signed-in user, for ownership conditions in queries. */
 	public UUID currentUserId() {
 		return caller().userId();

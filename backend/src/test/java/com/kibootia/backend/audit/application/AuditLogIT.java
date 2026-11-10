@@ -201,13 +201,13 @@ class AuditLogIT {
 	}
 
 	@Test
-	@DisplayName("the repository offers no way to change or remove an entry except the retention purge")
+	@DisplayName("the repository can add, read and purge entries, and offers no way to change or remove one otherwise")
 	void appendOnly() throws ClassNotFoundException {
 		Class<?> repository = Class.forName("com.kibootia.backend.audit.persistence.AuditEntryRepository");
 
 		List<String> operations = Arrays.stream(repository.getDeclaredMethods()).map(Method::getName).sorted().toList();
 
-		assertThat(operations).containsExactly("deleteOccurredBefore", "save");
+		assertThat(operations).containsExactly("deleteOccurredBefore", "save", "search");
 	}
 
 	@Test

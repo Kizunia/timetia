@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.kibootia.backend.GrantedPermissions;
 import com.kibootia.backend.TestcontainersConfiguration;
 import com.kibootia.backend.platform.tenancy.TenantContext;
 
@@ -41,8 +42,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({ TestcontainersConfiguration.class, AuthorizationIT.Declares.class, AuthorizationIT.ProbeService.class,
-		AuthorizationIT.ProbeController.class })
+@Import({ TestcontainersConfiguration.class, GrantedPermissions.class, AuthorizationIT.Declares.class,
+		AuthorizationIT.ProbeService.class, AuthorizationIT.ProbeController.class })
 class AuthorizationIT {
 
 	static final UUID ALICE = UUID.fromString("11111111-1111-7111-8111-111111111111");
@@ -153,6 +154,7 @@ class AuthorizationIT {
 	@AfterEach
 	void clear() {
 		SecurityContextHolder.clearContext();
+		GrantedPermissions.reset();
 	}
 
 	private static void signInAs(UUID user) {

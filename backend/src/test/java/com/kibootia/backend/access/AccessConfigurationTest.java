@@ -1,11 +1,13 @@
 package com.kibootia.backend.access;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
+import com.kibootia.backend.access.domain.PermissionSource;
 import com.kibootia.backend.platform.authorization.Permission;
 import com.kibootia.backend.platform.authorization.PermissionProvider;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
@@ -41,6 +43,7 @@ class AccessConfigurationTest {
 
 	private final ApplicationContextRunner runner = new ApplicationContextRunner()
 		.withBean(Declares.class)
+		.withBean(PermissionSource.class, () -> (caller) -> Set.of())
 		.withUserConfiguration(AccessConfiguration.class);
 
 	@Test

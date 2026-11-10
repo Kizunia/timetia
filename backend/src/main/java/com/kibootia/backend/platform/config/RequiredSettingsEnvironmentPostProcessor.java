@@ -1,5 +1,6 @@
 package com.kibootia.backend.platform.config;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.boot.EnvironmentPostProcessor;
@@ -13,10 +14,18 @@ import org.springframework.util.StringUtils;
  */
 class RequiredSettingsEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
-	/** Required setting mapped to the hint shown to the developer. */
-	static final Map<String, String> REQUIRED = Map.of(
-			"spring.datasource.password",
-			"Set MYSQL_PASSWORD (run 'pnpm bootstrap' to create .env from .env.example, or export the variable).");
+	/** Required setting mapped to the hint shown to the developer, checked in this order. */
+	static final Map<String, String> REQUIRED = required();
+
+	private static Map<String, String> required() {
+		Map<String, String> required = new LinkedHashMap<>();
+		required.put("spring.datasource.password",
+				"Set MYSQL_PASSWORD (run 'pnpm bootstrap' to create .env from .env.example, or export the variable).");
+		required.put("kibootia.identity.keycloak.client-secret",
+				"Set KEYCLOAK_ADMIN_CLIENT_SECRET, the secret of the kibootia-admin service-account client (run "
+						+ "'pnpm bootstrap' to create .env from .env.example, or export the variable).");
+		return required;
+	}
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {

@@ -3,8 +3,11 @@ package com.kibootia.backend.audit.persistence;
 import java.time.Instant;
 import java.util.Map;
 
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import com.kibootia.backend.audit.application.AuditEntryStore;
@@ -28,8 +31,32 @@ class JpaAuditEntryStore implements AuditEntryStore {
 	}
 
 	@Override
+	public Page<Stored> search(Filter filter, Pageable pageable) {
+		return this.entries
+			.search(filter.actorId(), likePrefix(filter.actionPrefix()), filter.targetType(), filter.targetId(),
+					filter.from(), filter.to(), pageable)
+			.map((entity) -> AuditEntryMapper.toStored(entity, deserialise(entity.getChanges())));
+	}
+
+	@Override
 	public int deleteOccurredBefore(Instant cutoff) {
 		return this.entries.deleteOccurredBefore(cutoff);
+	}
+
+	/** A LIKE pattern matching the start of an action code, with the caller's own % and _ made literal. */
+	private static String likePrefix(String prefix) {
+		if (prefix == null || prefix.isBlank()) {
+			return null;
+		}
+		return prefix.strip().replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+	}
+
+	private Map<String, String> deserialise(String changes) {
+		if (changes == null || changes.isBlank()) {
+			return Map.of();
+		}
+		return this.json.readValue(changes, new TypeReference<Map<String, String>>() {
+		});
 	}
 
 	private String serialise(Map<String, String> changes) {

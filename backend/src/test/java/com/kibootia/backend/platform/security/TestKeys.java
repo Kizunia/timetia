@@ -75,7 +75,9 @@ final class TestKeys {
 			.claim("preferred_username", "demo")
 			.claim("email", "demo@kibootia.localhost")
 			.claim("email_verified", true)
-			.claim("name", "Demo User");
+			.claim("name", "Demo User")
+			.claim("given_name", "Demo")
+			.claim("family_name", "User");
 		customizer.accept(claims);
 		try {
 			SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(key.getKeyID()).build(),

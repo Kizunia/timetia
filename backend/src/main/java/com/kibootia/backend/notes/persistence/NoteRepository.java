@@ -39,6 +39,11 @@ interface NoteRepository extends JpaRepository<NoteEntity, UUID> {
 			""", nativeQuery = true)
 	int restore(byte[] id, byte[] tenant, LocalDateTime now, byte[] by);
 
+	/** Native for the same reasons as {@link #restore}: it must reach deleted notes, so it states the tenant itself. */
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query(value = "delete from note where tenant_id = :tenant and owner_id = :owner", nativeQuery = true)
+	int purgeOwnedBy(byte[] tenant, byte[] owner);
+
 	/** Native for the same reasons as {@link #restore}. */
 	@Modifying(clearAutomatically = true, flushAutomatically = true)
 	@Query(value = "delete from note where tenant_id = :tenant and deleted_at is not null and deleted_at < :cutoff",
