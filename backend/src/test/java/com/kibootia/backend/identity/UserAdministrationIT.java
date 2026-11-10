@@ -249,11 +249,10 @@ class UserAdministrationIT extends AdminApiTest {
 	}
 
 	@Test
-	@DisplayName("erasing a deleted user removes their Keycloak account, profile, roles and notes and leaves only their ID in the log")
+	@DisplayName("erasing a deleted user removes their Keycloak account, profile and roles and leaves only their ID in the log")
 	void erasing() throws Exception {
 		ensureAdmin();
 		signIn(ALICE);
-		post(user(ALICE), "/api/v1/notes", "{\"title\":\"Mine\",\"body\":\"b\"}").andExpect(status().isCreated());
 		setRoles(ALICE, builtInRoleId("USER"), createRole("Reviewers"));
 
 		post(admin(), "/api/v1/users/" + ALICE + "/erase", null).andExpect(status().isConflict())
@@ -263,8 +262,6 @@ class UserAdministrationIT extends AdminApiTest {
 		post(admin(), "/api/v1/users/" + ALICE + "/erase", null).andExpect(status().isAccepted());
 
 		Await.until("the user to be erased", () -> !profileExists(ALICE));
-		Await.until("the notes to be erased",
-				() -> count("select count(*) from note where owner_id = unhex(?)", hex(ALICE)) == 0);
 		assertThat(this.keycloak.calls()).contains("delete:" + ALICE);
 		assertThat(count("select count(*) from role_assignment where user_id = unhex(?)", hex(ALICE))).isZero();
 		assertThat(audited("identity.user.erasure-requested", ALICE)).isEqualTo(1);

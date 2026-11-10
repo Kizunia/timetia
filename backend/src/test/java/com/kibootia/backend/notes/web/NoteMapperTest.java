@@ -25,12 +25,24 @@ class NoteMapperTest {
 	void toResponse() {
 		Instant created = Instant.parse("2026-11-09T10:00:00Z");
 		Instant updated = Instant.parse("2026-11-09T11:00:00Z");
-		Note note = new Note(ID, TENANT, OWNER, "Title", "Body", 3, created, updated);
+		Note note = new Note(ID, TENANT, OWNER, "Title", "Body", 3, created, updated, null);
 
 		NoteResponse response = NoteMapper.toResponse(note);
 
-		assertThat(response).isEqualTo(new NoteResponse(ID, OWNER, "Title", "Body", 3, created, updated));
+		assertThat(response).isEqualTo(new NoteResponse(ID, OWNER, "Title", "Body", 3, created, updated, null));
 		assertThat(NoteResponse.class.getRecordComponents()).extracting((c) -> c.getName()).doesNotContain("tenantId");
+	}
+
+	@Test
+	@DisplayName("the stored file of a note is shown only as a version that changes with it, never as a file ID of its own")
+	void attachmentVersion() {
+		UUID file = UUID.fromString("33333333-3333-7333-8333-333333333333");
+		Instant at = Instant.parse("2026-11-09T10:00:00Z");
+
+		NoteResponse response = NoteMapper.toResponse(new Note(ID, TENANT, OWNER, "Title", "Body", 3, at, at, file));
+
+		assertThat(response.attachmentVersion()).isEqualTo(file);
+		assertThat(NoteResponse.class.getRecordComponents()).extracting((c) -> c.getName()).doesNotContain("attachmentFileId");
 	}
 
 	@Test

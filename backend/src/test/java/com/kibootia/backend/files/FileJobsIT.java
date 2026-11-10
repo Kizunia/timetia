@@ -129,7 +129,7 @@ class FileJobsIT extends AdminApiTest {
 		this.objectStorage.putAt(key(oldOrphan, "small"), new byte[] { 3 }, Instant.now().minus(Duration.ofDays(3)));
 		UUID youngOrphan = UUID.randomUUID();
 		this.objectStorage.putAt(key(youngOrphan, "large"), new byte[] { 4 }, Instant.now().minus(Duration.ofHours(1)));
-		this.objectStorage.putAt(TENANT + "/notes.txt", new byte[] { 5 }, Instant.now().minus(Duration.ofDays(30)));
+		this.objectStorage.putAt(TENANT + "/readme.txt", new byte[] { 5 }, Instant.now().minus(Duration.ofDays(30)));
 		this.objectStorage.putAt("another-tenant/avatar/" + UUID.randomUUID() + "/large", new byte[] { 6 },
 				Instant.now().minus(Duration.ofDays(30)));
 		UUID lost = file(BOB, 3, null);
@@ -147,7 +147,7 @@ class FileJobsIT extends AdminApiTest {
 		assertThat(hasObjects(oldOrphan)).isFalse();
 		assertThat(hasObjects(youngOrphan)).isTrue();
 		assertThat(hasObjects(referenced)).isTrue();
-		assertThat(this.objectStorage.contains(TENANT + "/notes.txt")).isTrue();
+		assertThat(this.objectStorage.contains(TENANT + "/readme.txt")).isTrue();
 		assertThat(this.objectStorage.keys()).anyMatch((key) -> key.startsWith("another-tenant/"));
 		assertThat(rowExists(lost)).as("metadata is never deleted on the word of a listing").isTrue();
 	}

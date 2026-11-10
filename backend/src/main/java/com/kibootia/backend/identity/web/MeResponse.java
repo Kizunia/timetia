@@ -22,6 +22,7 @@ public record MeResponse(
 		@Schema(requiredMode = REQUIRED) List<String> permissions,
 		@Schema(requiredMode = REQUIRED) List<UserRoleResponse> roles,
 			@Schema(nullable = true, description = "Changes whenever the avatar does; null when there is none. Use it to refresh a cached image.") UUID avatarVersion,
-			@Schema(requiredMode = REQUIRED, description = "False when the files module is switched off; then there are no avatars.") boolean avatarsEnabled) {
+			@Schema(requiredMode = REQUIRED, description = "False when the files module is switched off; then there are no avatars.") boolean avatarsEnabled,
+			@Schema(requiredMode = REQUIRED, description = "False when the files module is switched off; then no feature can keep a file, such as a note's picture.") boolean filesEnabled) {
 
 }

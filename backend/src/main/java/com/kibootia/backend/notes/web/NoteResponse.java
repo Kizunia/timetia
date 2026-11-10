@@ -18,6 +18,7 @@ public record NoteResponse(
 		@Schema(requiredMode = REQUIRED) String body,
 		@Schema(requiredMode = REQUIRED) long version,
 		@Schema(requiredMode = REQUIRED) Instant createdAt,
-		@Schema(requiredMode = REQUIRED) Instant updatedAt) {
+		@Schema(requiredMode = REQUIRED) Instant updatedAt,
+		@Schema(nullable = true, description = "Changes whenever the picture does; null when there is none. Use it to refresh a cached image.") UUID attachmentVersion) {
 
 }

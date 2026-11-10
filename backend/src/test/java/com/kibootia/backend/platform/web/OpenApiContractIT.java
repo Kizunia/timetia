@@ -79,13 +79,16 @@ class OpenApiContractIT {
 		assertThat(api.at("/security/0/bearer").isArray()).isTrue();
 		Set<String> paths = new java.util.TreeSet<>();
 		api.get("paths").propertyNames().forEach(paths::add);
+		assertThat(paths).allMatch((path) -> path.startsWith("/api/v1/"));
+		// The notes module is removable (ADR 0024), so its endpoints are checked in NotesOpenApiIT and left out here: this
+		// list stays right whether or not the module is present.
+		paths.removeIf((path) -> path.equals("/api/v1/notes") || path.startsWith("/api/v1/notes/"));
 		assertThat(paths).containsExactlyInAnyOrder("/api/v1/me", "/api/v1/me/preferences",
-				"/api/v1/me/verification-email", "/api/v1/me/avatar", "/api/v1/users/{id}/avatar", "/api/v1/notes", "/api/v1/notes/{id}", "/api/v1/notes/{id}/restore",
+				"/api/v1/me/verification-email", "/api/v1/me/avatar", "/api/v1/users/{id}/avatar",
 				"/api/v1/failed-events", "/api/v1/failed-events/{id}/retry", "/api/v1/permissions", "/api/v1/roles",
 				"/api/v1/roles/{id}", "/api/v1/users", "/api/v1/users/{id}", "/api/v1/users/{id}/invitation",
 				"/api/v1/users/{id}/disable", "/api/v1/users/{id}/enable", "/api/v1/users/{id}/restore",
 				"/api/v1/users/{id}/erase", "/api/v1/users/{userId}/roles", "/api/v1/audit-entries");
-		assertThat(paths).allMatch((path) -> path.startsWith("/api/v1/"));
 	}
 
 	@Test
@@ -109,14 +112,10 @@ class OpenApiContractIT {
 	void fieldsAreRequiredOrNullable() throws Exception {
 		JsonNode schemas = generate().at("/components/schemas");
 
-		assertThat(schemas.at("/NoteResponse/required").toString()).contains("id", "title", "body", "version",
-				"createdAt");
-		assertThat(schemas.at("/MeResponse/required").toString()).contains("id", "emailVerified")
+		assertThat(schemas.at("/MeResponse/required").toString()).contains("id", "emailVerified", "filesEnabled")
 			.doesNotContain("username");
 		assertThat(schemas.at("/MeResponse/properties/email/type").toString()).contains("string", "null");
 		assertThat(schemas.at("/MeResponse/properties/id/type").toString()).doesNotContain("null");
-		assertThat(schemas.at("/CreateNoteRequest/required").toString()).contains("title", "body");
-		assertThat(schemas.at("/UpdateNoteRequest/required").toString()).contains("title", "body", "version");
 	}
 
 }

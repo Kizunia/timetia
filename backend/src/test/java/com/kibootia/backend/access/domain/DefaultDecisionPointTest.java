@@ -28,16 +28,16 @@ class DefaultDecisionPointTest {
 
 	static final UUID BOB = UUID.fromString("22222222-2222-7222-8222-222222222222");
 
-	static final String UPDATE = "notes.notes.update";
+	static final String UPDATE = "widgets.widgets.update";
 
-	static final String UPDATE_ANY = "notes.notes.update-any";
+	static final String UPDATE_ANY = "widgets.widgets.update-any";
 
-	static final String RESTORE = "notes.notes.restore";
+	static final String RESTORE = "widgets.widgets.restore";
 
 	static final PermissionRegistry REGISTRY = new PermissionRegistry(List.of(
-			Permission.forEveryUser(UPDATE, "Change own notes"),
-			Permission.restricted(UPDATE_ANY, "Change anyone's notes"),
-			Permission.restricted(RESTORE, "Restore deleted notes")));
+			Permission.forEveryUser(UPDATE, "Change own widgets"),
+			Permission.restricted(UPDATE_ANY, "Change anyone's widgets"),
+			Permission.restricted(RESTORE, "Restore deleted widgets")));
 
 	record Note(UUID ownerId, UUID tenantId) implements Owned, TenantBound {
 
@@ -67,8 +67,8 @@ class DefaultDecisionPointTest {
 		@Test
 		@DisplayName("refuses a name that is not <module>.<resource>.<action>")
 		void refusesBadNames() {
-			for (String bad : List.of("update", "notes.update", "Notes.notes.update", "notes.notes.Update",
-					"notes.notes.update.again", "notes..update", "notes.notes.update_any")) {
+			for (String bad : List.of("update", "widgets.update", "Widgets.widgets.update", "widgets.widgets.Update",
+					"widgets.widgets.update.again", "widgets..update", "widgets.widgets.update_any")) {
 				assertThatThrownBy(() -> new PermissionRegistry(List.of(Permission.restricted(bad, "x"))))
 					.as(bad)
 					.isInstanceOf(IllegalStateException.class)
@@ -140,9 +140,9 @@ class DefaultDecisionPointTest {
 		@Test
 		@DisplayName("is an error for a permission nobody declared")
 		void unknownPermission() {
-			assertThatThrownBy(() -> pointFor(Set.of()).scopeFor(alice(), "notes.notes.typo"))
+			assertThatThrownBy(() -> pointFor(Set.of()).scopeFor(alice(), "widgets.widgets.typo"))
 				.isInstanceOf(IllegalStateException.class)
-				.hasMessageContaining("notes.notes.typo");
+				.hasMessageContaining("widgets.widgets.typo");
 		}
 
 	}
@@ -151,12 +151,12 @@ class DefaultDecisionPointTest {
 	@DisplayName("a caller who has not verified their email address")
 	class Unverified {
 
-		static final String BEFORE = "notes.notes.read-own";
+		static final String BEFORE = "widgets.widgets.read-own";
 
 		final PermissionRegistry registry = new PermissionRegistry(List.of(
-				Permission.forEveryUser(UPDATE, "Change own notes"),
-				Permission.restricted(UPDATE_ANY, "Change anyone's notes"),
-				Permission.forEveryUser(BEFORE, "Read own notes").beforeVerification()));
+				Permission.forEveryUser(UPDATE, "Change own widgets"),
+				Permission.restricted(UPDATE_ANY, "Change anyone's widgets"),
+				Permission.forEveryUser(BEFORE, "Read own widgets").beforeVerification()));
 
 		Caller unverified() {
 			return Caller.user(ALICE, TENANT, false);
@@ -248,7 +248,7 @@ class DefaultDecisionPointTest {
 		@Test
 		@DisplayName("lets a module's own policy decide for the records it supports")
 		void modulePolicy() {
-			ResourcePolicy sharedNotes = new ResourcePolicy() {
+			ResourcePolicy sharedWidgets = new ResourcePolicy() {
 				@Override
 				public boolean supports(Object resource) {
 					return resource instanceof Note;
@@ -259,7 +259,7 @@ class DefaultDecisionPointTest {
 					return scope == Scope.OWN && ((Note) resource).ownerId().equals(BOB);
 				}
 			};
-			DefaultDecisionPoint point = pointFor(Set.of(UPDATE), sharedNotes);
+			DefaultDecisionPoint point = pointFor(Set.of(UPDATE), sharedWidgets);
 
 			assertThat(point.can(alice(), UPDATE, new Note(BOB, TENANT))).isTrue();
 			assertThat(point.can(alice(), UPDATE, new Note(ALICE, TENANT))).isFalse();

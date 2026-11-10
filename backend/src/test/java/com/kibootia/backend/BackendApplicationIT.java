@@ -1,5 +1,6 @@
 package com.kibootia.backend;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Starts the whole application against MySQL: Flyway migrates from an empty database and Hibernate validates the
  * mapped tables (including the event publication registry) against the migrated schema.
  */
+@Tag("startup")
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 class BackendApplicationIT {

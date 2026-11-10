@@ -33,7 +33,19 @@ class NoteEntityMapperTest {
 
 		Note note = NoteEntityMapper.toModel(entity);
 
-		assertThat(note).isEqualTo(new Note(ID, TENANT, OWNER, "Title", "Body", 4, created, updated));
+		assertThat(note).isEqualTo(new Note(ID, TENANT, OWNER, "Title", "Body", 4, created, updated, null));
+	}
+
+	@Test
+	@DisplayName("the attachment of an entity reaches the note, and a new entity has none")
+	void attachment() {
+		UUID file = UUID.fromString("33333333-3333-7333-8333-333333333333");
+		NoteEntity entity = NoteEntityMapper.toNewEntity(OWNER, "Title", "Body");
+		assertThat(NoteEntityMapper.toModel(entity).attachmentFileId()).isNull();
+
+		ReflectionTestUtils.setField(entity, "attachmentFileId", file);
+
+		assertThat(NoteEntityMapper.toModel(entity).attachmentFileId()).isEqualTo(file);
 	}
 
 	@Test

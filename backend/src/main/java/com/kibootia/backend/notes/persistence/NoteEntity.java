@@ -26,6 +26,14 @@ class NoteEntity extends SoftDeletableEntity {
 	@Column(name = "body", nullable = false, length = 4000)
 	private String body;
 
+	/**
+	 * The stored picture of the note, or null. Never written through the entity ({@code updatable = false}): an ordinary
+	 * edit of the title or body must not put back an attachment that changed while it was being made. The attachment is
+	 * changed by a statement of its own, in {@link JpaNoteStore}.
+	 */
+	@Column(name = "attachment_file_id", updatable = false, columnDefinition = "binary(16)")
+	private UUID attachmentFileId;
+
 	protected NoteEntity() {
 	}
 
@@ -45,6 +53,10 @@ class NoteEntity extends SoftDeletableEntity {
 
 	String getBody() {
 		return this.body;
+	}
+
+	UUID getAttachmentFileId() {
+		return this.attachmentFileId;
 	}
 
 	void change(String title, String body) {

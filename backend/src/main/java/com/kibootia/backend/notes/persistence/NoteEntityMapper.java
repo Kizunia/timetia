@@ -10,7 +10,7 @@ final class NoteEntityMapper {
 
 	static Note toModel(NoteEntity entity) {
 		return new Note(entity.getId(), entity.getTenantId(), entity.getOwnerId(), entity.getTitle(), entity.getBody(),
-				entity.getVersion(), entity.getCreatedAt(), entity.getUpdatedAt());
+				entity.getVersion(), entity.getCreatedAt(), entity.getUpdatedAt(), entity.getAttachmentFileId());
 	}
 
 	static NoteEntity toNewEntity(java.util.UUID ownerId, String title, String body) {

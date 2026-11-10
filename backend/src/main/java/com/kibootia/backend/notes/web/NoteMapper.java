@@ -20,7 +20,7 @@ final class NoteMapper {
 
 	static NoteResponse toResponse(Note note) {
 		return new NoteResponse(note.id(), note.ownerId(), note.title(), note.body(), note.version(), note.createdAt(),
-				note.updatedAt());
+				note.updatedAt(), note.attachmentFileId());
 	}
 
 }

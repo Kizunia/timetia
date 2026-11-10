@@ -57,7 +57,9 @@ class FilesDisabledIT extends AdminApiTest {
 		ByteArrayOutputStream png = new ByteArrayOutputStream();
 		ImageIO.write(picture, "png", png);
 
-		get(user(ALICE), "/api/v1/me").andExpect(status().isOk()).andExpect(jsonPath("$.avatarsEnabled").value(false));
+		get(user(ALICE), "/api/v1/me").andExpect(status().isOk())
+			.andExpect(jsonPath("$.avatarsEnabled").value(false))
+			.andExpect(jsonPath("$.filesEnabled").value(false));
 		this.mvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.PUT, "/api/v1/me/avatar")
 			.file(new MockMultipartFile("file", "a.png", "image/png", png.toByteArray()))
 			.with(user(ALICE))).andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("files.disabled"));
@@ -73,7 +75,7 @@ class FilesDisabledIT extends AdminApiTest {
 		ensureAdmin();
 
 		get(admin(), "/api/v1/users").andExpect(status().isOk());
-		post(user(ALICE), "/api/v1/notes", "{\"title\":\"Still works\",\"body\":\"b\"}").andExpect(status().isCreated());
+		get(user(ALICE), "/api/v1/me").andExpect(status().isOk());
 	}
 
 }

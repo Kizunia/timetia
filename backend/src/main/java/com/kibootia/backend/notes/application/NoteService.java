@@ -96,9 +96,17 @@ public class NoteService {
 		this.events.publishEvent(new NoteDeleted(id, this.eventContexts.capture()));
 	}
 
-	/** A page of notes: all of them for a caller who may view any, otherwise only their own. */
+	/**
+	 * A page of notes: all of them for a caller who may view any, otherwise only their own. With {@code deleted}, the
+	 * deleted notes of everyone, which only someone who may restore notes can see; they are listed so that one can be
+	 * found and restored.
+	 */
 	@Transactional(readOnly = true)
 	public Page<Note> list(NoteFilter filter, Pageable pageable) {
+		if (filter.deleted()) {
+			this.authorization.require(NotesPermissions.RESTORE);
+			return this.notes.searchDeleted(filter.owner(), filter.text(), pageable);
+		}
 		Scope scope = this.authorization.requireScope(NotesPermissions.VIEW);
 		UUID me = this.authorization.currentUserId();
 		if (scope == Scope.OWN) {

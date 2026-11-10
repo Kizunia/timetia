@@ -75,11 +75,14 @@ class NotesController {
 	/**
 	 * @param q only notes containing this text in the title or body
 	 * @param owner only this user's notes; a caller who may see only their own gets an empty page for anyone else
+	 * @param deleted the deleted notes instead of the live ones; needs the permission to restore notes
 	 */
 	@GetMapping
 	PageResponse<NoteResponse> list(@ParameterObject @Valid PageQuery query,
-			@RequestParam(required = false) @Size(max = 100) String q, @RequestParam(required = false) UUID owner) {
-		return PageResponse.of(this.notes.list(new NoteFilter(q, owner), query.toPageable(SORTABLE, NEWEST_FIRST)),
+			@RequestParam(required = false) @Size(max = 100) String q, @RequestParam(required = false) UUID owner,
+			@RequestParam(defaultValue = "false") boolean deleted) {
+		return PageResponse.of(
+				this.notes.list(new NoteFilter(q, owner, deleted), query.toPageable(SORTABLE, NEWEST_FIRST)),
 				NoteMapper::toResponse);
 	}
 

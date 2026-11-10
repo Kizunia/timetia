@@ -56,8 +56,9 @@ public class ProfileService {
 		UserProfile profile = this.profiles.find(id).orElseThrow(ProfileService::notFound);
 		boolean verified = this.authorization.isEmailVerified();
 		Set<String> permissions = verified ? this.roleAssignments.permissionsOf(id) : Set.of();
-		return new MyProfile(profile, verified, permissions, this.roleAssignments.rolesOf(id),
-				this.files.getIfAvailable() != null);
+		boolean filesRunning = this.files.getIfAvailable() != null;
+		return new MyProfile(profile, verified, permissions, this.roleAssignments.rolesOf(id), filesRunning,
+				filesRunning);
 	}
 
 	@Transactional

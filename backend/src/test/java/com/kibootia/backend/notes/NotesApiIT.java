@@ -509,6 +509,67 @@ class NotesApiIT {
 	}
 
 	@Test
+	@DisplayName("someone who may restore notes lists everyone's deleted notes, filtered, sorted and paged, and no other tenant's")
+	void listDeleted() throws Exception {
+		String alpha = created(ALICE, "Alpha");
+		String beta = created(ALICE, "Beta");
+		String gamma = created(BOB, "Gamma");
+		created(ALICE, "Still alive");
+		mvc.perform(as(ALICE, delete("/api/v1/notes/" + alpha))).andExpect(status().isNoContent());
+		mvc.perform(as(ALICE, delete("/api/v1/notes/" + beta))).andExpect(status().isNoContent());
+		mvc.perform(as(BOB, delete("/api/v1/notes/" + gamma))).andExpect(status().isNoContent());
+		String foreign = noteOfAnotherTenant("Foreign");
+		jdbc.update("update note set deleted_at = now(6) where id = unhex(?)", hex(UUID.fromString(foreign)));
+		GrantedPermissions.grant(NotesPermissions.RESTORE);
+
+		mvc.perform(as(ADMIN, get("/api/v1/notes?deleted=true&sort=title,asc"))).andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[*].title", org.hamcrest.Matchers.contains("Alpha", "Beta", "Gamma")))
+			.andExpect(jsonPath("$.items[*].id", org.hamcrest.Matchers.contains(alpha, beta, gamma)))
+			.andExpect(jsonPath("$.page.totalElements").value(3));
+		mvc.perform(as(ADMIN, get("/api/v1/notes?deleted=true&sort=title,desc&size=2&page=1"))).andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[*].title", org.hamcrest.Matchers.contains("Alpha")))
+			.andExpect(jsonPath("$.page.totalPages").value(2));
+		mvc.perform(as(ADMIN, get("/api/v1/notes?deleted=true&owner=" + BOB))).andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[*].title", org.hamcrest.Matchers.contains("Gamma")));
+		mvc.perform(as(ADMIN, get("/api/v1/notes?deleted=true&q=BET"))).andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[*].title", org.hamcrest.Matchers.contains("Beta")));
+		mvc.perform(as(ADMIN, get("/api/v1/notes?deleted=true&sort=body,asc"))).andExpect(status().isBadRequest());
+		// A listed note can be found and restored.
+		mvc.perform(as(ADMIN, post("/api/v1/notes/" + beta + "/restore"))).andExpect(status().isOk());
+		mvc.perform(as(ADMIN, get("/api/v1/notes?deleted=true"))).andExpect(jsonPath("$.page.totalElements").value(2));
+	}
+
+	@Test
+	@DisplayName("the deleted notes are an administrative view: without the permission to restore, asking for them is 403")
+	void listDeletedDenied() throws Exception {
+		String id = created(ALICE, "Mine and deleted");
+		mvc.perform(as(ALICE, delete("/api/v1/notes/" + id))).andExpect(status().isNoContent());
+		GrantedPermissions.grant(NotesPermissions.VIEW_ANY);
+
+		mvc.perform(as(ALICE, get("/api/v1/notes?deleted=true"))).andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("platform.forbidden"));
+		mvc.perform(as(ADMIN, get("/api/v1/notes?deleted=true"))).andExpect(status().isForbidden());
+	}
+
+	@Test
+	@DisplayName("a caller whose email address is not verified is refused every notes operation")
+	void unverifiedCaller() throws Exception {
+		String id = created(ALICE, "Mine");
+		var unverified = jwt().jwt((token) -> token.subject(ALICE.toString()).claim("email_verified", false));
+
+		mvc.perform(get("/api/v1/notes").with(unverified)).andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+		mvc.perform(post("/api/v1/notes").with(unverified).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"title\":\"New\",\"body\":\"b\"}")).andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+		mvc.perform(get("/api/v1/notes/" + id).with(unverified)).andExpect(status().isNotFound());
+		mvc.perform(put("/api/v1/notes/" + id).with(unverified).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"title\":\"x\",\"body\":\"y\",\"version\":0}")).andExpect(status().isNotFound());
+		mvc.perform(delete("/api/v1/notes/" + id).with(unverified)).andExpect(status().isNotFound());
+		assertThat(count("select count(*) from note where deleted_at is null")).isEqualTo(1);
+	}
+
+	@Test
 	@DisplayName("the retention purge removes notes deleted long ago and keeps live and recently deleted ones")
 	void retentionPurge() throws Exception {
 		String old = created(ALICE, "Deleted long ago");

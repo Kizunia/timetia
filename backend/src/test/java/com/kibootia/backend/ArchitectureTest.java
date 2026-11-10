@@ -5,14 +5,20 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+
+import java.util.List;
+import java.util.stream.Stream;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
- * ArchUnit rules from kibootia-docs/architecture/architecture-enforcement.md that can be meaningful before the first
- * feature module exists. Rules 1, 4, 6 and 7 hold vacuously until a module has an application package; rule 8 is
- * checked against real classes. Rule 5 waits for the optional modules; rules 2 and 3 are covered by Spring Modulith.
+ * ArchUnit rules from kibootia-docs/architecture/architecture-enforcement.md. Rule 5 covers every removable module in
+ * {@link #REMOVABLE_MODULES}; rules 2 and 3 are covered by Spring Modulith ({@code ModularityTest}). Because the notes
+ * module can be removed, a rule must not need any particular feature module to exist: a rule about a module that is
+ * absent simply has nothing to check.
  */
 class ArchitectureTest {
 
@@ -73,15 +79,20 @@ class ArchitectureTest {
 	}
 
 	/**
-	 * Rule 5 for the default-on {@code files} module (ADR 0024): nothing outside it depends on it, so removing it, or
-	 * switching it off, cannot break another module. Others reach it through the {@code platform.files} port.
+	 * The default-on modules a fork may remove or switch off (ADR 0024). Adding a module to this list is how a new
+	 * removable module comes under rule 5.
 	 */
-	@Test
-	void rule5_nothingOutsideTheFilesModuleDependsOnIt() {
-		ArchRule rule = noClasses().that().resideOutsideOfPackage(ROOT + ".files..")
-				.should().dependOnClassesThat().resideInAPackage(ROOT + ".files..")
-				.because("the files module is optional; other modules use the platform.files port");
-		rule.check(classes);
+	static final List<String> REMOVABLE_MODULES = List.of("files", "notes");
+
+	/**
+	 * Rule 5 for every removable default-on module (ADR 0024): nothing outside it depends on it, so removing it, or
+	 * switching it off, cannot break another module. Others reach {@code files} through the {@code platform.files} port;
+	 * nothing reaches {@code notes}, which is only a consumer.
+	 */
+	@TestFactory
+	Stream<DynamicTest> rule5_nothingOutsideARemovableModuleDependsOnIt() {
+		return REMOVABLE_MODULES.stream()
+			.map((module) -> DynamicTest.dynamicTest(module, () -> ModuleRules.nothingOutsideDependsOn(ROOT + "." + module).check(classes)));
 	}
 
 	@Test

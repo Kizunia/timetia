@@ -17,6 +17,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import com.kibootia.backend.platform.fixtures.WidgetFixtures;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -24,6 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The base of the integration tests that drive the identity, access and audit APIs through the real stack: filter chain,
  * request gate, method security, decision point, MySQL, with a fake in place of Keycloak. Every subclass has the same
  * configuration, so they share one Spring context and one MySQL container.
+ *
+ * <p>The base knows no feature module beyond the core ones: it imports {@link WidgetFixtures} for permissions to work
+ * with and a protected URL, and never names the notes module. A test that creates notes cleans the note table itself.
  *
  * <p>{@link #ADMIN} is the bootstrap administrator: the first request they make with a verified email address grants the
  * administrator role, exactly as in production ({@code kibootia.identity.bootstrap-admin-email}). Everyone else starts
@@ -36,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		"kibootia.events.initial-backoff=PT0S", "kibootia.events.max-backoff=PT0S", "kibootia.events.max-attempts=4",
 		"kibootia.events.stale-after=PT1H" })
 @AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+@Import({ TestcontainersConfiguration.class, WidgetFixtures.class })
 public abstract class AdminApiTest {
 
 	public static final String ADMIN_EMAIL = "admin@kibootia.test";
@@ -76,7 +81,6 @@ public abstract class AdminApiTest {
 		this.jdbc.update("delete from stored_file");
 		this.jdbc.update("delete from user_profile");
 		this.jdbc.update("delete from audit_entry");
-		this.jdbc.update("delete from note");
 		this.jdbc.update("delete from event_publication");
 		this.jdbc.update("delete from processed_event");
 		this.keycloak.reset();

@@ -29,21 +29,21 @@ class BuiltInRolesIT extends AdminApiTest {
 		String current = get(admin(), "/api/v1/roles/" + userRole).andReturn().getResponse().getContentAsString();
 		long version = ((Number) JsonPath.read(current, "$.version")).longValue();
 		put(admin(), "/api/v1/roles/" + userRole, "{\"name\":\"User\",\"description\":\"x\",\"permissions\":"
-				+ "[\"notes.notes.view\",\"notes.notes.update\",\"notes.notes.delete\"],\"version\":" + version + "}")
+				+ "[\"widgets.widgets.view\",\"widgets.widgets.update\",\"widgets.widgets.delete\"],\"version\":" + version + "}")
 			.andExpect(status().isOk());
 
 		// A permission the user role was never offered, as when a module adds one in a new release.
-		this.jdbc.update("delete from role_permission_seed where permission = 'notes.notes.update'");
-		this.jdbc.update("delete from role_permission where permission = 'notes.notes.update'");
+		this.jdbc.update("delete from role_permission_seed where permission = 'widgets.widgets.update'");
+		this.jdbc.update("delete from role_permission where permission = 'widgets.widgets.update'");
 
 		this.builtInRoles.run(null);
 
 		get(admin(), "/api/v1/roles/" + userRole).andExpect(status().isOk())
-			.andExpect(jsonPath("$.permissions", hasItem("notes.notes.update")))
-			.andExpect(jsonPath("$.permissions", not(hasItem("notes.notes.create"))));
+			.andExpect(jsonPath("$.permissions", hasItem("widgets.widgets.update")))
+			.andExpect(jsonPath("$.permissions", not(hasItem("widgets.widgets.create"))));
 
 		this.builtInRoles.run(null);
-		get(admin(), "/api/v1/roles/" + userRole).andExpect(jsonPath("$.permissions", not(hasItem("notes.notes.create"))));
+		get(admin(), "/api/v1/roles/" + userRole).andExpect(jsonPath("$.permissions", not(hasItem("widgets.widgets.create"))));
 	}
 
 	@Test
@@ -57,7 +57,7 @@ class BuiltInRolesIT extends AdminApiTest {
 		this.jdbc.update("delete from user_profile");
 
 		get(user(ALICE), "/api/v1/me").andExpect(status().isOk())
-			.andExpect(jsonPath("$.permissions", hasItem("notes.notes.create")));
+			.andExpect(jsonPath("$.permissions", hasItem("widgets.widgets.create")));
 	}
 
 }

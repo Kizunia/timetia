@@ -81,7 +81,7 @@ class ApiDocsExposureIT {
 			HttpResponse<String> response = get(managementPort, "/actuator/openapi");
 
 			assertThat(response.statusCode()).isEqualTo(200);
-			assertThat(response.body()).contains("\"openapi\"").contains("/api/v1/notes");
+			assertThat(response.body()).contains("\"openapi\"").contains("/api/v1/me");
 		}
 
 		@Test

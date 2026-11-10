@@ -1,6 +1,7 @@
 package com.kibootia.backend.notes.application;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,8 +38,33 @@ public interface NoteStore {
 	 */
 	Page<Note> search(UUID owner, String text, Pageable pageable);
 
+	/**
+	 * The current tenant's deleted notes, sorted as asked and filtered like {@link #search}. Only an administrative view
+	 * may call this; the notes are not live and cannot be read through {@link #find}.
+	 */
+	Page<Note> searchDeleted(UUID owner, String text, Pageable pageable);
+
 	/** Whether the owner has a live note with this title, other than {@code except}. */
 	boolean titleInUse(UUID owner, String title, UUID except);
+
+	/**
+	 * Makes {@code fileId} the picture of a live note, or removes it when {@code fileId} is null, and says which file it
+	 * replaced. Does not change the note's version. Empty when there is no live note with that ID.
+	 */
+	Optional<AttachmentChange> replaceAttachment(UUID noteId, UUID fileId);
+
+	/** The file a note had before its attachment was replaced; null when it had none. */
+	record AttachmentChange(UUID previousFileId) {
+
+	}
+
+	/** The notes that {@link #purgeDeletedBefore} would remove and that have a file, so the files can be removed too. */
+	List<AttachedFile> attachmentsDeletedBefore(Instant cutoff);
+
+	/** A note and the stored file attached to it. */
+	record AttachedFile(UUID noteId, UUID fileId) {
+
+	}
 
 	/** Permanently removes notes deleted before the cutoff and returns how many. */
 	int purgeDeletedBefore(Instant cutoff);

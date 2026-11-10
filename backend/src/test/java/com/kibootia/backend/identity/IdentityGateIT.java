@@ -58,7 +58,7 @@ class IdentityGateIT extends AdminApiTest {
 			.andExpect(jsonPath("$.name").value("Alice Example"))
 			.andExpect(jsonPath("$.status").value("ACTIVE"))
 			.andExpect(jsonPath("$.roles[*].name", contains("User")))
-			.andExpect(jsonPath("$.permissions", hasItems("notes.notes.create", "notes.notes.view")))
+			.andExpect(jsonPath("$.permissions", hasItems("widgets.widgets.create", "widgets.widgets.view")))
 			.andExpect(jsonPath("$.permissions", not(hasItem("identity.profiles.view"))));
 		get(tokenWith(ALICE, "alice@kibootia.test", "Alice", Instant.now()), "/api/v1/me").andExpect(status().isOk());
 
@@ -177,7 +177,7 @@ class IdentityGateIT extends AdminApiTest {
 			.andExpect(jsonPath("$.state").value("DISABLED"));
 		get(user(ALICE), "/api/v1/me").andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.code").value("identity.account_disabled"));
-		get(user(ALICE), "/api/v1/notes").andExpect(status().isForbidden());
+		get(user(ALICE), "/api/v1/widgets").andExpect(status().isForbidden());
 
 		post(admin(), "/api/v1/users/" + ALICE + "/enable", null).andExpect(status().isOk());
 		get(user(ALICE), "/api/v1/me").andExpect(status().isOk());
@@ -212,7 +212,7 @@ class IdentityGateIT extends AdminApiTest {
 			.andExpect(jsonPath("$.roles[*].name", contains("User")));
 		Await.until("the verification email to be requested", () -> this.keycloak.countCalls("sendVerificationEmail") == 1);
 
-		get(unverified(BOB), "/api/v1/notes").andExpect(status().isForbidden())
+		get(unverified(BOB), "/api/v1/widgets").andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
 		put(unverified(BOB), "/api/v1/me/preferences", "{\"theme\":\"DARK\"}").andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));

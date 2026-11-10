@@ -77,7 +77,7 @@ class ApiConventionsIT {
 		@GetMapping("/api-error/{kind}")
 		String apiError(@org.springframework.web.bind.annotation.PathVariable String kind) {
 			throw switch (kind) {
-				case "not-found" -> ApiException.notFound("notes.not_found", "No such note.");
+				case "not-found" -> ApiException.notFound("widgets.not_found", "No such widget.");
 				case "conflict" -> ApiException.conflict("access.last_admin", "The last administrator stays.");
 				case "too-large" -> ApiException.payloadTooLarge("files.too_large", "Too large.");
 				case "unsupported" -> ApiException.unsupportedMediaType("files.unsupported_type", "Not allowed.");
@@ -197,7 +197,7 @@ class ApiConventionsIT {
 	@Test
 	@DisplayName("modules choose their own status and code through ApiException")
 	void apiExceptions() throws Exception {
-		problem(call(authed(get("/api/v1/probe/api-error/not-found"))), 404, "notes.not_found");
+		problem(call(authed(get("/api/v1/probe/api-error/not-found"))), 404, "widgets.not_found");
 		problem(call(authed(get("/api/v1/probe/api-error/conflict"))), 409, "access.last_admin");
 		problem(call(authed(get("/api/v1/probe/api-error/too-large"))), 413, "files.too_large");
 		problem(call(authed(get("/api/v1/probe/api-error/unsupported"))), 415, "files.unsupported_type");
