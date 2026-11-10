@@ -25,11 +25,11 @@ Decided rules. Rules 1, 4, 6 and 8 are implemented in `ArchitectureTest`, rules 
 
 | # | Rule |
 |---|---|
-| 1 | Application logic must not depend on concrete infrastructure implementations |
+| 1 | Application logic must not depend on concrete infrastructure implementations (the `web`, `persistence`, `keycloak` and `s3` packages) |
 | 2 | A feature must not access another feature's private persistence implementation (Spring Modulith) |
 | 3 | There are no circular dependencies between features (Spring Modulith) |
 | 4 | Designated domain packages must not depend on infrastructure frameworks |
-| 5 | Optional capabilities must not introduce unnecessary dependencies; core code does not depend on an optional or default-on module ([ADR 0024](../decisions/0024-package-modules-with-infrastructure-toggles.md)) |
+| 5 | Optional capabilities must not introduce unnecessary dependencies; core code does not depend on an optional or default-on module ([ADR 0024](../decisions/0024-package-modules-with-infrastructure-toggles.md)). Implemented for `files` in milestone 4: nothing outside it depends on it, and other modules use the `platform.files` port ([ADR 0051](../decisions/0051-milestone-4-implementation-decisions.md)); the rule for the other optional modules arrives with them |
 | 6 | Persistence entities are not used in API types ([ADR 0004](../decisions/0004-separate-api-application-and-persistence-models.md)) |
 | 7 | Every public use-case method carries an authorization check or an explicit `@NoAuthorization("reason")` ([ADR 0044](../decisions/0044-authorization-enforcement-conventions.md)) |
 | 8 | The `platform` module contains no business logic and depends on no other module. Proposed (an inference from the module map, not an owner decision); implemented for the dependency half (`platform` is declared with no allowed dependencies and ArchUnit checks it); "no business logic" is not machine-checkable |

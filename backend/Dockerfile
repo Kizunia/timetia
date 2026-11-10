@@ -26,4 +26,5 @@ COPY --from=build /build/layers/application/ ./
 USER 10001:10001
 # 8080 is the API; the management port (8090) is bound to loopback inside the container and never published.
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "org.springframework.boot.loader.launch.JarLauncher"]
+# Headless: avatars are decoded, scaled and re-encoded with java.awt, and a container has no display.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-Djava.awt.headless=true", "org.springframework.boot.loader.launch.JarLauncher"]

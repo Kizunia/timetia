@@ -42,7 +42,7 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0026 | Next.js as backend-for-frontend with an encrypted cookie session | platform | accepted (extended by 0042) | 2026-10-28 | [0026](0026-nextjs-bff-session.md) |
 | 0027 | Central authorization decision point; OPA as a recipe | platform | accepted (extended by 0044) | 2026-10-28 | [0027](0027-central-authorization-decision-point.md) |
 | 0028 | Tenant-ready schema | platform | accepted | 2026-10-28 | [0028](0028-tenant-ready-schema.md) |
-| 0029 | S3 API object storage contract, RustFS locally | platform | accepted (extended by 0041) | 2026-10-28 | [0029](0029-s3-object-storage-contract.md) |
+| 0029 | S3 API object storage contract, RustFS locally | platform | accepted (extended by 0041, 0051) | 2026-10-28 | [0029](0029-s3-object-storage-contract.md) |
 | 0030 | OTLP telemetry with a local Grafana LGTM container | platform | accepted | 2026-10-28 | [0030](0030-otlp-telemetry-and-local-lgtm.md) |
 | 0031 | Transactional outbox and lock-protected jobs | platform | accepted (extended by 0039) | 2026-10-28 | [0031](0031-transactional-outbox-and-locked-jobs.md) |
 | 0032 | Secrets from environment and files; Vault recommended | platform | accepted | 2026-10-28 | [0032](0032-secrets-from-environment-and-files.md) |
@@ -64,5 +64,6 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0048 | Java 25 baseline on Eclipse Temurin | platform | accepted | 2026-11-08 | [0048](0048-java-25-baseline-on-temurin.md) |
 | 0049 | Milestone 2 implementation decisions | platform | accepted | 2026-11-09 | [0049](0049-milestone-2-implementation-decisions.md) |
 | 0050 | Milestone 3 implementation decisions | platform | accepted | 2026-11-10 | [0050](0050-milestone-3-implementation-decisions.md) |
+| 0051 | Milestone 4 implementation decisions | platform | accepted | 2026-11-10 | [0051](0051-milestone-4-implementation-decisions.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** the container route below (`pnpm apps:up`) was run on a Windows machine on 2026-11-10 from freshly reset volumes, and the checks in section 4 passed there and in CI (run 42780048416, pull request #5). The host route (`pnpm dev`) was last run for milestone 1 and is not re-run for milestone 3. Not run on macOS or Linux.
+> **Implementation:** the container route below (`pnpm apps:up`) was run on a Windows machine on 2026-11-10 from freshly reset volumes, and the checks in section 4 passed there and in CI (run 42780048416, pull request #5). The host route (`pnpm dev`) was last run for milestone 1 and is not re-run for milestone 3. Not run on macOS or Linux. The photo checks (steps 16 to 18) and the avatar end-to-end tests describe milestone 4 and have not been run on a running stack yet: the backend tests passed locally, and the stack runs for the first time in CI.
 
 ## Goal
 
@@ -14,7 +14,7 @@ Configure and start every part of Kibootia, know what it does today and what it 
 
 ## What exists today
 
-Milestones 0 to 3 are built ([roadmap](../../product/roadmap/README.md), [implementation status](../../product/roadmap/implementation-status.md)).
+Milestones 0 to 4 are built ([roadmap](../../product/roadmap/README.md), [implementation status](../../product/roadmap/implementation-status.md)).
 
 | Area | What you can do or see | Built in |
 |---|---|---|
@@ -29,11 +29,12 @@ Milestones 0 to 3 are built ([roadmap](../../product/roadmap/README.md), [implem
 | Self-registration and verification | Anyone can register on Keycloak's page. Until they verify their email address they can only see their own profile, ask for the email again and sign out | 3 |
 | Audit log screen | Every administrative change, newest first, with who did it and to whom; an erased user shows as "deleted user" | 3 |
 | Rate limiting | Invitations, verification mail and administrative actions are limited per user, answering 429 with `Retry-After` | 3 |
-| Quality gates | Architecture rules, 283 backend tests, 144 frontend tests, 14 end-to-end tests with accessibility checks, container image scan and secret scan, all in CI | 0 to 3 |
+| Avatars and object storage | Upload, replace and remove a photo on your profile (JPEG, PNG or WebP, up to 5 MB). The server stores a square 64 and 256 pixel copy and drops everything else in the file, such as the camera's location. Others see your photo only with the permission to see profiles. The files live in RustFS, an S3-compatible server; the module can be switched off | 4 |
+| Quality gates | Architecture rules, 341 backend tests, 168 frontend tests, 22 end-to-end tests with accessibility checks, container image scan and secret scan. Milestones 0 to 3 passed in CI; for milestone 4 the CI run is pending, and the 8 new end-to-end tests have not run yet | 0 to 4 |
 
 **Not built yet:**
 
-- Files, avatars and object storage ([milestone 4](../../product/roadmap/milestone-4-files.md)).
+- Files other than avatars: the storage module is generic, but only the avatar uses it so far. An administrator cannot remove someone else's photo.
 - A screen for the notes example, and the check that the application still builds with a module removed ([milestone 5](../../product/roadmap/milestone-5-example-feature.md)).
 - The production deployment, the production start-up guards and the first release ([milestone 6](../../product/roadmap/milestone-6-production-readiness.md)).
 - A screen for failed events (the API exists: `GET /api/v1/failed-events`).
@@ -60,7 +61,10 @@ Everything is configured through that one file. You normally change nothing in i
 | `DEMO_ADMIN_PASSWORD` | Password of the demo administrator `demo-admin` | generated |
 | `KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL` | The address that becomes the first administrator when it signs in with a verified email address | `demo-admin@kibootia.localhost` |
 | `KEYCLOAK_ADMIN_PASSWORD` | Password of Keycloak's own console (`admin`) | generated |
-| `COMPOSE_PROFILES` | `observability` also starts Grafana; remove it to save memory | `observability` |
+| `COMPOSE_PROFILES` | `observability` also starts Grafana; remove it to save memory. `files` starts RustFS, the object store; without it, photos cannot be saved (uploads answer 503) unless you also set `KIBOOTIA_FILES_ENABLED=false` | `observability,files` |
+| `KIBOOTIA_FILES_ACCESS_KEY`, `KIBOOTIA_FILES_SECRET_KEY` | The login of the local object store | generated |
+
+**If you made your `.env` before milestone 4:** run `pnpm bootstrap` to add the two storage keys (it keeps every value you have), then add `,files` to `COMPOSE_PROFILES` in `.env` by hand: bootstrap never changes a value. Then `pnpm infra:up` starts RustFS.
 
 Every setting, with its default and whether it is secret, is in [application configuration](../../operations/configuration/application-configuration.md). Rate limits, the retention periods and the Keycloak address have settings of their own there.
 
@@ -116,20 +120,26 @@ Do these in order; each builds on the one before. Use a private window for the s
 | 13 | The audit log | **Administration, Audit log** | Entries for the role, the invitation, the role assignments, the disable and enable, the deletion and the erasure, newest first. The erased user shows as "Deleted user" and no email address appears anywhere |
 | 14 | Rate limiting | Invite 21 addresses within an hour as the same administrator (this creates 20 invited users) | The 21st is refused (429) and the screen says to wait |
 | 15 | The data | In Adminer open the tables `user_profile`, `role`, `role_assignment`, `audit_entry` | Profiles keyed by the Keycloak user ID; roles and assignments; audit rows holding only user IDs, no names or emails |
-| 16 | One trace across both applications | In Grafana, Explore, the Tempo data source, search service `kibootia-backend` | A trace that starts in the web app and continues into the API |
+| 16 | A photo | As `demo`, open **Your profile**, choose **Upload a photo** and pick a JPEG, PNG or WebP | "Photo saved", and the photo appears on the page and in the header. Choose a text file or one over 5 MB: the page refuses it without sending it |
+| 17 | The photo is private and resized | As `demo-admin`, open the user `demo` under **Administration, Users**. Then open <http://localhost:9001> and sign in with the two storage keys from `.env` | The administrator sees the photo; a user without the permission to see profiles is refused (403) when asking for someone else's. In the console the bucket `kibootia` holds two small PNGs for the photo (64 and 256 pixels), not your original, and no public link exists |
+| 18 | Replace and remove | **Replace photo**, then **Remove photo** | The picture changes, then the initials come back. The files of removed photos stay (hidden) for 30 days, and are removed with the user when the user is erased |
+| 19 | One trace across both applications | In Grafana, Explore, the Tempo data source, search service `kibootia-backend` | A trace that starts in the web app and continues into the API |
 
 **The same checks, automated.** These cover steps 2 to 13 against the running stack, each page with an accessibility check:
 
 | Command | What it runs | Needs |
 |---|---|---|
 | `pnpm --filter kibootia-frontend exec playwright install chromium` | Installs the test browser, once | Nothing running |
-| `pnpm --filter kibootia-frontend test:e2e` | 14 browser tests: sign-in, administration from invitation to erasure, registration with verification, denied access | The stack running (step 3) |
-| `cd backend && ./mvnw verify` | 81 fast and 202 integration tests, including the Keycloak adapter against a real Keycloak and Mailpit | Docker, JDK 25 |
-| `pnpm --filter kibootia-frontend lint`, `typecheck`, `test` | Lint, type check and 144 unit tests | Nothing running |
+| `pnpm --filter kibootia-frontend test:e2e` | 22 browser tests: sign-in, administration from invitation to erasure, registration with verification, denied access, and the avatar story (the last 8 have not been run yet) | The stack running (step 3), with the `files` profile |
+| `cd backend && ./mvnw verify` | 103 fast and 238 integration tests, including the Keycloak adapter against a real Keycloak and Mailpit, and the storage contract against a real RustFS | Docker, JDK 25 |
+| `pnpm --filter kibootia-frontend lint`, `typecheck`, `test` | Lint, type check and 168 unit tests | Nothing running |
 
 The end-to-end tests create their own users, roles and audit entries, so after running them the lists in the app hold test data. `pnpm reset` clears it.
 
 ## Troubleshooting
+
+- **Saving a photo says a service is not available.** The object store is not running or not reachable. Check that `COMPOSE_PROFILES` in `.env` includes `files` and run `pnpm infra:up`; `docker ps` should list `kibootia-rustfs` as healthy. Everything except photos works without it.
+- **Starting the backend fails naming `kibootia.files.access-key`.** The two storage keys are missing from `.env`. Run `pnpm bootstrap`, or set `KIBOOTIA_FILES_ENABLED=false` to run without files.
 
 - **Keycloak or the backend stays unhealthy right after you created a new `.env`.** The old database volumes were made with the old passwords. Run `pnpm reset`.
 - **A port is in use.** Find what holds it before stopping anything; it may belong to another project. The services fail rather than move to another port, because the sign-in redirect addresses are fixed.

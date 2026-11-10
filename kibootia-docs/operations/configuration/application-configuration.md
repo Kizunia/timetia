@@ -76,6 +76,25 @@ Names only.
 | `kibootia.rate-limit.limits.<category>.capacity`, `.period` | Backend | Categories `invitations` (20 per hour), `admin-actions` (120 per minute), `verification-resend` (3 per hour), `uploads` (30 per 10 minutes) | No |
 | `DEMO_ADMIN_PASSWORD` | Compose, OpenTofu, Playwright | Generated; password of the local `demo-admin` user. Local overlay only | Yes |
 
+## Settings added by milestone 4 (observed, local run on 2026-11-10; CI run pending)
+
+Names only.
+
+| Setting | Read by | Default and notes | Secret |
+|---|---|---|---|
+| `kibootia.files.enabled` (`KIBOOTIA_FILES_ENABLED`) | Backend, Compose | `true`. With `false` the files module is absent: no storage client, jobs, listener or permissions, no storage setting is needed, and the avatar endpoints answer 404 `files.disabled` | No |
+| `kibootia.files.access-key` (`KIBOOTIA_FILES_ACCESS_KEY`) | Backend, Compose (RustFS) | Required while the module is on; startup fails naming it when missing. Generated into `.env` | Yes |
+| `kibootia.files.secret-key` (`KIBOOTIA_FILES_SECRET_KEY`) | Backend, Compose (RustFS) | Required while the module is on. Generated into `.env` | Yes |
+| `kibootia.files.endpoint` (`KIBOOTIA_FILES_ENDPOINT`) | Backend | `http://localhost:9000`; `http://rustfs:9000` in Compose. The S3 API address as the backend reaches it | No |
+| `kibootia.files.region`, `.bucket` | Backend | `us-east-1`, `kibootia`. Any region name works with an S3-compatible server | No |
+| `kibootia.files.create-bucket` | Backend | `true`: the backend creates the bucket at startup and, if the server was down then, on the first upload. A deployment that manages the bucket sets `false` | No |
+| `kibootia.files.max-upload-size` | Backend | `5MB`. The largest upload any category accepts; a category may allow less (an avatar: 5 MB) | No |
+| `kibootia.files.reconcile-grace` | Backend | `PT24H`. How old an object without a metadata row must be before reconciliation removes it | No |
+| `kibootia.files.reconcile-cron` | Backend | `0 0 4 * * *` (UTC). When reconciliation runs, under a database lock | No |
+| `kibootia.files.purge-batch-size` | Backend | `500`. Files removed per batch by the retention purge | No |
+| `spring.servlet.multipart.max-file-size`, `.max-request-size`, `server.tomcat.max-swallow-size` | Backend | `6MB`, `7MB`, `16MB`: above the 5 MB limit so the module can answer with a clear message, and Tomcat reads on through a refused upload so the client receives the 413 instead of a reset | No |
+| `COMPOSE_PROFILES` | Compose | New environments start with `observability,files`. An existing `.env` keeps its value: add `files` by hand to start RustFS | No |
+
 ## Naming (owner decision of 2026-11-08)
 
 - Kibootia's own settings are named `kibootia.<module>.<setting>` and bound to typed configuration classes with validation. A missing or invalid required setting stops startup with a message naming the setting.
@@ -95,7 +114,7 @@ The one list of every setting. Rows are added in the same change that introduces
 | Next.js BFF | Keycloak client ID and secret, session-cookie encryption key, public base URL | Client secret, cookie key |
 | Keycloak service | Its PostgreSQL credentials, SMTP settings, hostname | Database password, SMTP password |
 | OpenTofu | Keycloak administrator credentials for realm configuration, state backend settings | Administrator password, storage keys |
-| Files | `kibootia.files.enabled`, endpoint, region, bucket, access key, secret key, size limits | Access and secret key |
+| Files | Implemented in milestone 4; see the table above | Access and secret key |
 | Telemetry | `kibootia.observability.enabled`, OTLP endpoint | Endpoint credentials, if any |
 | Identity | `KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL` ([ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md)); implemented in milestone 3, see above | None |
 | Retention | Audit retention (default 365 days), soft-delete retention (default 30 days) | None |

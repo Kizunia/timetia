@@ -25,7 +25,7 @@ com.kibootia.backend
 ├─ identity/   profiles, /me, user administration (Keycloak Admin API port), avatar use case
 ├─ access/     permissions, roles, assignments, decision point
 ├─ audit/      append-only audit log and viewer
-├─ files/      S3 port, file metadata, validation, image processing, reconciliation job
+├─ files/      file metadata, validation, image processing, jobs; s3/ is the adapter of the S3 port
 └─ notes/      deletable example feature (working name)
 ```
 

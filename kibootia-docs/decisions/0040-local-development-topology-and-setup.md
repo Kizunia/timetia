@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** observed, not verified in CI. `pnpm bootstrap`, `infra:up`, `infra:down`, `dev`, `reset`, `apps:up` and `apps:down` exist, and `.env.example` exists. The `apps` profile ran both applications in containers with a working sign-in (a Playwright test passed locally on 2026-11-09). Run on Windows only; macOS and Linux are untested. Ports in use: web app 3470, API 8080, management 8090, Keycloak 8180, Grafana 3001, Mailpit 8025, Adminer 8081, MySQL 3307.
+> **Implementation:** observed, not verified in CI. `pnpm bootstrap`, `infra:up`, `infra:down`, `dev`, `reset`, `apps:up` and `apps:down` exist, and `.env.example` exists. The `apps` profile ran both applications in containers with a working sign-in (a Playwright test passed locally on 2026-11-09). Run on Windows only; macOS and Linux are untested. Ports in use: web app 3470, API 8080, management 8090, Keycloak 8180, Grafana 3001, Mailpit 8025, Adminer 8081, MySQL 3307, RustFS 9000 (S3 API) and 9001 (console), added in milestone 4 and bound to the loopback address.
 
 ## Context
 

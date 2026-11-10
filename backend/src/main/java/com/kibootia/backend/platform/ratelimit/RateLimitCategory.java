@@ -18,7 +18,7 @@ public enum RateLimitCategory {
 	/** Asking for the verification email again. */
 	VERIFICATION_RESEND(3, Duration.ofHours(1)),
 
-	/** Uploading files; the storage module (milestone 4) applies it. */
+	/** Uploading files; the avatar upload of milestone 4 applies it. */
 	UPLOADS(30, Duration.ofMinutes(10));
 
 	private final int defaultCapacity;

@@ -77,7 +77,16 @@ RFC 9457 Problem Details with Kibootia extensions:
 
 - The backend validates all input; client-side validation never replaces it.
 - No CORS policy for browser traffic; browsers reach the API only through the Next.js proxy.
-- Sensitive endpoints are rate limited per user and per application instance (invitations, administrative actions, asking for the verification email again; uploads from milestone 4) with Bucket4j, 429 and `Retry-After` when the allowance is used up; production also limits at the edge. Keycloak's brute-force detection covers login. The limits are `kibootia.rate-limit.limits.<category>.capacity` and `.period`.
+- Sensitive endpoints are rate limited per user and per application instance (invitations, administrative actions, asking for the verification email again, uploads) with Bucket4j, 429 and `Retry-After` when the allowance is used up; production also limits at the edge. Keycloak's brute-force detection covers login. The limits are `kibootia.rate-limit.limits.<category>.capacity` and `.period`.
+
+## Files
+
+Decision: [ADR 0029](../../decisions/0029-s3-object-storage-contract.md), [ADR 0051](../../decisions/0051-milestone-4-implementation-decisions.md). Observed (local run on 2026-11-10; CI run pending).
+
+- An upload is `multipart/form-data` with one part named `file`, sent with `PUT` to the resource it belongs to (`/api/v1/me/avatar`). The answer is the changed resource, not the file.
+- A file is shown from an endpoint of its own (`GET /api/v1/users/{id}/avatar?size=SMALL|LARGE`), never from a public address, so the permission is checked on every view. The response has a fixed `Content-Type`, `X-Content-Type-Options: nosniff`, a `Content-Security-Policy` of `default-src 'none'; sandbox`, an `ETag`, and `Cache-Control: private, no-cache`; a request with a matching `If-None-Match` is answered 304 after the check.
+- Upload errors: 413 `files.too_large` (the category's limit, 5 MB for an avatar) or `platform.payload_too_large` (above the multipart ceiling), 415 `files.unsupported_type` (decided from the bytes), 400 `files.invalid_image` (damaged, empty, or over 40 megapixels), 429 with `Retry-After`, 503 when the storage server cannot be reached, 404 `files.disabled` when the module is switched off.
+- A resource that has a file carries a nullable `avatarVersion`, the file's ID. It changes with every upload and is what the interface puts in the image address to refresh a cached copy.
 
 ## Testing
 
