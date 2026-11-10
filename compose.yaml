@@ -118,6 +118,34 @@ services:
     ports:
       - "8025:8025"
 
+  # S3-compatible object storage for avatars and other uploads (ADR 0029). Only on this machine: the ports are bound to
+  # the loopback address, because the backend reaches it over the Compose network and browsers never talk to it. The
+  # profile `files` starts it; leave the profile out, and set KIBOOTIA_FILES_ENABLED=false, to run without storage.
+  # The image runs as user 10001, which owns /data in the image and so in a new named volume.
+  rustfs:
+    image: rustfs/rustfs:1.0.4
+    container_name: kibootia-rustfs
+    restart: unless-stopped
+    profiles: ["files"]
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: ${KIBOOTIA_FILES_ACCESS_KEY:?Set KIBOOTIA_FILES_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${KIBOOTIA_FILES_SECRET_KEY:?Set KIBOOTIA_FILES_SECRET_KEY in .env}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - kibootia_rustfs_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   # Grafana, Tempo, Loki and an OTLP receiver in one container, for development only (ADR 0030).
   lgtm:
     image: grafana/otel-lgtm:0.40.0
@@ -154,6 +182,11 @@ services:
       KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL: ${KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL:-}
       MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://lgtm:4318/v1/traces
       MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://lgtm:4318/v1/metrics
+      # The object store, reached on the Compose network (ADR 0029). Both keys are required while files are enabled.
+      KIBOOTIA_FILES_ENABLED: ${KIBOOTIA_FILES_ENABLED:-true}
+      KIBOOTIA_FILES_ENDPOINT: http://rustfs:9000
+      KIBOOTIA_FILES_ACCESS_KEY: ${KIBOOTIA_FILES_ACCESS_KEY:-}
+      KIBOOTIA_FILES_SECRET_KEY: ${KIBOOTIA_FILES_SECRET_KEY:-}
       KIBOOTIA_OBSERVABILITY_ENABLED: ${KIBOOTIA_OBSERVABILITY_ENABLED:-true}
     ports:
       - "8080:8080"
@@ -162,6 +195,10 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      # Optional: without the `files` profile there is no storage container, and file features answer 503.
+      rustfs:
+        condition: service_healthy
+        required: false
     healthcheck:
       # No curl in the JRE image; the readiness probe on the loopback-only management port is read with bash.
       test:
@@ -210,3 +247,4 @@ volumes:
   kibootia_keycloak_db_data:
   kibootia_tofu_state:
   kibootia_lgtm_data:
+  kibootia_rustfs_data:
