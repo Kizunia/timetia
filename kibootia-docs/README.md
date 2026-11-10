@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-10
 
 > **Implementation:** not applicable (index).
 
@@ -32,6 +32,7 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 ## Where to start
 
 - New to the project: [vision](product/vision.md), then [architecture overview](architecture/overview.md).
+- Want to run it and see it work: [start and check](engineering/getting-started/start-and-check.md).
 - Wondering what works today: [implementation status](product/roadmap/implementation-status.md).
 - Why something is the way it is: [ADR index](decisions/INDEX.md).
 - What is still undecided: [open questions](decisions/open-questions.md).

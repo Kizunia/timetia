@@ -68,4 +68,5 @@ These ports were chosen to avoid the ones other local projects commonly use. If 
 
 ## Related
 
+[Start Kibootia and see what works](start-and-check.md) (what exists, the demo users and a checklist), 
 [Application configuration](../../operations/configuration/application-configuration.md), [milestone 1](../../product/roadmap/milestone-1-walking-skeleton.md), [ADR 0040](../../decisions/0040-local-development-topology-and-setup.md).
