@@ -47,6 +47,9 @@ class UserProfileEntity extends AssignedIdEntity {
 	@Column(name = "erasure_requested_at")
 	private Instant erasureRequestedAt;
 
+	@Column(name = "avatar_file_id", columnDefinition = "binary(16)")
+	private UUID avatarFileId;
+
 	protected UserProfileEntity() {
 	}
 
@@ -91,6 +94,14 @@ class UserProfileEntity extends AssignedIdEntity {
 
 	Instant getErasureRequestedAt() {
 		return this.erasureRequestedAt;
+	}
+
+	UUID getAvatarFileId() {
+		return this.avatarFileId;
+	}
+
+	void setAvatarFileId(UUID avatarFileId) {
+		this.avatarFileId = avatarFileId;
 	}
 
 	void setStatus(UserProfile.Status status) {

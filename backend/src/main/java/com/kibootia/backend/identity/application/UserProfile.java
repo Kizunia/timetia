@@ -12,10 +12,11 @@ import java.util.UUID;
  * @param status whether the user can sign in; independent of being deleted
  * @param deleted true while the profile is soft-deleted and an administrator can still restore it
  * @param erasureRequestedAt when erasure began, or null; the row disappears once Keycloak has deleted the account
+ * @param avatarFileId the file the files module keeps as the user's avatar, or null when there is none
  */
 public record UserProfile(UUID id, UUID tenantId, long version, Status status, String username, String email,
 		String firstName, String lastName, boolean emailVerified, Theme theme, boolean deleted, Instant deletedAt,
-		Instant erasureRequestedAt, Instant createdAt, Instant updatedAt) {
+		Instant erasureRequestedAt, Instant createdAt, Instant updatedAt, UUID avatarFileId) {
 
 	/** Whether the user may sign in. A deleted user is not shown as disabled; deletion is a separate fact. */
 	public enum Status {

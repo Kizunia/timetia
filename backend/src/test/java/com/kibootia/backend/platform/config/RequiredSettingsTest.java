@@ -15,12 +15,45 @@ class RequiredSettingsTest {
 	/** An environment that has every required setting except the ones a test then leaves out or changes. */
 	private static MockEnvironment complete() {
 		return new MockEnvironment().withProperty("spring.datasource.password", "x")
-			.withProperty("kibootia.identity.keycloak.client-secret", "y");
+			.withProperty("kibootia.identity.keycloak.client-secret", "y")
+			.withProperty("kibootia.files.access-key", "a")
+			.withProperty("kibootia.files.secret-key", "s");
+	}
+
+	@Test
+	void missingStorageKeyFailsAndNamesTheSettingWhileFilesAreOn() {
+		MockEnvironment environment = new MockEnvironment().withProperty("spring.datasource.password", "x")
+			.withProperty("kibootia.identity.keycloak.client-secret", "y")
+			.withProperty("kibootia.files.access-key", "a");
+
+		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null))
+			.isInstanceOf(MissingRequiredSettingException.class)
+			.hasMessageContaining("kibootia.files.secret-key")
+			.hasMessageContaining("KIBOOTIA_FILES_SECRET_KEY");
+	}
+
+	@Test
+	void storageKeysAreNotRequiredWhenFilesAreSwitchedOff() {
+		MockEnvironment environment = new MockEnvironment().withProperty("spring.datasource.password", "x")
+			.withProperty("kibootia.identity.keycloak.client-secret", "y")
+			.withProperty("kibootia.files.enabled", "false");
+
+		assertThatCode(() -> processor.postProcessEnvironment(environment, null)).doesNotThrowAnyException();
+	}
+
+	@Test
+	void anUnresolvedStoragePlaceholderFailsWhileFilesAreOn() {
+		MockEnvironment environment = complete().withProperty("kibootia.files.access-key", "${NOT_SET_ANYWHERE}");
+
+		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null))
+			.isInstanceOf(MissingRequiredSettingException.class)
+			.hasMessageContaining("kibootia.files.access-key");
 	}
 
 	@Test
 	void missingPasswordFailsAndNamesTheSetting() {
-		MockEnvironment environment = new MockEnvironment().withProperty("kibootia.identity.keycloak.client-secret", "y");
+		MockEnvironment environment = new MockEnvironment().withProperty("kibootia.identity.keycloak.client-secret", "y")
+			.withProperty("kibootia.files.enabled", "false");
 
 		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null))
 				.isInstanceOf(MissingRequiredSettingException.class)
@@ -50,7 +83,8 @@ class RequiredSettingsTest {
 
 	@Test
 	void missingKeycloakSecretFailsAndNamesTheSetting() {
-		MockEnvironment environment = new MockEnvironment().withProperty("spring.datasource.password", "x");
+		MockEnvironment environment = new MockEnvironment().withProperty("spring.datasource.password", "x")
+			.withProperty("kibootia.files.enabled", "false");
 
 		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null))
 				.isInstanceOf(MissingRequiredSettingException.class)

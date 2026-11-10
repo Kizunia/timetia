@@ -3,10 +3,12 @@ package com.kibootia.backend.identity.application;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kibootia.backend.access.RoleAssignments;
+import com.kibootia.backend.platform.files.StoredFiles;
 import com.kibootia.backend.platform.authorization.Authorization;
 import com.kibootia.backend.platform.authorization.NoAuthorization;
 import com.kibootia.backend.platform.errors.ApiException;
@@ -35,13 +37,16 @@ public class ProfileService {
 
 	private final RateLimiter rateLimiter;
 
+	private final ObjectProvider<StoredFiles> files;
+
 	ProfileService(UserProfileStore profiles, RoleAssignments roleAssignments, IdentityProviderAdmin keycloak,
-			Authorization authorization, RateLimiter rateLimiter) {
+			Authorization authorization, RateLimiter rateLimiter, ObjectProvider<StoredFiles> files) {
 		this.profiles = profiles;
 		this.roleAssignments = roleAssignments;
 		this.keycloak = keycloak;
 		this.authorization = authorization;
 		this.rateLimiter = rateLimiter;
+		this.files = files;
 	}
 
 	@Transactional(readOnly = true)
@@ -51,7 +56,8 @@ public class ProfileService {
 		UserProfile profile = this.profiles.find(id).orElseThrow(ProfileService::notFound);
 		boolean verified = this.authorization.isEmailVerified();
 		Set<String> permissions = verified ? this.roleAssignments.permissionsOf(id) : Set.of();
-		return new MyProfile(profile, verified, permissions, this.roleAssignments.rolesOf(id));
+		return new MyProfile(profile, verified, permissions, this.roleAssignments.rolesOf(id),
+				this.files.getIfAvailable() != null);
 	}
 
 	@Transactional

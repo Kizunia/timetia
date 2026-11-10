@@ -48,6 +48,8 @@ import com.kibootia.backend.files.application.ObjectStorage;
  */
 public class S3ObjectStorage implements ObjectStorage, AutoCloseable {
 
+	private static final int MAX_KEYS_PER_DELETE = 1000;
+
 	private final S3Client client;
 
 	private final S3Presigner presigner;
@@ -158,18 +160,19 @@ public class S3ObjectStorage implements ObjectStorage, AutoCloseable {
 
 	@Override
 	public void deleteAll(Collection<String> keys) {
-		if (keys.isEmpty()) {
-			return;
-		}
 		List<ObjectIdentifier> identifiers = keys.stream().map((key) -> ObjectIdentifier.builder().key(key).build()).toList();
-		try {
-			this.client.deleteObjects(DeleteObjectsRequest.builder()
-				.bucket(this.bucket)
-				.delete(Delete.builder().objects(identifiers).quiet(true).build())
-				.build());
-		}
-		catch (SdkException ex) {
-			throw unavailable("delete objects", ex);
+		// One request deletes at most a thousand keys.
+		for (int from = 0; from < identifiers.size(); from += MAX_KEYS_PER_DELETE) {
+			List<ObjectIdentifier> chunk = identifiers.subList(from, Math.min(from + MAX_KEYS_PER_DELETE, identifiers.size()));
+			try {
+				this.client.deleteObjects(DeleteObjectsRequest.builder()
+					.bucket(this.bucket)
+					.delete(Delete.builder().objects(chunk).quiet(true).build())
+					.build());
+			}
+			catch (SdkException ex) {
+				throw unavailable("delete objects", ex);
+			}
 		}
 	}
 

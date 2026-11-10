@@ -63,12 +63,12 @@ class MeController {
 		}
 	}
 
-	private static MeResponse toResponse(MyProfile me) {
+	static MeResponse toResponse(MyProfile me) {
 		UserProfile profile = me.profile();
 		return new MeResponse(profile.id(), profile.username(), profile.email(), me.emailVerified(),
 				profile.displayName(), profile.status().name(), profile.theme().name(),
 				me.permissions().stream().sorted().toList(),
-				UserRoleResponse.of(me.roles()));
+				UserRoleResponse.of(me.roles()), profile.avatarFileId(), me.avatarsEnabled());
 	}
 
 }

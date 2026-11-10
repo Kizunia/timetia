@@ -27,13 +27,39 @@ class RequiredSettingsEnvironmentPostProcessor implements EnvironmentPostProcess
 		return required;
 	}
 
+	/**
+	 * Required only while the files module is on (ADR 0024): with {@code kibootia.files.enabled=false} the application
+	 * starts without any storage setting.
+	 */
+	static final Map<String, String> REQUIRED_WITH_FILES = requiredWithFiles();
+
+	private static Map<String, String> requiredWithFiles() {
+		Map<String, String> required = new LinkedHashMap<>();
+		required.put("kibootia.files.access-key",
+				"Set KIBOOTIA_FILES_ACCESS_KEY, the access key of the object store (run 'pnpm bootstrap' to create .env "
+						+ "from .env.example, export the variable, or set kibootia.files.enabled=false to run without files).");
+		required.put("kibootia.files.secret-key",
+				"Set KIBOOTIA_FILES_SECRET_KEY, the secret key of the object store (run 'pnpm bootstrap' to create .env "
+						+ "from .env.example, export the variable, or set kibootia.files.enabled=false to run without files).");
+		return required;
+	}
+
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-		REQUIRED.forEach((setting, hint) -> {
-			if (!isPresent(environment, setting)) {
-				throw new MissingRequiredSettingException(setting, hint);
-			}
-		});
+		REQUIRED.forEach((setting, hint) -> require(environment, setting, hint));
+		if (filesEnabled(environment)) {
+			REQUIRED_WITH_FILES.forEach((setting, hint) -> require(environment, setting, hint));
+		}
+	}
+
+	private static void require(ConfigurableEnvironment environment, String setting, String hint) {
+		if (!isPresent(environment, setting)) {
+			throw new MissingRequiredSettingException(setting, hint);
+		}
+	}
+
+	private static boolean filesEnabled(ConfigurableEnvironment environment) {
+		return !"false".equalsIgnoreCase(environment.getProperty("kibootia.files.enabled", "true").strip());
 	}
 
 	private static boolean isPresent(ConfigurableEnvironment environment, String setting) {

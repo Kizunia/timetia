@@ -21,6 +21,16 @@ public class TestcontainersConfiguration {
 		return new FakeIdentityProvider();
 	}
 
+	/**
+	 * Takes the place of the S3 adapter wherever an {@code ObjectStorage} is injected, so no test needs a storage server
+	 * unless it is about the adapter itself ({@code S3ObjectStorageContractIT}).
+	 */
+	@Bean
+	@Primary
+	FakeObjectStorage fakeObjectStorage() {
+		return new FakeObjectStorage();
+	}
+
 	@Bean
 	@ServiceConnection
 	MySQLContainer mysql() {

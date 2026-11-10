@@ -22,6 +22,7 @@ public record UserResponse(
 		@Schema(requiredMode = REQUIRED) boolean emailVerified,
 		@Schema(requiredMode = REQUIRED, description = "True once erasing a deleted user has begun.") boolean erasureBegun,
 		@Schema(requiredMode = REQUIRED) List<UserRoleResponse> roles,
+			@Schema(nullable = true, description = "Changes whenever the avatar does; null when there is none.") UUID avatarVersion,
 		@Schema(requiredMode = REQUIRED) long version,
 		@Schema(requiredMode = REQUIRED) Instant createdAt,
 		@Schema(requiredMode = REQUIRED) Instant updatedAt) {

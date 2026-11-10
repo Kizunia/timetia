@@ -36,6 +36,13 @@ public interface UserProfileStore {
 
 	void updateTheme(UUID id, UserProfile.Theme theme);
 
+	/**
+	 * Makes the file the user's avatar, or removes the avatar when {@code fileId} is null, and returns the avatar the user
+	 * had before (null when there was none). It holds a lock on the profile for the change, so two uploads at the same
+	 * moment leave exactly one avatar and each hands back the one it replaced, which the caller then discards.
+	 */
+	UUID replaceAvatar(UUID id, UUID fileId);
+
 	/** Marks a live profile deleted. It stays until it is erased. */
 	void softDelete(UUID id);
 

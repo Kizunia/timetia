@@ -60,6 +60,9 @@ public abstract class AdminApiTest {
 	@Autowired
 	protected FakeIdentityProvider keycloak;
 
+	@Autowired
+	protected FakeObjectStorage objectStorage;
+
 	@BeforeEach
 	@AfterEach
 	protected void cleanDatabase() {
@@ -70,12 +73,14 @@ public abstract class AdminApiTest {
 		this.jdbc.update("delete from role_permission");
 		this.jdbc.update("delete from role_permission_seed");
 		this.jdbc.update("delete from role");
+		this.jdbc.update("delete from stored_file");
 		this.jdbc.update("delete from user_profile");
 		this.jdbc.update("delete from audit_entry");
 		this.jdbc.update("delete from note");
 		this.jdbc.update("delete from event_publication");
 		this.jdbc.update("delete from processed_event");
 		this.keycloak.reset();
+		this.objectStorage.clear();
 	}
 
 	// --- who is calling ---------------------------------------------------------------------------------------------

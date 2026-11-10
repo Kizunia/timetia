@@ -30,7 +30,7 @@ class ArchitectureTest {
 	@Test
 	void rule1_applicationLogicDoesNotDependOnInfrastructure() {
 		ArchRule rule = noClasses().that().resideInAPackage("..application..")
-				.should().dependOnClassesThat().resideInAnyPackage("..web..", "..persistence..", "..keycloak..")
+				.should().dependOnClassesThat().resideInAnyPackage("..web..", "..persistence..", "..keycloak..", "..s3..")
 				.allowEmptyShould(true);
 		rule.check(classes);
 	}
@@ -70,6 +70,18 @@ class ArchitectureTest {
 	@Test
 	void rule11_durableListenersTakeADomainEvent() {
 		EventAndJobRules.durableListenersTakeADomainEvent().check(classes);
+	}
+
+	/**
+	 * Rule 5 for the default-on {@code files} module (ADR 0024): nothing outside it depends on it, so removing it, or
+	 * switching it off, cannot break another module. Others reach it through the {@code platform.files} port.
+	 */
+	@Test
+	void rule5_nothingOutsideTheFilesModuleDependsOnIt() {
+		ArchRule rule = noClasses().that().resideOutsideOfPackage(ROOT + ".files..")
+				.should().dependOnClassesThat().resideInAPackage(ROOT + ".files..")
+				.because("the files module is optional; other modules use the platform.files port");
+		rule.check(classes);
 	}
 
 	@Test

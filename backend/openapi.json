@@ -143,6 +143,15 @@
       },
       "MeResponse" : {
         "properties" : {
+          "avatarVersion" : {
+            "description" : "Changes whenever the avatar does; null when there is none. Use it to refresh a cached image.",
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
+          "avatarsEnabled" : {
+            "description" : "False when the files module is switched off; then there are no avatars.",
+            "type" : "boolean"
+          },
           "email" : {
             "type" : [ "string", "null" ]
           },
@@ -181,7 +190,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "emailVerified", "id", "name", "permissions", "roles", "status", "theme" ],
+        "required" : [ "avatarsEnabled", "emailVerified", "id", "name", "permissions", "roles", "status", "theme" ],
         "type" : "object"
       },
       "NoteResponse" : {
@@ -538,6 +547,11 @@
       },
       "UserResponse" : {
         "properties" : {
+          "avatarVersion" : {
+            "description" : "Changes whenever the avatar does; null when there is none.",
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
           "createdAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -963,6 +977,129 @@
           }
         },
         "tags" : [ "me" ]
+      }
+    },
+    "/api/v1/me/avatar" : {
+      "delete" : {
+        "operationId" : "avatarRemove",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "avatar" ]
+      },
+      "put" : {
+        "operationId" : "avatarUpload",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "avatar" ]
       }
     },
     "/api/v1/me/preferences" : {
@@ -2372,6 +2509,106 @@
           }
         },
         "tags" : [ "users" ]
+      }
+    },
+    "/api/v1/users/{id}/avatar" : {
+      "get" : {
+        "operationId" : "avatarView",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : "LARGE",
+            "enum" : [ "SMALL", "LARGE" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "If-None-Match",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              },
+              "image/png" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "avatar" ]
       }
     },
     "/api/v1/users/{id}/disable" : {

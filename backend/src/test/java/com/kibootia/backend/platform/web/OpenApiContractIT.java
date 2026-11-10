@@ -80,7 +80,7 @@ class OpenApiContractIT {
 		Set<String> paths = new java.util.TreeSet<>();
 		api.get("paths").propertyNames().forEach(paths::add);
 		assertThat(paths).containsExactlyInAnyOrder("/api/v1/me", "/api/v1/me/preferences",
-				"/api/v1/me/verification-email", "/api/v1/notes", "/api/v1/notes/{id}", "/api/v1/notes/{id}/restore",
+				"/api/v1/me/verification-email", "/api/v1/me/avatar", "/api/v1/users/{id}/avatar", "/api/v1/notes", "/api/v1/notes/{id}", "/api/v1/notes/{id}/restore",
 				"/api/v1/failed-events", "/api/v1/failed-events/{id}/retry", "/api/v1/permissions", "/api/v1/roles",
 				"/api/v1/roles/{id}", "/api/v1/users", "/api/v1/users/{id}", "/api/v1/users/{id}/invitation",
 				"/api/v1/users/{id}/disable", "/api/v1/users/{id}/enable", "/api/v1/users/{id}/restore",

@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.kibootia.backend.identity.application.UserProfile;
 import com.kibootia.backend.identity.application.UserProfileStore;
@@ -96,6 +97,20 @@ class JpaUserProfileStore implements UserProfileStore {
 		UserProfileEntity entity = this.entityManager.find(UserProfileEntity.class, id);
 		entity.setTheme(theme);
 		this.entityManager.flush();
+	}
+
+	@Override
+	@Transactional
+	public UUID replaceAvatar(UUID id, UUID fileId) {
+		UserProfileEntity entity = this.entityManager.find(UserProfileEntity.class, id,
+				jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+		if (entity == null) {
+			throw new IllegalStateException("There is no profile " + id + " to change the avatar of");
+		}
+		UUID previous = entity.getAvatarFileId();
+		entity.setAvatarFileId(fileId);
+		this.entityManager.flush();
+		return previous;
 	}
 
 	@Override

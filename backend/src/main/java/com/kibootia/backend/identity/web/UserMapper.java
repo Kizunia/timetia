@@ -21,7 +21,7 @@ final class UserMapper {
 		String state = profile.deleted() ? "DELETED" : profile.status().name();
 		return new UserResponse(profile.id(), profile.username(), profile.email(), profile.displayName(), state,
 				profile.emailVerified(), profile.erasureRequestedAt() != null,
-				UserRoleResponse.of(user.roles()),
+				UserRoleResponse.of(user.roles()), profile.avatarFileId(),
 				profile.version(), profile.createdAt(), profile.updatedAt());
 	}
 
