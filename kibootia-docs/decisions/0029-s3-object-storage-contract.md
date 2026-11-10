@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** observed (local run on 2026-11-10; CI run pending). The `files` module, the S3 adapter, RustFS in the `files` Compose profile and the avatar flow exist; decisions made while building are in [ADR 0051](0051-milestone-4-implementation-decisions.md). The verification gate passed locally: 12 contract tests against `rustfs/rustfs:1.0.4`, including presigned PUT and GET.
+> **Implementation:** verified (CI run 42873216224, 2026-11-10, pull request #6). The `files` module, the S3 adapter, RustFS in the `files` Compose profile and the avatar flow exist; decisions made while building are in [ADR 0051](0051-milestone-4-implementation-decisions.md). The verification gate passed, locally and in CI: 12 contract tests against `rustfs/rustfs:1.0.4`, including presigned PUT and GET.
 
 > **Extended by [ADR 0051](0051-milestone-4-implementation-decisions.md)**: the port lives in `platform` and the consumer asks for it optionally; the gate result; the AWS SDK checksum settings; the order of storage and database writes; how images are processed and avatars are served.
 
@@ -50,7 +50,7 @@ RustFS reached version 1.0 only in September 2026, so it is young; the pin, the 
 
 ## Status
 
-accepted. The verification gate (presigned PUT and GET and the other needed operations on the pinned RustFS) passed in a local run on 2026-11-10, so RustFS stays the local default; the CI run completes the gate. Avatar visibility extended by [ADR 0041](0041-user-lifecycle-and-account-model.md).
+accepted. The verification gate (presigned PUT and GET and the other needed operations on the pinned RustFS) passed in a local run and in CI (CI run 42873216224, 2026-11-10), so RustFS stays the local default. Avatar visibility extended by [ADR 0041](0041-user-lifecycle-and-account-model.md).
 
 ## Related
 

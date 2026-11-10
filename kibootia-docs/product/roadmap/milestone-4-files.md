@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** built; every criterion is covered by tests that passed in a local run on 2026-11-10 (103 fast and 238 integration backend tests, 168 frontend unit tests). The 8 end-to-end tests of the avatar story have not been run: they run first in CI, and this line becomes "verified" with the run ID once pull request #6 is green. Decisions made while building: [ADR 0051](../../decisions/0051-milestone-4-implementation-decisions.md).
+> **Implementation:** built; every criterion is covered by tests that passed in CI (CI run 42873216224, 2026-11-10, pull request #6): 103 fast and 238 integration backend tests, 168 frontend unit tests and 22 end-to-end tests against the full stack, 8 of them the avatar story. Decisions made while building: [ADR 0051](../../decisions/0051-milestone-4-implementation-decisions.md).
 
 ## Scope
 
@@ -25,18 +25,18 @@ The storage module and the avatar flow, as a complete vertical slice. Decision: 
 
 ## Status against the criteria
 
-Level: observed. Every row passed in a local run on 2026-11-10; the CI run is pending.
+Level: verified (CI run 42873216224, 2026-11-10, pull request #6). Every row also passed in a local run, except the end-to-end story, which ran first in CI.
 
 | Criterion | Evidence |
 |---|---|
 | Gate on the pinned RustFS | `S3ObjectStorageContractIT`: 12 checks on `rustfs/rustfs:1.0.4`, including presigned PUT and GET, a tampered address and credentials of the generated shape. RustFS stays the local default |
 | Port on the S3 client, contract tests against the local server | The same test; the adapter is `S3ObjectStorage` on the AWS SDK for Java. In CI it needs Docker, as the other Testcontainers tests do |
-| Upload, replace, view, delete; type from the bytes; size limits; re-encoding; streaming | `AvatarApiIT` (a script named .png, GIF and SVG are 415; 5 MB plus 1 byte is 413; a damaged or empty image is 400; the stored objects hold none of the upload's comment or filename; two concurrent uploads leave one avatar), `ImageProcessorTest` (all three formats, EXIF orientation 1 to 8, metadata and trailing data removed, a 40-megapixel limit checked before decoding), `proxy-files.test.ts` (multipart streamed byte for byte, images streamed back, 304 passed through), `avatar.test.tsx`, and the `avatar` end-to-end story (pending CI) |
+| Upload, replace, view, delete; type from the bytes; size limits; re-encoding; streaming | `AvatarApiIT` (a script named .png, GIF and SVG are 415; 5 MB plus 1 byte is 413; a damaged or empty image is 400; the stored objects hold none of the upload's comment or filename; two concurrent uploads leave one avatar), `ImageProcessorTest` (all three formats, EXIF orientation 1 to 8, metadata and trailing data removed, a 40-megapixel limit checked before decoding), `proxy-files.test.ts` (multipart streamed byte for byte, images streamed back, 304 passed through), `avatar.test.tsx`, and the `avatar` end-to-end story (8 tests) |
 | Own avatar always visible; others need `identity.profiles.view`; tenant isolation | `AvatarApiIT` (owner, an unverified owner, a user without and with the permission, an administrator, another tenant's profile and file, a cached copy that does not get past a refusal) |
 | Uploads rate limited, a test shows the 429 | `AvatarRateLimitIT` (the third upload within an allowance of two is 429 with `Retry-After`, stores nothing, does not affect another user, and a refused caller uses up no allowance) |
 | Reconciliation and purge remove orphans and expired data; erasing a user removes their files | `FileJobsIT` (purge in batches and with the storage server down, reconciliation with its grace period and its report-only rule, erasing a user removes every file they own and no one else's) |
 | Module switched off, the application still starts | `FilesDisabledIT` (starts with `kibootia.files.enabled=false` and no keys, none of the module's beans exist, the avatar endpoints answer 404 `files.disabled`, the rest works), `RequiredSettingsTest`, ArchUnit rule 5 |
-| All of the above in CI | Pull request #6, run pending |
+| All of the above in CI | Pull request #6, run 42873216224: backend (103 fast and 238 integration tests), frontend (168 unit tests), image scan, secret scan and 22 end-to-end tests all passed |
 
 ## Deviations and limits
 

@@ -76,7 +76,7 @@ Names only.
 | `kibootia.rate-limit.limits.<category>.capacity`, `.period` | Backend | Categories `invitations` (20 per hour), `admin-actions` (120 per minute), `verification-resend` (3 per hour), `uploads` (30 per 10 minutes) | No |
 | `DEMO_ADMIN_PASSWORD` | Compose, OpenTofu, Playwright | Generated; password of the local `demo-admin` user. Local overlay only | Yes |
 
-## Settings added by milestone 4 (observed, local run on 2026-11-10; CI run pending)
+## Settings added by milestone 4 (verified, CI run 42873216224)
 
 Names only.
 

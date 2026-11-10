@@ -81,7 +81,7 @@ RFC 9457 Problem Details with Kibootia extensions:
 
 ## Files
 
-Decision: [ADR 0029](../../decisions/0029-s3-object-storage-contract.md), [ADR 0051](../../decisions/0051-milestone-4-implementation-decisions.md). Observed (local run on 2026-11-10; CI run pending).
+Decision: [ADR 0029](../../decisions/0029-s3-object-storage-contract.md), [ADR 0051](../../decisions/0051-milestone-4-implementation-decisions.md). Verified (CI run 42873216224, 2026-11-10).
 
 - An upload is `multipart/form-data` with one part named `file`, sent with `PUT` to the resource it belongs to (`/api/v1/me/avatar`). The answer is the changed resource, not the file.
 - A file is shown from an endpoint of its own (`GET /api/v1/users/{id}/avatar?size=SMALL|LARGE`), never from a public address, so the permission is checked on every view. The response has a fixed `Content-Type`, `X-Content-Type-Options: nosniff`, a `Content-Security-Policy` of `default-src 'none'; sandbox`, an `ETag`, and `Cache-Control: private, no-cache`; a request with a matching `If-None-Match` is answered 304 after the check.

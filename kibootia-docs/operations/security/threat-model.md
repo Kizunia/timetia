@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** the entries for milestones 1 and 2 are verified or observed as their rows in [implementation status](../../product/roadmap/implementation-status.md) say; the entries added for milestone 3 (marked below) are verified (CI run 42780048416, 2026-11-10); the entries marked milestone 4 are observed (local run on 2026-11-10; CI run pending). Entries for later milestones are intended mitigations only.
+> **Implementation:** the entries for milestones 1 and 2 are verified or observed as their rows in [implementation status](../../product/roadmap/implementation-status.md) say; the entries added for milestone 3 (marked below) are verified (CI run 42780048416, 2026-11-10); the entries marked milestone 4 are verified (CI run 42873216224, 2026-11-10). Entries for later milestones are intended mitigations only.
 
 A living, short threat model organised by trust boundary (owner decision of 2026-10-28). Each capability adds its entries when it is built, and a milestone that adds a boundary is not complete until its entries exist. It lists what could go wrong and the intended mitigation, with the decision that fixes it. It is a starting point, not a completed analysis.
 

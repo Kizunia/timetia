@@ -12,7 +12,7 @@ Live list of unresolved decisions, deviations observed in the repository and che
 
 Resolved on 2026-10-28 and removed: OQ-02, OQ-03, OQ-04, OQ-06, OQ-20, OQ-22, OQ-23, OQ-25, OQ-27, OQ-28, OQ-29, OQ-31 (versions aside) and OQ-34; see ADRs [0023](0023-template-fork-adoption-model.md) to [0038](0038-frontend-stack.md).
 
-Resolved on 2026-11-10 and removed: OQ-40 (RustFS 1.0.4 passed 12 contract tests, including presigned PUT and GET, in a local run; the CI run completes it, [0051](0051-milestone-4-implementation-decisions.md)).
+Resolved on 2026-11-10 and removed: OQ-40 (RustFS 1.0.4 passed 12 contract tests, including presigned PUT and GET, in a local run and in CI run 42873216224; [0051](0051-milestone-4-implementation-decisions.md)).
 
 Resolved on 2026-11-09 and removed: OQ-41 (Hibernate 7.4 generates UUIDv7, maps `BINARY(16)` and filters soft-deleted rows with no fallback; [0049](0049-milestone-2-implementation-decisions.md)) and the deviations OQ-12, OQ-15 and OQ-16 (JPA added, Java 25, Adminer pinned).
 

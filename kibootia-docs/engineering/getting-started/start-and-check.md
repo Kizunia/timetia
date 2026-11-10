@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** the container route below (`pnpm apps:up`) was run on a Windows machine on 2026-11-10 from freshly reset volumes, and the checks in section 4 passed there and in CI (run 42780048416, pull request #5). The host route (`pnpm dev`) was last run for milestone 1 and is not re-run for milestone 3. Not run on macOS or Linux. The photo checks (steps 16 to 18) and the avatar end-to-end tests describe milestone 4 and have not been run on a running stack yet: the backend tests passed locally, and the stack runs for the first time in CI.
+> **Implementation:** the container route below (`pnpm apps:up`) was run on a Windows machine on 2026-11-10 from freshly reset volumes, and the checks in section 4 passed there and in CI (run 42780048416, pull request #5). The host route (`pnpm dev`) was last run for milestone 1 and is not re-run for milestone 3. Not run on macOS or Linux. The photo checks (steps 16 to 18) describe milestone 4. Their automated counterpart, the avatar end-to-end story, passed against the full stack in CI (run 42873216224, pull request #6); nobody has walked through the steps by hand yet.
 
 ## Goal
 
@@ -30,7 +30,7 @@ Milestones 0 to 4 are built ([roadmap](../../product/roadmap/README.md), [implem
 | Audit log screen | Every administrative change, newest first, with who did it and to whom; an erased user shows as "deleted user" | 3 |
 | Rate limiting | Invitations, verification mail and administrative actions are limited per user, answering 429 with `Retry-After` | 3 |
 | Avatars and object storage | Upload, replace and remove a photo on your profile (JPEG, PNG or WebP, up to 5 MB). The server stores a square 64 and 256 pixel copy and drops everything else in the file, such as the camera's location. Others see your photo only with the permission to see profiles. The files live in RustFS, an S3-compatible server; the module can be switched off | 4 |
-| Quality gates | Architecture rules, 341 backend tests, 168 frontend tests, 22 end-to-end tests with accessibility checks, container image scan and secret scan. Milestones 0 to 3 passed in CI; for milestone 4 the CI run is pending, and the 8 new end-to-end tests have not run yet | 0 to 4 |
+| Quality gates | Architecture rules, 341 backend tests, 168 frontend tests, 22 end-to-end tests with accessibility checks, container image scan and secret scan, all in CI (milestone 4: run 42873216224) | 0 to 4 |
 
 **Not built yet:**
 
@@ -130,7 +130,7 @@ Do these in order; each builds on the one before. Use a private window for the s
 | Command | What it runs | Needs |
 |---|---|---|
 | `pnpm --filter kibootia-frontend exec playwright install chromium` | Installs the test browser, once | Nothing running |
-| `pnpm --filter kibootia-frontend test:e2e` | 22 browser tests: sign-in, administration from invitation to erasure, registration with verification, denied access, and the avatar story (the last 8 have not been run yet) | The stack running (step 3), with the `files` profile |
+| `pnpm --filter kibootia-frontend test:e2e` | 22 browser tests: sign-in, administration from invitation to erasure, registration with verification, denied access, and the avatar story (the last 8 are the avatar story) | The stack running (step 3), with the `files` profile |
 | `cd backend && ./mvnw verify` | 103 fast and 238 integration tests, including the Keycloak adapter against a real Keycloak and Mailpit, and the storage contract against a real RustFS | Docker, JDK 25 |
 | `pnpm --filter kibootia-frontend lint`, `typecheck`, `test` | Lint, type check and 168 unit tests | Nothing running |
 

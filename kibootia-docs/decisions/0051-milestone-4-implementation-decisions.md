@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** observed (local run on 2026-11-10; CI run pending): 103 fast and 238 integration backend tests, 168 frontend unit tests, lint, type check and the frontend build passed locally. The 8 new end-to-end tests are written and have not been run: the full stack could not be started locally without stopping the developer's running containers, so they run first in CI. This line becomes "verified" with the run ID once pull request #6 is green ([verification standard](../engineering/testing/verification-standard.md)).
+> **Implementation:** verified (CI run 42873216224, 2026-11-10, pull request #6): 103 fast and 238 integration backend tests (including the storage contract against a real RustFS), 168 frontend unit tests with lint, type check and build, the image scan, the secret scan, and 22 end-to-end tests against the full Compose stack, 8 of them the avatar story ([verification standard](../engineering/testing/verification-standard.md)).
 
 ## Context
 
@@ -62,7 +62,7 @@
 
 ## Status
 
-accepted. Extends [ADR 0029](0029-s3-object-storage-contract.md) (its verification gate has passed locally; the CI run completes it) and [ADR 0041](0041-user-lifecycle-and-account-model.md), which stay accepted. Applies [ADR 0034](0034-soft-delete-with-retention-purge.md) without an exception.
+accepted. Extends [ADR 0029](0029-s3-object-storage-contract.md) (its verification gate passed locally and in CI run 42873216224, 2026-11-10) and [ADR 0041](0041-user-lifecycle-and-account-model.md), which stay accepted. Applies [ADR 0034](0034-soft-delete-with-retention-purge.md) without an exception.
 
 ## Related
 
