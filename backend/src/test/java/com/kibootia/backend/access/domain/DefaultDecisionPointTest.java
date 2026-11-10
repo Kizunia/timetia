@@ -148,6 +148,59 @@ class DefaultDecisionPointTest {
 	}
 
 	@Nested
+	@DisplayName("a caller who has not verified their email address")
+	class Unverified {
+
+		static final String BEFORE = "notes.notes.read-own";
+
+		final PermissionRegistry registry = new PermissionRegistry(List.of(
+				Permission.forEveryUser(UPDATE, "Change own notes"),
+				Permission.restricted(UPDATE_ANY, "Change anyone's notes"),
+				Permission.forEveryUser(BEFORE, "Read own notes").beforeVerification()));
+
+		Caller unverified() {
+			return Caller.user(ALICE, TENANT, false);
+		}
+
+		@Test
+		@DisplayName("holds nothing, even what the user role grants")
+		void holdsNothing() {
+			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(UPDATE, UPDATE_ANY, BEFORE),
+					List.of());
+
+			assertThat(point.scopeFor(unverified(), UPDATE)).isEqualTo(Scope.NONE);
+			assertThat(point.scopeFor(unverified(), UPDATE_ANY)).isEqualTo(Scope.NONE);
+			assertThat(point.can(unverified(), UPDATE, new Note(ALICE, TENANT))).isFalse();
+		}
+
+		@Test
+		@DisplayName("holds a permission marked as allowed before verification")
+		void holdsMarkedPermission() {
+			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(BEFORE), List.of());
+
+			assertThat(point.scopeFor(unverified(), BEFORE)).isEqualTo(Scope.ALL);
+			assertThat(point.scopeFor(Caller.user(ALICE, TENANT, true), BEFORE)).isEqualTo(Scope.ALL);
+		}
+
+		@Test
+		@DisplayName("is still denied a marked permission it was never granted")
+		void markedPermissionStillNeedsGranting() {
+			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(), List.of());
+
+			assertThat(point.scopeFor(unverified(), BEFORE)).isEqualTo(Scope.NONE);
+		}
+
+		@Test
+		@DisplayName("is not affected for the system")
+		void systemIgnoresVerification() {
+			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(), List.of());
+
+			assertThat(point.scopeFor(new Caller(ALICE, TENANT, false, true), UPDATE_ANY)).isEqualTo(Scope.ALL);
+		}
+
+	}
+
+	@Nested
 	@DisplayName("a decision about one record")
 	class Records {
 

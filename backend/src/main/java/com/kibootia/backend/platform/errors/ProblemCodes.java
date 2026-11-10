@@ -10,6 +10,9 @@ public final class ProblemCodes {
 
 	public static final String FORBIDDEN = "platform.forbidden";
 
+	/** 403 for a signed-in user whose email address is not verified yet (ADR 0041). */
+	public static final String EMAIL_NOT_VERIFIED = "platform.email_not_verified";
+
 	public static final String VALIDATION_FAILED = "platform.validation_failed";
 
 	public static final String MALFORMED_REQUEST = "platform.malformed_request";
@@ -35,6 +38,9 @@ public final class ProblemCodes {
 	public static final String RATE_LIMITED = "platform.rate_limited";
 
 	public static final String INTERNAL_ERROR = "platform.internal_error";
+
+	/** 503 when a system the call depends on, such as Keycloak, cannot be reached right now. */
+	public static final String SERVICE_UNAVAILABLE = "platform.service_unavailable";
 
 	private ProblemCodes() {
 	}

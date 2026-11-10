@@ -76,7 +76,7 @@ class FailedEventsApiIT {
 	}
 
 	private static org.springframework.test.web.servlet.request.RequestPostProcessor admin() {
-		return jwt().jwt((token) -> token.subject(ADMIN.toString()));
+		return jwt().jwt((token) -> token.subject(ADMIN.toString()).claim("email_verified", true));
 	}
 
 	private void publishFailing(UUID tenant) {

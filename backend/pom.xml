@@ -32,6 +32,8 @@
 		<archunit.version>1.5.1</archunit.version>
 		<shedlock.version>7.11.0</shedlock.version>
 		<springdoc.version>3.2.0</springdoc.version>
+		<!-- 8.16.1 is the newest line that has had a patch release (ADR 0035). -->
+		<bucket4j.version>8.16.1</bucket4j.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -94,6 +96,16 @@
 			<groupId>net.javacrumbs.shedlock</groupId>
 			<artifactId>shedlock-provider-jdbc-template</artifactId>
 			<version>${shedlock.version}</version>
+		</dependency>
+		<!-- In-app rate limiting (API conventions): token buckets held per user in a size-bounded Caffeine cache. -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j_jdk17-core</artifactId>
+			<version>${bucket4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
 		</dependency>
 
 		<dependency>

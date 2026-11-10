@@ -156,7 +156,11 @@ class AuthorizationIT {
 	}
 
 	private static void signInAs(UUID user) {
-		Jwt token = Jwt.withTokenValue("t").header("alg", "none").subject(user.toString()).build();
+		Jwt token = Jwt.withTokenValue("t")
+			.header("alg", "none")
+			.subject(user.toString())
+			.claim("email_verified", true)
+			.build();
 		SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(token));
 	}
 
@@ -274,7 +278,7 @@ class AuthorizationIT {
 	@Test
 	@DisplayName("over HTTP an allowed call is 200 and a denied one is 403 Problem Details")
 	void overHttp() throws Exception {
-		var alice = jwt().jwt((token) -> token.subject(ALICE.toString()));
+		var alice = jwt().jwt((token) -> token.subject(ALICE.toString()).claim("email_verified", true));
 
 		this.mvc.perform(get("/api/v1/probe-auth/read").with(alice)).andExpect(status().isOk());
 		this.mvc.perform(get("/api/v1/probe-auth/purge").with(alice))
@@ -282,6 +286,37 @@ class AuthorizationIT {
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.code").value("platform.forbidden"))
 			.andExpect(jsonPath("$.detail").value("Access is denied"));
+	}
+
+	@Test
+	@DisplayName("over HTTP an unverified caller is refused with email_not_verified, not a plain forbidden")
+	void overHttpUnverified() throws Exception {
+		var unverified = jwt().jwt((token) -> token.subject(ALICE.toString()).claim("email_verified", false));
+
+		this.mvc.perform(get("/api/v1/probe-auth/read").with(unverified))
+			.andExpect(status().isForbidden())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+		this.mvc.perform(get("/api/v1/probe-auth/read").with(jwt().jwt((token) -> token.subject(ALICE.toString()))))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+	}
+
+	@Test
+	@DisplayName("requireVerified lets a verified caller through and refuses an unverified one")
+	void requireVerified() {
+		signInAs(ALICE);
+		inTenant(() -> {
+			authorization.requireVerified();
+			return null;
+		});
+
+		Jwt unverified = Jwt.withTokenValue("t").header("alg", "none").subject(ALICE.toString()).build();
+		SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(unverified));
+		assertThatThrownBy(() -> inTenant(() -> {
+			authorization.requireVerified();
+			return null;
+		})).isInstanceOf(EmailNotVerifiedException.class);
 	}
 
 	@Test

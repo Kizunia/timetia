@@ -78,7 +78,7 @@ class AuditLogIT {
 	}
 
 	private static void signInAs(UUID user) {
-		Jwt token = Jwt.withTokenValue("t").header("alg", "none").subject(user.toString()).build();
+		Jwt token = Jwt.withTokenValue("t").header("alg", "none").subject(user.toString()).claim("email_verified", true).build();
 		SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(token));
 	}
 

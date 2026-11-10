@@ -16,8 +16,16 @@ public class PermissionChecks {
 		this.authorization = authorization;
 	}
 
+	/**
+	 * True when the caller holds the permission. A denial for a caller who has not verified their email address is
+	 * raised here as {@link EmailNotVerifiedException}, so the response says why; the expression language passes a
+	 * runtime exception through unchanged.
+	 */
 	public boolean holds(String permission) {
-		return this.authorization.can(permission);
+		if (this.authorization.can(permission)) {
+			return true;
+		}
+		throw this.authorization.denied(permission);
 	}
 
 }

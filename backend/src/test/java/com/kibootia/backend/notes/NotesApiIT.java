@@ -77,7 +77,7 @@ class NotesApiIT {
 	}
 
 	private static MockHttpServletRequestBuilder as(UUID user, MockHttpServletRequestBuilder request) {
-		return request.with(jwt().jwt((token) -> token.subject(user.toString())));
+		return request.with(jwt().jwt((token) -> token.subject(user.toString()).claim("email_verified", true)));
 	}
 
 	private ResultActions create(UUID user, String title) throws Exception {

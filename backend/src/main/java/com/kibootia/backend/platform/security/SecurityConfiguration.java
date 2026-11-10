@@ -55,11 +55,18 @@ class SecurityConfiguration {
 
 	@Bean
 	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ProblemFactory problemFactory,
-			ObjectProvider<TenantResolver> tenantResolver) throws Exception {
+			ObjectProvider<TenantResolver> tenantResolver, ObjectProvider<RequestGate> gate) throws Exception {
 		ProblemDetailsHandlers problems = new ProblemDetailsHandlers(problemFactory);
+		TenantContextFilter tenantFilter = new TenantContextFilter(
+				tenantResolver.getIfAvailable(TenantResolver::singleTenant));
+		// Binds the tenant once the bearer token has authenticated the caller (ADR 0028).
+		http.addFilterAfter(tenantFilter, BearerTokenAuthenticationFilter.class);
+		// Then the module that owns user profiles admits or refuses the caller (ADR 0041).
+		RequestGate requestGate = gate.getIfAvailable();
+		if (requestGate != null) {
+			http.addFilterAfter(new RequestGateFilter(requestGate, problemFactory), TenantContextFilter.class);
+		}
 		http
-			// Binds the tenant once the bearer token has authenticated the caller (ADR 0028).
-			.addFilterAfter(new TenantContextFilter(tenantResolver.getIfAvailable(TenantResolver::singleTenant)), BearerTokenAuthenticationFilter.class)
 			.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated())
 			.sessionManagement((sessions) -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			// Bearer tokens in a header are not sent by browsers on their own, so there is no cookie to forge.

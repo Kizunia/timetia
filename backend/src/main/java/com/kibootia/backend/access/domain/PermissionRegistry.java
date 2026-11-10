@@ -60,6 +60,12 @@ public final class PermissionRegistry {
 		return Collections.unmodifiableSet(names);
 	}
 
+	/** Whether a caller who has not verified their email address may use the permission (ADR 0041). */
+	public boolean isAllowedBeforeVerification(String name) {
+		Permission permission = this.byName.get(name);
+		return permission != null && permission.allowedBeforeVerification();
+	}
+
 	/** Whether the action has a {@code -any} variant, which makes the plain permission mean "records I own". */
 	public boolean hasAnyVariant(String action) {
 		return this.byName.containsKey(action + ANY_SUFFIX);

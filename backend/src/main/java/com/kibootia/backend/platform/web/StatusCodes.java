@@ -26,6 +26,7 @@ final class StatusCodes {
 			case PAYLOAD_TOO_LARGE -> ProblemCodes.PAYLOAD_TOO_LARGE;
 			case CONFLICT -> ProblemCodes.CONCURRENT_MODIFICATION;
 			case TOO_MANY_REQUESTS -> ProblemCodes.RATE_LIMITED;
+			case SERVICE_UNAVAILABLE -> ProblemCodes.SERVICE_UNAVAILABLE;
 			default -> known.is5xxServerError() ? ProblemCodes.INTERNAL_ERROR : ProblemCodes.BAD_REQUEST;
 		};
 	}

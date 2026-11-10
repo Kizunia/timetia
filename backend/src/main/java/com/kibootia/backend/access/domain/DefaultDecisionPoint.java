@@ -17,6 +17,8 @@ import com.kibootia.backend.platform.authorization.TenantBound;
  * <ol>
  * <li>The system may do anything. It is a caller created only by {@code Authorization#runAsSystem}.</li>
  * <li>An action must be a registered permission; anything else is a programming error.</li>
+ * <li>A caller who has not verified their email address holds only the permissions marked
+ * {@code allowedBeforeVerification}.</li>
  * <li>Holding {@code <action>-any} gives {@link Scope#ALL}. Holding {@code <action>} gives {@link Scope#OWN} when the
  * action has an {@code -any} variant, and {@link Scope#ALL} when it has none (an administrative action). Holding
  * neither gives {@link Scope#NONE}.</li>
@@ -43,6 +45,10 @@ public final class DefaultDecisionPoint implements PolicyDecisionPoint {
 		requireRegistered(action);
 		if (caller.system()) {
 			return Scope.ALL;
+		}
+		if (!caller.emailVerified() && !this.registry.isAllowedBeforeVerification(action)) {
+			// ADR 0041: until the address is verified only the operations marked for it work.
+			return Scope.NONE;
 		}
 		Set<String> held = this.source.permissionsOf(caller);
 		if (held.contains(action + PermissionRegistry.ANY_SUFFIX)) {

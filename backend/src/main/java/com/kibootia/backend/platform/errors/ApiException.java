@@ -66,6 +66,11 @@ public class ApiException extends RuntimeException {
 		return new ApiException(HttpStatus.TOO_MANY_REQUESTS, ProblemCodes.RATE_LIMITED, message, List.of(), headers);
 	}
 
+	/** 503 when a system this call needs, such as Keycloak, cannot be reached. The caller may try again later. */
+	public static ApiException serviceUnavailable(String message) {
+		return new ApiException(HttpStatus.SERVICE_UNAVAILABLE, ProblemCodes.SERVICE_UNAVAILABLE, message);
+	}
+
 	public HttpStatus status() {
 		return this.status;
 	}

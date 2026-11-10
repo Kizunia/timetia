@@ -35,6 +35,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.kibootia.backend.platform.authorization.EmailNotVerifiedException;
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.errors.ApiFieldError;
 import com.kibootia.backend.platform.errors.ProblemCodes;
@@ -134,6 +135,10 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(AccessDeniedException.class)
 	ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
 		// Raised by method security, after the filter chain; the filter chain's own 403 has the same shape.
+		if (ex instanceof EmailNotVerifiedException) {
+			return respond(request, HttpStatus.FORBIDDEN, ProblemCodes.EMAIL_NOT_VERIFIED,
+					"Verify your email address to do this.");
+		}
 		return respond(request, HttpStatus.FORBIDDEN, ProblemCodes.FORBIDDEN, "Access is denied");
 	}
 

@@ -5,6 +5,7 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
+import com.kibootia.backend.platform.authorization.EmailNotVerifiedException;
 import com.kibootia.backend.platform.errors.ProblemCodes;
 import com.kibootia.backend.platform.web.ProblemFactory;
 
@@ -33,7 +34,10 @@ final class ProblemDetailsHandlers {
 
 	AccessDeniedHandler accessDeniedHandler() {
 		return (request, response, exception) -> this.problems.write(request, response,
-				this.problems.create(HttpStatus.FORBIDDEN, ProblemCodes.FORBIDDEN, "Access is denied"));
+				(exception instanceof EmailNotVerifiedException)
+						? this.problems.create(HttpStatus.FORBIDDEN, ProblemCodes.EMAIL_NOT_VERIFIED,
+								"Verify your email address to do this.")
+						: this.problems.create(HttpStatus.FORBIDDEN, ProblemCodes.FORBIDDEN, "Access is denied"));
 	}
 
 }

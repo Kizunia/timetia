@@ -71,6 +71,16 @@ public class Authorization {
 		}
 	}
 
+	/**
+	 * For an operation on the caller's own account that needs no permission but is not open to someone who has not
+	 * verified their email address (ADR 0041).
+	 */
+	public void requireVerified() {
+		if (!caller().emailVerified()) {
+			throw new EmailNotVerifiedException();
+		}
+	}
+
 	public Scope scopeFor(String action) {
 		return this.decisionPoint.scopeFor(caller(), action);
 	}
@@ -145,8 +155,13 @@ public class Authorization {
 		}
 	}
 
-	private static AccessDeniedException denied(String action) {
-		return new AccessDeniedException("Not allowed: " + action);
+	/**
+	 * The refusal for an action. A caller who has not verified their email address is told that, because verifying is
+	 * what they can do about it; everyone else gets a plain denial.
+	 */
+	AccessDeniedException denied(String action) {
+		return caller().emailVerified() ? new AccessDeniedException("Not allowed: " + action)
+				: new EmailNotVerifiedException();
 	}
 
 }

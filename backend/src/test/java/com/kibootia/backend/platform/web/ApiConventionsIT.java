@@ -142,7 +142,7 @@ class ApiConventionsIT {
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder authed(
 			org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder) {
-		return builder.with(jwt().jwt((token) -> token.subject("11111111-1111-7111-8111-111111111111")));
+		return builder.with(jwt().jwt((token) -> token.subject("11111111-1111-7111-8111-111111111111").claim("email_verified", true)));
 	}
 
 	private static ResultActions problem(ResultActions result, int status, String code) throws Exception {
