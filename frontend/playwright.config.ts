@@ -3,11 +3,13 @@ import path from "node:path";
 
 import { defineConfig, devices } from "@playwright/test";
 
-// The demo user's password is generated into the root .env by 'pnpm bootstrap'. CI sets it in the environment.
+// The demo users' passwords are generated into the root .env by 'pnpm bootstrap'. CI sets them in the environment.
 const rootEnv = path.join(process.cwd(), "..", ".env");
-if (!process.env.DEMO_USER_PASSWORD && existsSync(rootEnv)) {
-  const match = /^DEMO_USER_PASSWORD=(.+)$/m.exec(readFileSync(rootEnv, "utf8"));
-  if (match?.[1]) process.env.DEMO_USER_PASSWORD = match[1].trim();
+for (const name of ["DEMO_USER_PASSWORD", "DEMO_ADMIN_PASSWORD"]) {
+  if (!process.env[name] && existsSync(rootEnv)) {
+    const match = new RegExp(`^${name}=(.+)$`, "m").exec(readFileSync(rootEnv, "utf8"));
+    if (match?.[1]) process.env[name] = match[1].trim();
+  }
 }
 
 /**
@@ -18,6 +20,8 @@ export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: false,
   workers: 1,
+  // Keycloak's pages and the durable events behind the mail take a moment; a test does several round trips.
+  timeout: 90_000,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {

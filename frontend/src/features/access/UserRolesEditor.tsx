@@ -39,9 +39,16 @@ function Checklist({ userId, roles, initial, editable }: { userId: string; roles
 
   return (
     <form
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
-        replace.mutate(selected, { onSuccess: () => toast.success("Roles saved") });
+        try {
+          // Awaited, not given callbacks: saving refreshes the data, which starts this checklist again, and a callback
+          // given to `mutate` is dropped for a component that has gone by then.
+          await replace.mutateAsync(selected);
+          toast.success("Roles saved");
+        } catch {
+          // The alert below shows what went wrong.
+        }
       }}
       className="grid gap-3"
     >

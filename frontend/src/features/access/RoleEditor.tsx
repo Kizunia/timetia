@@ -99,23 +99,22 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
   }
 
   const mutation = role ? update : create;
-  const submit = form.handleSubmit((values) => {
+  const submit = form.handleSubmit(async (values) => {
     setFailure(null);
     const input = { name: values.name, description: values.description, permissions: values.permissions };
-    const done = {
-      onSuccess: (saved: Role) => {
-        toast.success(role ? "Role saved" : "Role created");
-        if (!role) router.push(`/admin/roles/${saved.id}`);
-      },
-      onError: (error: unknown) =>
-        setFailure(
-          applyProblem(error, ["name", "description", "permissions"], (field, message) => form.setError(field as "name", { message }), {
-            "access.role_name_in_use": "name",
-          }),
-        ),
-    };
-    if (role) update.mutate({ ...input, version: role.version }, done);
-    else create.mutate(input, done);
+    try {
+      // Awaited, not given callbacks: saving refreshes the role, which starts this form again with the new version, and a
+      // callback given to `mutate` is dropped for a form that has gone by then.
+      const saved = role ? await update.mutateAsync({ ...input, version: role.version }) : await create.mutateAsync(input);
+      toast.success(role ? "Role saved" : "Role created");
+      if (!role) router.push(`/admin/roles/${saved.id}`);
+    } catch (error) {
+      setFailure(
+        applyProblem(error, ["name", "description", "permissions"], (field, message) => form.setError(field as "name", { message }), {
+          "access.role_name_in_use": "name",
+        }),
+      );
+    }
   });
 
   return (
@@ -244,14 +243,15 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() =>
-                      remove.mutate(undefined, {
-                        onSuccess: () => {
-                          toast.success("Role deleted");
-                          router.push("/admin/roles");
-                        },
-                      })
-                    }
+                    onClick={async () => {
+                      try {
+                        await remove.mutateAsync();
+                        toast.success("Role deleted");
+                        router.push("/admin/roles");
+                      } catch {
+                        // The alert above shows what went wrong.
+                      }
+                    }}
                   >
                     Delete
                   </AlertDialogAction>
