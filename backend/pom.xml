@@ -34,6 +34,10 @@
 		<springdoc.version>3.2.0</springdoc.version>
 		<!-- 8.16.1 is the newest line that has had a patch release (ADR 0035). -->
 		<bucket4j.version>8.16.1</bucket4j.version>
+		<!-- Object storage and images (ADR 0029). Tika 4.x has no patch release yet (ADR 0035), so the 3.3 line is used. -->
+		<awssdk.version>2.57.12</awssdk.version>
+		<tika.version>3.3.3</tika.version>
+		<twelvemonkeys.version>3.15.3</twelvemonkeys.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -107,6 +111,42 @@
 			<groupId>com.github.ben-manes.caffeine</groupId>
 			<artifactId>caffeine</artifactId>
 		</dependency>
+		<!-- Object storage through the standard S3 API (ADR 0029). The JDK-based HTTP client keeps Netty and Apache out. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>netty-nio-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>apache-client</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>url-connection-client</artifactId>
+		</dependency>
+		<!-- File type from the bytes, never from the filename or the declared content type. -->
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+			<version>${tika.version}</version>
+		</dependency>
+		<!-- WebP and metadata reading for ImageIO; JPEG and PNG are built into the JDK. -->
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-webp</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-jpeg</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.mysql</groupId>
@@ -176,6 +216,13 @@
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-bom</artifactId>
 				<version>${spring-modulith.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>software.amazon.awssdk</groupId>
+				<artifactId>bom</artifactId>
+				<version>${awssdk.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
