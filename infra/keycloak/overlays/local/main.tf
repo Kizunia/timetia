@@ -29,6 +29,11 @@ variable "demo_user_password" {
   sensitive = true
 }
 
+variable "demo_admin_password" {
+  type      = string
+  sensitive = true
+}
+
 terraform {
   required_providers {
     keycloak = {
@@ -58,6 +63,23 @@ module "base" {
     host = "mailpit"
     port = 1025
     from = "kibootia@localhost"
+  }
+}
+
+# The local administrator. The backend makes this address the first administrator when it signs in with a verified email
+# address, through the same bootstrap setting production uses (KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL, ADR 0025).
+resource "keycloak_user" "demo_admin" {
+  realm_id       = module.base.realm_id
+  username       = "demo-admin"
+  enabled        = true
+  email          = "demo-admin@kibootia.localhost"
+  email_verified = true
+  first_name     = "Demo"
+  last_name      = "Administrator"
+
+  initial_password {
+    value     = var.demo_admin_password
+    temporary = false
   }
 }
 

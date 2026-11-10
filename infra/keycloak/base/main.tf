@@ -69,7 +69,8 @@ resource "keycloak_openid_client" "web" {
   pkce_code_challenge_method   = "S256"
 
   root_url                        = var.public_base_url
-  valid_redirect_uris             = ["${var.public_base_url}/auth/callback"]
+  # The callback, and the front door that the links in Keycloak's invitation and verification emails return to.
+  valid_redirect_uris             = ["${var.public_base_url}/auth/callback", "${var.public_base_url}/"]
   valid_post_logout_redirect_uris = [var.public_base_url]
   web_origins                     = []
 }
@@ -99,6 +100,23 @@ resource "keycloak_openid_client" "admin" {
   implicit_flow_enabled        = false
   direct_access_grants_enabled = false
   service_accounts_enabled     = true
+}
+
+# Keycloak 26.8 accepts an Admin API call only when the token's audience is the realm's admin API address. The built-in
+# kc-admin-api scope adds it; a client created here does not have it unless it is made a default scope. The list is the
+# default set plus that scope; the resource owns the whole set.
+resource "keycloak_openid_client_default_scopes" "admin" {
+  realm_id  = keycloak_realm.kibootia.id
+  client_id = keycloak_openid_client.admin.id
+  default_scopes = [
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    "acr",
+    "basic",
+    "kc-admin-api",
+  ]
 }
 
 data "keycloak_openid_client" "realm_management" {

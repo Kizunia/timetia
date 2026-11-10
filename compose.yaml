@@ -102,6 +102,7 @@ services:
       TF_VAR_web_client_secret: ${KEYCLOAK_WEB_CLIENT_SECRET:?Set KEYCLOAK_WEB_CLIENT_SECRET in .env}
       TF_VAR_admin_client_secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:?Set KEYCLOAK_ADMIN_CLIENT_SECRET in .env}
       TF_VAR_demo_user_password: ${DEMO_USER_PASSWORD:?Set DEMO_USER_PASSWORD in .env}
+      TF_VAR_demo_admin_password: ${DEMO_ADMIN_PASSWORD:?Set DEMO_ADMIN_PASSWORD in .env}
     volumes:
       - ./infra/keycloak:/infra:ro
       - kibootia_tofu_state:/state
@@ -146,6 +147,11 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       KIBOOTIA_SECURITY_ISSUER: http://localhost:8180/realms/kibootia
       KIBOOTIA_SECURITY_JWK_SET_URI: http://keycloak:8080/realms/kibootia/protocol/openid-connect/certs
+      # The Admin API of Keycloak, reached on the internal address, with the service account that may only manage users.
+      KIBOOTIA_IDENTITY_KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:?Set KEYCLOAK_ADMIN_CLIENT_SECRET in .env}
+      KIBOOTIA_IDENTITY_PUBLIC_BASE_URL: http://localhost:3470
+      KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL: ${KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL:-}
       MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://lgtm:4318/v1/traces
       MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://lgtm:4318/v1/metrics
       KIBOOTIA_OBSERVABILITY_ENABLED: ${KIBOOTIA_OBSERVABILITY_ENABLED:-true}
