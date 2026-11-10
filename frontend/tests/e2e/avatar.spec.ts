@@ -6,6 +6,8 @@ import {
   DEMO_USERNAME,
   demoPassword,
   expectNoAccessibilityViolations,
+  expectNoToasts,
+  makeImage,
   signIn,
 } from "./support";
 
@@ -37,29 +39,6 @@ test.afterAll(async () => {
   await adminContext.close();
 });
 
-type ImageType = "image/jpeg" | "image/png" | "image/webp";
-
-/** A real image of the type, made by the browser itself: a coloured field with a white corner, so it is not a blank. */
-async function makeImage(page: Page, type: ImageType, width: number, height: number, colour: string): Promise<Buffer> {
-  const bytes = await page.evaluate(
-    async ({ type, width, height, colour }) => {
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext("2d")!;
-      context.fillStyle = colour;
-      context.fillRect(0, 0, width, height);
-      context.fillStyle = "#ffffff";
-      context.fillRect(0, 0, width / 4, height / 4);
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.9));
-      if (!blob || blob.type !== type) throw new Error(`This browser cannot encode ${type}`);
-      return Array.from(new Uint8Array(await blob.arrayBuffer()));
-    },
-    { type, width, height, colour },
-  );
-  return Buffer.from(bytes);
-}
-
 /** The picture has loaded from the API, at the size the server made it. */
 async function expectLoaded(image: Locator, pixels: number) {
   await expect
@@ -71,14 +50,6 @@ async function expectLoaded(image: Locator, pixels: number) {
 
 const photo = (page: Page) => page.getByRole("img", { name: "Your photo" });
 const headerAvatar = (page: Page) => page.getByRole("banner").getByTestId("avatar");
-
-/**
- * Axe measures colours as they are at that moment, and a toast that is still fading in or out has a colour that is not
- * its final one, so a check made while one is on screen fails now and then. Wait until they are gone.
- */
-async function expectNoToasts(page: Page) {
-  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0, { timeout: 15_000 });
-}
 
 async function choose(page: Page, file: { name: string; mimeType: string; buffer: Buffer }) {
   await page.getByTestId("avatar-input").setInputFiles(file);

@@ -35,7 +35,7 @@ test("a user who registers is held to the unverified rules until they follow the
   await expect(page.getByTestId("profile").locator('[data-field="email"]')).toContainText("not verified");
   await expect(page.getByLabel("Colour scheme")).toBeDisabled();
   const refused = await page.evaluate(async () => {
-    const response = await fetch("/api/v1/notes", { headers: { "x-kibootia-request": "1" } });
+    const response = await fetch("/api/v1/me/preferences", { method: "PUT", headers: { "x-kibootia-request": "1", "content-type": "application/json" }, body: JSON.stringify({ theme: "DARK" }) });
     return { status: response.status, code: ((await response.json()) as { code: string }).code };
   });
   expect(refused).toEqual({ status: 403, code: "platform.email_not_verified" });
@@ -59,7 +59,7 @@ test("a user who registers is held to the unverified rules until they follow the
   await expect(page.getByTestId("profile").locator('[data-field="email"]')).toContainText("verified");
   await expect(page.getByLabel("Colour scheme")).toBeEnabled();
 
-  const allowed = await page.evaluate(async () => (await fetch("/api/v1/notes", { headers: { "x-kibootia-request": "1" } })).status);
+  const allowed = await page.evaluate(async () => (await fetch("/api/v1/me/preferences", { method: "PUT", headers: { "x-kibootia-request": "1", "content-type": "application/json" }, body: JSON.stringify({ theme: "DARK" }) })).status);
   expect(allowed).toBe(200);
   await expectNoAccessibilityViolations(page);
 });
