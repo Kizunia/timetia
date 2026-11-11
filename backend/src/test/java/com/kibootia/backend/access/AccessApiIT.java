@@ -298,6 +298,34 @@ class AccessApiIT extends AdminApiTest {
 		get(user(BOB), "/api/v1/me").andExpect(jsonPath("$.permissions", hasItem("access.roles.manage")));
 	}
 
+	@Test
+	@DisplayName("a role can only be given by someone who holds every permission in it, to others and to themselves")
+	void aRoleCanOnlyBeGivenByAHolderOfItsPermissions() throws Exception {
+		ensureAdmin();
+		signIn(ALICE);
+		signIn(BOB);
+		String userRole = builtInRoleId("USER");
+		String assigner = createRole("Assigners", "access.roles.view", "access.roles.assign");
+		String powerful = createRole("Powerful", "identity.users.erase", "audit.entries.view");
+		String modest = createRole("Modest", "access.roles.view");
+		setRoles(ALICE, userRole, assigner);
+
+		// Alice may assign roles, but does not hold what Powerful allows: neither Bob nor she can get it through her.
+		put(user(ALICE), "/api/v1/users/" + BOB + "/roles", "{\"roleIds\":[\"" + powerful + "\"]}")
+			.andExpect(status().isForbidden());
+		put(user(ALICE), "/api/v1/users/" + ALICE + "/roles",
+				"{\"roleIds\":[\"" + userRole + "\",\"" + assigner + "\",\"" + powerful + "\"]}")
+			.andExpect(status().isForbidden());
+		assertThat(count("select count(*) from role_assignment where role_id = unhex(?)", powerful.replace("-", "")))
+			.isZero();
+
+		// A role whose permissions she holds is fine, and an administrator can still give any role.
+		put(user(ALICE), "/api/v1/users/" + BOB + "/roles", "{\"roleIds\":[\"" + modest + "\"]}")
+			.andExpect(status().isOk());
+		put(admin(), "/api/v1/users/" + BOB + "/roles", "{\"roleIds\":[\"" + userRole + "\",\"" + powerful + "\"]}")
+			.andExpect(status().isOk());
+	}
+
 	// --- the last administrator ----------------------------------------------------------------------------------------
 
 	@Test

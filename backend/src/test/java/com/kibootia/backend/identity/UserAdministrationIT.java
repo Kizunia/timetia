@@ -105,6 +105,24 @@ class UserAdministrationIT extends AdminApiTest {
 	}
 
 	@Test
+	@DisplayName("an invitation cannot name a role whose permissions the inviter does not hold, and leaves no account behind")
+	void invitingCannotGrantMoreThanTheInviterHolds() throws Exception {
+		ensureAdmin();
+		signIn(ALICE);
+		String powerful = createRole("Powerful", "identity.users.erase");
+		String inviters = createRole("Inviters", "identity.users.invite", "access.roles.assign");
+		setRoles(ALICE, builtInRoleId("USER"), inviters);
+
+		post(user(ALICE), "/api/v1/users", "{\"email\":\"x@kibootia.test\",\"roleIds\":[\"" + powerful + "\"]}")
+			.andExpect(status().isForbidden());
+		assertThat(this.keycloak.countCalls("delete")).as("the account was taken back").isEqualTo(1);
+		assertThat(count("select count(*) from user_profile")).as("no profile was left behind").isEqualTo(2);
+
+		post(admin(), "/api/v1/users", "{\"email\":\"y@kibootia.test\",\"roleIds\":[\"" + powerful + "\"]}")
+			.andExpect(status().isCreated());
+	}
+
+	@Test
 	@DisplayName("an address that is taken, malformed or blank is refused, and a Keycloak outage is 503 with nothing left behind")
 	void invitingRefusals() throws Exception {
 		ensureAdmin();
@@ -169,6 +187,7 @@ class UserAdministrationIT extends AdminApiTest {
 		this.keycloak.register(ALICE, true, true);
 
 		post(user(ALICE), "/api/v1/users/" + BOB + "/disable", null).andExpect(status().isForbidden());
+		post(user(ALICE), "/api/v1/users/" + BOB + "/enable", null).andExpect(status().isForbidden());
 		post(admin(), "/api/v1/users/" + ALICE + "/disable", null).andExpect(status().isOk())
 			.andExpect(jsonPath("$.state").value("DISABLED"));
 		post(admin(), "/api/v1/users/" + ALICE + "/disable", null).andExpect(status().isOk());
@@ -200,24 +219,33 @@ class UserAdministrationIT extends AdminApiTest {
 	}
 
 	@Test
-	@DisplayName("the last administrator who can sign in cannot be disabled or deleted, even by someone else")
-	void lastAdministrator() throws Exception {
+	@DisplayName("only an administrator can disable, enable, delete, restore or erase an administrator, whatever else they may do")
+	void onlyAnAdministratorActsOnAnAdministrator() throws Exception {
 		ensureAdmin();
 		signIn(ALICE);
-		String managers = createRole("User managers", "identity.users.disable", "identity.users.delete");
-		setRoles(ALICE, builtInRoleId("USER"), managers);
-
-		post(user(ALICE), "/api/v1/users/" + ADMIN + "/disable", null).andExpect(status().isConflict())
-			.andExpect(jsonPath("$.code").value("access.last_administrator"));
-		delete(user(ALICE), "/api/v1/users/" + ADMIN).andExpect(status().isConflict())
-			.andExpect(jsonPath("$.code").value("access.last_administrator"));
-		get(admin(), "/api/v1/me").andExpect(status().isOk());
-
+		signIn(BOB);
 		signIn(SECOND_ADMIN);
+		String managers = createRole("User managers", "identity.users.disable", "identity.users.delete",
+				"identity.users.restore", "identity.users.erase");
+		setRoles(ALICE, builtInRoleId("USER"), managers);
 		setRoles(SECOND_ADMIN, builtInRoleId("USER"), builtInRoleId("ADMIN"));
-		post(user(ALICE), "/api/v1/users/" + ADMIN + "/disable", null).andExpect(status().isOk());
-		delete(user(ALICE), "/api/v1/users/" + SECOND_ADMIN).andExpect(status().isConflict())
-			.andExpect(jsonPath("$.code").value("access.last_administrator"));
+		String target = "/api/v1/users/" + SECOND_ADMIN;
+
+		// Alice holds every account permission and still cannot touch an administrator, however she asks.
+		post(user(ALICE), target + "/disable", null).andExpect(status().isForbidden());
+		post(user(ALICE), target + "/enable", null).andExpect(status().isForbidden());
+		delete(user(ALICE), target).andExpect(status().isForbidden());
+		post(user(ALICE), target + "/restore", null).andExpect(status().isForbidden());
+		post(user(ALICE), target + "/erase", null).andExpect(status().isForbidden());
+		assertThat(count("select count(*) from user_profile where id = unhex(?) and status = 'ACTIVE' and deleted_at is null",
+				hex(SECOND_ADMIN))).as("the administrator is untouched").isEqualTo(1);
+
+		// The same permissions still work on an ordinary user.
+		post(user(ALICE), "/api/v1/users/" + BOB + "/disable", null).andExpect(status().isOk());
+
+		// An administrator can act on another administrator while someone else can still sign in.
+		post(admin(), target + "/disable", null).andExpect(status().isOk());
+		post(admin(), target + "/enable", null).andExpect(status().isOk());
 	}
 
 	// --- deleting, restoring, erasing -------------------------------------------------------------------------------------

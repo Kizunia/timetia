@@ -25,6 +25,9 @@ public interface RoleAssignments {
 	/** The roles of several users at once, for a list screen. A user with no role is absent from the map. */
 	Map<UUID, List<RoleSummary>> rolesOf(Collection<UUID> userIds);
 
+	/** Whether the user holds the built-in administrator role. */
+	boolean holdsAdministratorRole(UUID userId);
+
 	/** Gives a new profile the built-in {@code user} role. Does nothing when the user already holds it. */
 	void assignDefaultRole(UUID userId);
 

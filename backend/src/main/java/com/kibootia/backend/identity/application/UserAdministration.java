@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Isolation;
@@ -178,6 +179,7 @@ public class UserAdministration {
 	public UserDetails disable(UUID id) {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		UserProfile profile = liveOtherThanMe(id);
+		requireMayActOn(id);
 		if (profile.status() == UserProfile.Status.DISABLED) {
 			return details(profile);
 		}
@@ -193,6 +195,7 @@ public class UserAdministration {
 	public UserDetails enable(UUID id) {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		UserProfile profile = live(id);
+		requireMayActOn(id);
 		if (profile.status() != UserProfile.Status.DISABLED) {
 			throw ApiException.conflict(NOT_DISABLED, "This user is not disabled.");
 		}
@@ -207,6 +210,7 @@ public class UserAdministration {
 	public void delete(UUID id) {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		liveOtherThanMe(id);
+		requireMayActOn(id);
 		this.roleAssignments.ensureNotLastAdministrator(id);
 		this.profiles.softDelete(id);
 		this.auditLog.record(AuditEntry.of("identity.user.deleted", "user", id));
@@ -217,6 +221,7 @@ public class UserAdministration {
 	@RequiresPermission(IdentityPermissions.RESTORE_USERS)
 	public UserDetails restore(UUID id) {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
+		requireMayActOn(id);
 		if (!this.profiles.restore(id, this.authorization.currentUserId())) {
 			throw ApiException.notFound(NOT_FOUND, "There is no deleted user with that ID to restore.");
 		}
@@ -235,6 +240,7 @@ public class UserAdministration {
 	public void erase(UUID id) {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		UserProfile profile = this.profiles.find(id).orElseThrow(UserAdministration::notFound);
+		requireMayActOn(id);
 		if (!profile.deleted()) {
 			throw ApiException.conflict(NOT_DELETED, "Delete the user before erasing them.");
 		}
@@ -257,6 +263,17 @@ public class UserAdministration {
 			throw notFound();
 		}
 		return profile;
+	}
+
+	/**
+	 * Only an administrator may disable, enable, delete, restore or erase an administrator's account. The permission to
+	 * do so to ordinary users is not enough to lock out someone who holds every permission.
+	 */
+	private void requireMayActOn(UUID id) {
+		if (this.roleAssignments.holdsAdministratorRole(id)
+				&& !this.roleAssignments.holdsAdministratorRole(this.authorization.currentUserId())) {
+			throw new AccessDeniedException("Only an administrator can do this to an administrator");
+		}
 	}
 
 	private UserProfile liveOtherThanMe(UUID id) {

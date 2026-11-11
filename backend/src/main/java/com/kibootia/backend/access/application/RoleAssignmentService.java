@@ -107,6 +107,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		if (added.contains(admin.id())) {
 			requireAdministrator();
 		}
+		requireGrantable(added.stream().map(wanted::get).toList());
 		if (removed.contains(admin.id())) {
 			ensureNotLastAdministrator(userId);
 		}
@@ -166,6 +167,13 @@ public class RoleAssignmentService implements RoleAssignments {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("callers authorize; a safeguard that asks whether an account is an administrator's")
+	public boolean holdsAdministratorRole(UUID userId) {
+		return isAdministrator(userId);
+	}
+
+	@Override
 	@Transactional(propagation = Propagation.MANDATORY)
 	@NoAuthorization("the request gate gives every new profile the user role before any use case runs")
 	public void assignDefaultRole(UUID userId) {
@@ -187,6 +195,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		if (wanted.containsKey(admin.id())) {
 			requireAdministrator();
 		}
+		requireGrantable(wanted.values());
 		Set<UUID> current = this.roles.roleIdsOf(userId);
 		UUID actor = this.authorization.currentUserId();
 		for (Role role : wanted.values()) {
@@ -251,6 +260,28 @@ public class RoleAssignmentService implements RoleAssignments {
 		if (!this.roles.roleIdsOf(caller).contains(this.builtIns.admin().id())) {
 			throw new AccessDeniedException("Only an administrator can give the administrator role");
 		}
+	}
+
+	/**
+	 * Giving a role gives its permissions, so the giver must hold each of them, as when a role is edited ({@code
+	 * RoleService}). Otherwise assigning roles would be a way to gain permissions, including by giving oneself a role. An
+	 * administrator holds every permission and may give any role.
+	 */
+	private void requireGrantable(Collection<Role> given) {
+		if (isAdministrator(this.authorization.currentUserId())) {
+			return;
+		}
+		for (Role role : given) {
+			for (String permission : role.permissions()) {
+				if (this.registry.isRegistered(permission)) {
+					this.authorization.require(permission);
+				}
+			}
+		}
+	}
+
+	private boolean isAdministrator(UUID userId) {
+		return this.roles.roleIdsOf(userId).contains(this.builtIns.admin().id());
 	}
 
 	private Map<UUID, Role> rolesById(Set<UUID> ids) {
