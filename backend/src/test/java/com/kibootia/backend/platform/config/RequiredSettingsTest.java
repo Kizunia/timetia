@@ -102,4 +102,89 @@ class RequiredSettingsTest {
 		assertThat(analysis.getAction()).contains("SOME_VAR");
 	}
 
+	// --- the production guard (Timetia ADR 0005) -------------------------------------------------------------------------
+
+	/** Every address a real deployment must set, and a management port apart from the API port. */
+	private static MockEnvironment production() {
+		return complete().withProperty("kibootia.environment", "production")
+			.withProperty("kibootia.security.issuer", "https://auth.example.org/realms/timetia")
+			.withProperty("kibootia.security.jwk-set-uri", "http://keycloak:8080/realms/timetia/protocol/openid-connect/certs")
+			.withProperty("kibootia.identity.public-base-url", "https://timetia.example.org")
+			.withProperty("kibootia.identity.keycloak.base-url", "http://keycloak:8080")
+			.withProperty("management.server.port", "8090");
+	}
+
+	@Test
+	void developmentDefaultsAreFineWhileTheEnvironmentIsLocal() {
+		MockEnvironment environment = complete().withProperty("kibootia.security.issuer", "http://localhost:8180/realms/x")
+			.withProperty("management.server.port", "8080");
+
+		assertThatCode(() -> processor.postProcessEnvironment(environment, null)).doesNotThrowAnyException();
+	}
+
+	@Test
+	void aCompleteProductionEnvironmentStartsAndInternalKeyAddressesAreAllowed() {
+		assertThatCode(() -> processor.postProcessEnvironment(production(), null)).doesNotThrowAnyException();
+	}
+
+	@Test
+	void productionRefusesTheDevelopmentDefaultAddresses() {
+		MockEnvironment environment = production()
+			.withProperty("kibootia.security.issuer", "http://localhost:8180/realms/timetia")
+			.withProperty("kibootia.security.jwk-set-uri", "http://localhost:8180/realms/timetia/protocol/openid-connect/certs")
+			.withProperty("kibootia.identity.public-base-url", "http://localhost:3470")
+			.withProperty("kibootia.identity.keycloak.base-url", "http://localhost:8180");
+
+		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null)).isInstanceOf(UnsafeSettingsException.class)
+			.satisfies((failure) -> assertThat(((UnsafeSettingsException) failure).getProblems()).hasSize(4)
+				.anyMatch((problem) -> problem.startsWith("kibootia.security.issuer"))
+				.anyMatch((problem) -> problem.startsWith("kibootia.security.jwk-set-uri"))
+				.anyMatch((problem) -> problem.startsWith("kibootia.identity.public-base-url"))
+				.anyMatch((problem) -> problem.startsWith("kibootia.identity.keycloak.base-url")));
+	}
+
+	@Test
+	void productionRefusesAnIssuerThatIsNotHttps() {
+		MockEnvironment environment = production().withProperty("kibootia.security.issuer", "http://auth.example.org/realms/x");
+
+		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null)).isInstanceOf(UnsafeSettingsException.class)
+			.hasMessageContaining("kibootia.security.issuer");
+	}
+
+	@Test
+	void productionRefusesHealthOnTheApiPortOrNoManagementPort() {
+		assertThatThrownBy(() -> processor.postProcessEnvironment(production().withProperty("management.server.port", "8080"), null))
+			.isInstanceOf(UnsafeSettingsException.class)
+			.hasMessageContaining("management.server.port");
+		assertThatThrownBy(() -> processor.postProcessEnvironment(production().withProperty("server.port", "9000")
+			.withProperty("management.server.port", "9000"), null)).isInstanceOf(UnsafeSettingsException.class);
+		MockEnvironment none = complete().withProperty("kibootia.environment", "production")
+			.withProperty("kibootia.security.issuer", "https://auth.example.org/realms/timetia")
+			.withProperty("kibootia.security.jwk-set-uri", "http://keycloak:8080/certs")
+			.withProperty("kibootia.identity.public-base-url", "https://timetia.example.org")
+			.withProperty("kibootia.identity.keycloak.base-url", "http://keycloak:8080");
+		assertThatThrownBy(() -> processor.postProcessEnvironment(none, null)).isInstanceOf(UnsafeSettingsException.class)
+			.hasMessageContaining("management.server.port");
+	}
+
+	@Test
+	void anUnknownEnvironmentNameFailsSoATypoCannotSwitchTheGuardOff() {
+		MockEnvironment environment = complete().withProperty("kibootia.environment", "prod");
+
+		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null)).isInstanceOf(UnsafeSettingsException.class)
+			.hasMessageContaining("kibootia.environment");
+	}
+
+	@Test
+	void theProductionFailureNamesSettingsAndNeverTheirValues() {
+		MockEnvironment environment = production().withProperty("kibootia.security.issuer", "http://secret-host.internal/realms/x");
+
+		assertThatThrownBy(() -> processor.postProcessEnvironment(environment, null))
+			.satisfies((failure) -> assertThat(failure.getMessage()).doesNotContain("secret-host"));
+		FailureAnalysis analysis = new UnsafeSettingsFailureAnalyzer()
+			.analyze(new UnsafeSettingsException(java.util.List.of("some.setting must be changed")));
+		assertThat(analysis.getDescription()).contains("some.setting");
+		assertThat(analysis.getAction()).contains("kibootia.environment=local");
+	}
+
 }
