@@ -94,6 +94,15 @@ public class Authorization {
 		return scope;
 	}
 
+	/**
+	 * How far the current caller's policy-decided permission reaches, for a list (Timetia ADR 0004): everywhere, or the
+	 * places where they hold it. Deny-by-default: a caller who holds it nowhere gets an empty reach, and the module should
+	 * then return nothing. Only for permissions declared policy-decided; the others use {@link #scopeFor}.
+	 */
+	public Reach reach(String action) {
+		return this.decisionPoint.reachFor(caller(), action);
+	}
+
 	/** Whether the signed-in user's email address is verified, as the token says (ADR 0041). */
 	public boolean isEmailVerified() {
 		return caller().emailVerified();

@@ -13,4 +13,12 @@ public interface PolicyDecisionPoint {
 	/** May this caller perform the action at all, and on which records? */
 	Scope scopeFor(Caller caller, String action);
 
+	/**
+	 * How far the caller's policy-decided permission reaches, for a list (Timetia ADR 0004). Nothing by default, so an
+	 * implementation that does not know policy-decided permissions denies them.
+	 */
+	default Reach reachFor(Caller caller, String action) {
+		return Reach.nothing();
+	}
+
 }

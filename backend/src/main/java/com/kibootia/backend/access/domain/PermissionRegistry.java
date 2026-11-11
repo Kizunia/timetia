@@ -30,6 +30,10 @@ public final class PermissionRegistry {
 				throw new IllegalStateException("Permission '" + permission.name()
 						+ "' is not named <module>.<resource>.<action> in lower-case words joined by hyphens");
 			}
+			if (permission.policyDecided() && permission.name().endsWith(ANY_SUFFIX)) {
+				throw new IllegalStateException("Policy-decided permission '" + permission.name()
+						+ "' cannot end in '-any': its reach comes from the scope of the assignment");
+			}
 			if (this.byName.putIfAbsent(permission.name(), permission) != null) {
 				duplicates.add(permission.name());
 			}
@@ -64,6 +68,12 @@ public final class PermissionRegistry {
 	public boolean isAllowedBeforeVerification(String name) {
 		Permission permission = this.byName.get(name);
 		return permission != null && permission.allowedBeforeVerification();
+	}
+
+	/** Whether the permission is decided per record from scoped grants (Timetia ADR 0004). */
+	public boolean isPolicyDecided(String name) {
+		Permission permission = this.byName.get(name);
+		return permission != null && permission.policyDecided();
 	}
 
 	/** Whether the action has a {@code -any} variant, which makes the plain permission mean "records I own". */

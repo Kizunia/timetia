@@ -25,6 +25,24 @@ class AccessConfigurationTest {
 
 	}
 
+	static class DeclaresPolicyDecided implements PermissionProvider {
+
+		@Override
+		public List<Permission> permissions() {
+			return List.of(Permission.policyDecided("probe.items.review", "Review items"));
+		}
+
+	}
+
+	/** A permission only a record check can satisfy, protected by the permission-only annotation: a mistake. */
+	static class FlatCheckOfPolicyDecided {
+
+		@RequiresPermission("probe.items.review")
+		public void review() {
+		}
+
+	}
+
 	static class GoodService {
 
 		@RequiresPermission("probe.items.read")
@@ -60,6 +78,23 @@ class AccessConfigurationTest {
 			assertThat(context.getStartupFailure()).hasStackTraceContaining("TypoService.read")
 				.hasStackTraceContaining("probe.items.raed");
 		});
+	}
+
+	@Test
+	@DisplayName("fails at startup, naming the method, when @RequiresPermission names a policy-decided permission")
+	void failsOnPolicyDecidedPermissionInTheFlatAnnotation() {
+		this.runner.withBean("policyDecided", DeclaresPolicyDecided.class).withBean(FlatCheckOfPolicyDecided.class).run((context) -> {
+			assertThat(context).hasFailed();
+			assertThat(context.getStartupFailure()).hasStackTraceContaining("FlatCheckOfPolicyDecided.review")
+				.hasStackTraceContaining("probe.items.review")
+				.hasStackTraceContaining("policy-decided");
+		});
+	}
+
+	@Test
+	@DisplayName("starts with a policy-decided permission that nothing protects with the flat annotation")
+	void startsWithPolicyDecidedPermissionUsedOnlyOnRecords() {
+		this.runner.withBean("policyDecided", DeclaresPolicyDecided.class).run((context) -> assertThat(context).hasNotFailed());
 	}
 
 	@Test
