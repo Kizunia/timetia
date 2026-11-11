@@ -1,0 +1,42 @@
+package com.kibootia.backend.platform.jobs;
+
+import javax.sql.DataSource;
+
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.core.LockingTaskExecutor;
+import net.javacrumbs.shedlock.core.DefaultLockingTaskExecutor;
+import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
+import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+/**
+ * Scheduling with a database lock (ADR 0031). Every {@code @Scheduled} method must also carry {@code @SchedulerLock}
+ * (an architecture rule enforces it), so two instances never run the same job at once. Lock times come from the
+ * database clock, so instances with drifting clocks cannot both win.
+ */
+@Configuration(proxyBeanMethods = false)
+@EnableScheduling
+@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
+@EnableConfigurationProperties(JobsProperties.class)
+class JobsConfiguration {
+
+	@Bean
+	LockProvider lockProvider(DataSource dataSource) {
+		return new JdbcTemplateLockProvider(JdbcTemplateLockProvider.Configuration.builder()
+			.withJdbcTemplate(new JdbcTemplate(dataSource))
+			.usingDbTime()
+			.build());
+	}
+
+	/** For code that needs a lock outside {@code @Scheduled}, and for tests. */
+	@Bean
+	LockingTaskExecutor lockingTaskExecutor(LockProvider lockProvider) {
+		return new DefaultLockingTaskExecutor(lockProvider);
+	}
+
+}

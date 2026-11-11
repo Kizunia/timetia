@@ -1,4 +1,7 @@
 
+# Local infrastructure (ADR 0040). The applications run on the host; the `apps` profile (added with the Dockerfiles)
+# runs them in containers. LGTM sits in the `observability` profile, which .env switches on by default.
+
 services:
   mysql:
     image: mysql:8.4
@@ -21,7 +24,7 @@ services:
       start_period: 30s
 
   adminer:
-    image: adminer:latest
+    image: adminer:6.3.0
     container_name: kibootia-adminer
     restart: unless-stopped
     ports:
@@ -32,5 +35,216 @@ services:
       mysql:
         condition: service_healthy
 
+  # Keycloak's own database (ADR 0045). Not published on the host.
+  keycloak-db:
+    image: postgres:17.11
+    container_name: kibootia-keycloak-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?Set KEYCLOAK_DB_PASSWORD in .env}
+    volumes:
+      - kibootia_keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Fixed public hostname with a dynamic back channel: browsers see http://localhost:8180, other containers reach
+  # Keycloak as http://keycloak:8080, and the issuer in tokens stays the public one (ADR 0040, OQ-45).
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2
+    container_name: kibootia-keycloak
+    restart: unless-stopped
+    command: ["start-dev"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?Set KEYCLOAK_DB_PASSWORD in .env}
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8180:8080"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      # The image has no curl; probe the management port (9000) with bash.
+      test:
+        - "CMD-SHELL"
+        - "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # One-shot: applies the realm (shared base plus the local overlay) with OpenTofu, then exits.
+  keycloak-config:
+    image: ghcr.io/opentofu/opentofu:1.13.9
+    container_name: kibootia-keycloak-config
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        tofu -chdir=/infra/overlays/local init -input=false &&
+        tofu -chdir=/infra/overlays/local apply -auto-approve -input=false -state=/state/terraform.tfstate
+    environment:
+      TF_DATA_DIR: /state/.terraform
+      TF_VAR_keycloak_url: http://keycloak:8080
+      TF_VAR_keycloak_admin_password: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
+      TF_VAR_web_client_secret: ${KEYCLOAK_WEB_CLIENT_SECRET:?Set KEYCLOAK_WEB_CLIENT_SECRET in .env}
+      TF_VAR_admin_client_secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:?Set KEYCLOAK_ADMIN_CLIENT_SECRET in .env}
+      TF_VAR_demo_user_password: ${DEMO_USER_PASSWORD:?Set DEMO_USER_PASSWORD in .env}
+      TF_VAR_demo_admin_password: ${DEMO_ADMIN_PASSWORD:?Set DEMO_ADMIN_PASSWORD in .env}
+    volumes:
+      - ./infra/keycloak:/infra:ro
+      - kibootia_tofu_state:/state
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  # Catches the mail Keycloak sends locally. UI on http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    container_name: kibootia-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+
+  # S3-compatible object storage for avatars and other uploads (ADR 0029). Only on this machine: the ports are bound to
+  # the loopback address, because the backend reaches it over the Compose network and browsers never talk to it. The
+  # profile `files` starts it; leave the profile out, and set KIBOOTIA_FILES_ENABLED=false, to run without storage.
+  # The image runs as user 10001, which owns /data in the image and so in a new named volume.
+  rustfs:
+    image: rustfs/rustfs:1.0.4
+    container_name: kibootia-rustfs
+    restart: unless-stopped
+    profiles: ["files"]
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: ${KIBOOTIA_FILES_ACCESS_KEY:?Set KIBOOTIA_FILES_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${KIBOOTIA_FILES_SECRET_KEY:?Set KIBOOTIA_FILES_SECRET_KEY in .env}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - kibootia_rustfs_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Grafana, Tempo, Loki and an OTLP receiver in one container, for development only (ADR 0030).
+  lgtm:
+    image: grafana/otel-lgtm:0.40.0
+    container_name: kibootia-lgtm
+    restart: unless-stopped
+    profiles: ["observability"]
+    ports:
+      - "3001:3000"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - kibootia_lgtm_data:/data
+
+  # --- The applications in containers (the `apps` profile): `pnpm apps:up`. Stop `pnpm dev` first; both use these ports.
+  # Inside Compose the applications reach Keycloak as http://keycloak:8080, while browsers and tokens use the public
+  # http://localhost:8180. The backend checks the public issuer and fetches keys from the internal address (OQ-45).
+
+  backend:
+    build:
+      context: ./backend
+    image: kibootia-backend:local
+    container_name: kibootia-backend
+    profiles: ["apps"]
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/kibootia
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      KIBOOTIA_SECURITY_ISSUER: http://localhost:8180/realms/kibootia
+      KIBOOTIA_SECURITY_JWK_SET_URI: http://keycloak:8080/realms/kibootia/protocol/openid-connect/certs
+      # The Admin API of Keycloak, reached on the internal address, with the service account that may only manage users.
+      KIBOOTIA_IDENTITY_KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:?Set KEYCLOAK_ADMIN_CLIENT_SECRET in .env}
+      KIBOOTIA_IDENTITY_PUBLIC_BASE_URL: http://localhost:3470
+      KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL: ${KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL:-}
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://lgtm:4318/v1/traces
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://lgtm:4318/v1/metrics
+      # The object store, reached on the Compose network (ADR 0029). Both keys are required while files are enabled.
+      KIBOOTIA_FILES_ENABLED: ${KIBOOTIA_FILES_ENABLED:-true}
+      KIBOOTIA_FILES_ENDPOINT: http://rustfs:9000
+      KIBOOTIA_FILES_ACCESS_KEY: ${KIBOOTIA_FILES_ACCESS_KEY:-}
+      KIBOOTIA_FILES_SECRET_KEY: ${KIBOOTIA_FILES_SECRET_KEY:-}
+      KIBOOTIA_OBSERVABILITY_ENABLED: ${KIBOOTIA_OBSERVABILITY_ENABLED:-true}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      # Optional: without the `files` profile there is no storage container, and file features answer 503.
+      rustfs:
+        condition: service_healthy
+        required: false
+    healthcheck:
+      # No curl in the JRE image; the readiness probe on the loopback-only management port is read with bash.
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "exec 3<>/dev/tcp/127.0.0.1/8090 && printf 'GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"UP\"' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: kibootia-frontend:local
+    container_name: kibootia-frontend
+    profiles: ["apps"]
+    restart: unless-stopped
+    environment:
+      PUBLIC_BASE_URL: http://localhost:3470
+      KEYCLOAK_ISSUER: http://localhost:8180/realms/kibootia
+      KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8080/realms/kibootia
+      KEYCLOAK_WEB_CLIENT_SECRET: ${KEYCLOAK_WEB_CLIENT_SECRET:?Set KEYCLOAK_WEB_CLIENT_SECRET in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      API_BASE_URL: http://backend:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
+      KIBOOTIA_OBSERVABILITY_ENABLED: ${KIBOOTIA_OBSERVABILITY_ENABLED:-true}
+    ports:
+      - "3470:3470"
+    depends_on:
+      backend:
+        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3470/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
 volumes:
   kibootia_mysql_data:
+  kibootia_keycloak_db_data:
+  kibootia_tofu_state:
+  kibootia_lgtm_data:
+  kibootia_rustfs_data:
