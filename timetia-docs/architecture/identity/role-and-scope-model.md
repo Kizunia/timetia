@@ -4,89 +4,107 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-12
 
-The roles, their scopes and a **draft** permission catalogue for Timetia. Everything is derived from the documents on 2026-11-11: [roles and powers](../../modules/lecture-rescheduling/rules/permissions.md), the [approval model](../../modules/lecture-rescheduling/rules/approval-model.md), [reverts](../../modules/lecture-rescheduling/rules/reverts.md), [ticket lifecycle](../../modules/lecture-rescheduling/rules/ticket-lifecycle.md), [issues](../../modules/lecture-rescheduling/rules/issues-from-cr-and-br.md) and the [role files](../../shared/roles/README.md). Where those documents are silent, this file marks the cell `?` and the question is in [open-questions.md](open-questions.md). This file does not invent a rule.
+The roles, scopes and permission catalogue that Phase 2 implements, with the rule for each permission. It follows [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md). Everything is derived from [roles and powers](../../modules/lecture-rescheduling/rules/permissions.md), the [approval model](../../modules/lecture-rescheduling/rules/approval-model.md), [reverts](../../modules/lecture-rescheduling/rules/reverts.md), [ticket lifecycle](../../modules/lecture-rescheduling/rules/ticket-lifecycle.md), [issues](../../modules/lecture-rescheduling/rules/issues-from-cr-and-br.md) and the [role files](../../shared/roles/README.md).
 
-It is a proposal until the owner has answered the questions marked blocking.
+Where those documents are silent, the right is **denied** and listed under "Not granted, because the documents do not say". This file does not invent a rule. The rules that the owner has not confirmed are marked **default** and come from ADR 0004, point 8.
+
+Implementation status is in [implementation-plan.md](implementation-plan.md).
 
 ## Roles and scopes
 
-| Role | Scope type | Meaning of the scope | Note |
+| Role | Scope type of its assignment | Meaning | Note |
 | --- | --- | --- | --- |
-| Super Admin | global | Everything | Configuration only. Not part of routine approval. Cannot override a conflict. |
-| Super HOD | global | All departments | Everything an HOD can, across departments. |
-| HOD | department | One department, with its divisions and batches | One active HOD per department (data model fix F-G2). |
-| Faculty | none, plus a relation | The lectures the person teaches | Whether Faculty is a role or only a profile is [OQ-A4](open-questions.md). |
-| CR | division | One division | **Theory** lectures only. A class can have several CRs. |
-| BR | batch | One batch | **Lab and tutorial** lectures only. |
-| Student | none, plus membership | Their own division, batch and shared-course batches | Read only. |
+| Super Admin | none (the built-in Administrator role) | Everything on the platform | Holds platform administration and the flat configuration and read-all permissions. **Holds no ticket permission.** Cannot override a conflict. |
+| Super HOD | `GLOBAL` | All departments | Everything an HOD can, across departments. |
+| HOD | `DEPARTMENT` | One department, with its divisions and batches | One active HOD per department (data model fix F-G2). |
+| Faculty | `GLOBAL` | Anywhere, but rights come from a relation to the lecture or ticket | A role template that carries permissions ([OQ-A4](open-questions.md) default). |
+| CR | `DIVISION` | One division | **Theory** lectures only. A class can have several CRs. |
+| BR | `BATCH` | One batch | **Lab and tutorial** lectures only. |
+| Student | `BATCH` | One batch | Read only. A theory lecture of a division lists every batch of that division, so a batch assignment sees it. |
 
-Scope hierarchy: department contains divisions, a division contains batches. A scoped permission held at a department applies to everything under it.
+A person may hold several assignments, for example an HOD of two departments or a CR of two divisions. There are no expiry dates yet ([OQ-A2](open-questions.md) default).
 
-CR and BR rights also depend on the **session type** of the lecture (theory, lab or tutorial). That is a fact of the record, not a scope.
+## Two kinds of permission
 
-## Facts the authorization policy needs about a ticket
+All Timetia ticket and timetable permissions are **policy-decided** ([ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md)). A flat check never satisfies them. They are decided per record by the policy, from the caller's grants and the record's facts. Each is one of:
 
-The ticket module supplies these through the ticket access facts port. Security code reads them and returns allow or deny. It does not change them.
+- **Scope-based (S).** Allowed when one of the caller's grants **covers** the record.
+- **Relation-based (R).** Allowed when the caller is one of the named people on the record. The caller must hold the permission through a role.
+- **Both (R and S).** The relation must hold, and a grant must cover the record.
 
-- The author, and whether the author acted for an absent faculty.
-- The affected faculty.
-- The requested reviewers.
-- The faculty mentioned on an issue, and who opened it.
-- The department, division and batch of the lecture, **several batches** when it is a shared course.
-- The session type.
+A permission is never both "or" ways: where a role needs a relation (Faculty) and another needs scope (HOD), they are two permissions. This keeps a Faculty member's `GLOBAL` assignment from covering every record.
 
-The ticket module keeps rules that depend on state: whether the lecture has started, whether the ticket is final, whether approvals count for the current revision, conflict checks. See [target architecture](target-architecture.md), principle 3.
+**A grant covers a record when:** the grant is `GLOBAL`; or it is `DEPARTMENT` and its id equals the record's department; or `DIVISION` and its id equals the record's division; or `BATCH` and its id is among the record's batches. A missing id in the facts never matches.
 
-## Draft permission catalogue
+**The session rule.** For the actions marked "session rule", a `DIVISION` grant applies only to a **theory** lecture, and a `BATCH` grant applies only to a **lab or tutorial** lecture. `DEPARTMENT` and `GLOBAL` grants have no session limit. This is how CR is limited to theory and BR to lab and tutorial.
 
-Names follow `<module>.<resource>.<action>`. The module names `rescheduling` and `timetable` are working names for the lecture-rescheduling and live timetable parts, and the module owners confirm them. Existing platform permissions (`access.roles.*`, `identity.users.*`, `audit.*`) are unchanged.
+The people lists in the facts are **user ids**, resolved by the module that owns the records. A person directory is not part of this phase.
 
-| Permission | Meaning | Reach |
-| --- | --- | --- |
-| `timetable.live.view` | See the live timetable | Scope or membership |
-| `timetable.config.manage` | Rooms, slot grid, calendar, holidays, exam weeks, notification settings | Global |
-| `rescheduling.tickets.create` | Raise a reschedule, exchange, extra, cancel or substitute ticket | Relation: lecture taught, or department when acting for an absent faculty |
-| `rescheduling.tickets.cancel` | Cancel a lecture directly, with a reason | Relation or department |
-| `rescheduling.tickets.self-approve` | Apply one's own change without a review | Relation |
-| `rescheduling.tickets.review` | Be a requested reviewer and approve | Relation, or scope with session type |
-| `rescheduling.tickets.reject` | Reject with a reason | Same as review |
-| `rescheduling.tickets.approve-permanent` | Approve a permanent change | Department |
-| `rescheduling.tickets.revert` | Revert before the lecture starts | Relation, or department |
-| `rescheduling.tickets.edit-own` | Edit and resubmit, escalate a rejection, withdraw | Author |
-| `rescheduling.tickets.view` | See a ticket | Relation or scope |
-| `rescheduling.tickets.audit.view` | Read a ticket's audit log | Relation or scope |
-| `rescheduling.issues.open` | Open an issue | Scope with session type |
-| `rescheduling.issues.close` | Close an issue | Opener or mentioned faculty |
+## Facts the policy reads
 
-Every in-app notification belongs to a user and is read by that user. That permission belongs to the notifications owner.
+The module that owns a record passes an object with these facts to the check. All of them extend the tenant of the record, so a record of another tenant is always refused.
 
-## Role by permission, as documented
+| Facts | Contents |
+| --- | --- |
+| Lecture | department id, division id, **all** batch ids, session type (theory, lab, tutorial), user ids of the teaching faculty |
+| Ticket (lecture plus) | author user id, user ids of the affected faculty, user ids of the requested reviewers, whether the change is permanent |
+| Issue (lecture plus) | opener user id, user ids of the faculty mentioned |
 
-`Y` allowed. `S` allowed within the role's scope. `R` allowed through a relation to the ticket or lecture. `—` not allowed or not mentioned. `?` not defined by the documents.
+The module keeps every rule that depends on state: whether the lecture has started, whether a ticket is final, whether approvals count for the current revision, whether a faculty member is absent, conflicts. See [target architecture](target-architecture.md), principle 3.
 
-| Permission | Super Admin | Super HOD | HOD | Faculty | CR | BR | Student |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `timetable.live.view` | Y | Y | S | R (own, across divisions) | S | S | S |
-| `timetable.config.manage` | Y | — | — | — | — | — | — |
-| `rescheduling.tickets.create` | — | R (acting for absent faculty) | R (acting for absent faculty) | R | — | — | — |
-| `rescheduling.tickets.cancel` | — | R | R | R | — | — | — |
-| `rescheduling.tickets.self-approve` | — | ? | ? | R (always) | — | — | — |
-| `rescheduling.tickets.review` | — | R | R | R (if requested) | S (theory, if requested) | S (lab, tutorial, if requested) | — |
-| `rescheduling.tickets.reject` | — | R | R | R (as reviewer) | S (theory) | S (lab, tutorial) | — |
-| `rescheduling.tickets.approve-permanent` | — | Y | S | — | — | — | — |
-| `rescheduling.tickets.revert` | — | R | S (any change in the department) | R (author, or affected faculty) | — | — | — |
-| `rescheduling.tickets.edit-own` | — | R | R | R (author) | — | — | — |
-| `rescheduling.tickets.view` | ? | R | S | R (own, requested, mentioned) | R (as reviewer or receiver) | R (as reviewer or receiver) | — (results only) |
-| `rescheduling.tickets.audit.view` | Y | ? | S | R (author, reviewer) | S | S | — |
-| `rescheduling.issues.open` | — | — | — | — | S (theory) | S (lab, tutorial) | — |
-| `rescheduling.issues.close` | — | — | — | R (if mentioned) | R (if opener) | R (if opener) | — |
+## Permission catalogue
 
-Not decided by the documents, and therefore not filled in: who may raise a permanent change, whether an HOD or Super HOD may self-approve, how a cross-department case is decided, who can revert a plain reschedule, extra lecture or permanent change when they are its author, and what a non-involved faculty member, Super HOD or Super Admin may see of tickets. These are [OQ-A3, OQ-A5, OQ-A11 and OQ-A12](open-questions.md).
+Names are `<module>.<resource>.<action>`. The module names `rescheduling` and `timetable` are working names, and the module owners confirm them. The names are stored in role definitions, so moving a declaration to another module later does not change them.
 
-**Nobody can override a conflict**, including the HOD and Super Admin ([conflict rules](../../modules/lecture-rescheduling/rules/conflict-rules.md)). This is a rule of the ticket module, and no permission grants it.
+| Permission | Kind | Rule | Held by |
+| --- | --- | --- | --- |
+| `timetable.live.view` | S | A grant covers the lecture | Super HOD, HOD, CR, BR, Student |
+| `timetable.live.view-own` | R | The caller teaches the lecture | Faculty |
+| `timetable.live.view-all` | flat | Everything | Super Admin |
+| `timetable.config.manage` | flat | Rooms, slot grid, calendar, holidays, exam weeks, notification settings | Super Admin |
+| `rescheduling.tickets.create` | R | The caller teaches the lecture | Faculty |
+| `rescheduling.tickets.create-on-behalf` | S | A grant covers the lecture | Super HOD, HOD |
+| `rescheduling.tickets.cancel` | R | The caller teaches the lecture | Faculty |
+| `rescheduling.tickets.cancel-on-behalf` | S | A grant covers the lecture | Super HOD, HOD |
+| `rescheduling.tickets.self-approve` | R | The caller is the author and teaches the lecture | Faculty |
+| `rescheduling.tickets.review` | R and S | The caller is a requested reviewer; a grant covers the lecture; session rule | Faculty, Super HOD, HOD, CR, BR |
+| `rescheduling.tickets.reject` | R and S | Same as review | Faculty, Super HOD, HOD, CR, BR |
+| `rescheduling.tickets.approve-permanent` | S | A grant covers the lecture | Super HOD, HOD |
+| `rescheduling.tickets.revert` | R | The caller is the author or an affected faculty, and the change is **not** permanent (default) | Faculty |
+| `rescheduling.tickets.revert-in-scope` | S | A grant covers the lecture | Super HOD, HOD |
+| `rescheduling.tickets.edit-own` | R | The caller is the author | Faculty, Super HOD, HOD |
+| `rescheduling.tickets.view` | R | The caller is the author, an affected faculty or a requested reviewer | Faculty |
+| `rescheduling.tickets.view-in-scope` | S | A grant covers the lecture; session rule | Super HOD, HOD, CR, BR |
+| `rescheduling.tickets.audit.view` | R | The same people as `view` | Faculty |
+| `rescheduling.tickets.audit.view-in-scope` | S | A grant covers the lecture; session rule | Super HOD, HOD, CR, BR |
+| `rescheduling.audit.view-all` | flat | Any ticket's audit log | Super Admin |
+| `rescheduling.issues.open` | S | A grant covers the lecture; session rule | CR, BR |
+| `rescheduling.issues.close` | R | The caller opened the issue or is a mentioned faculty | Faculty, CR, BR |
 
-## From this table to roles in the system
+"Flat" permissions are ordinary permissions. The built-in Administrator holds them implicitly, like every other flat permission. Every other permission above is policy-decided, so the Administrator does not hold it.
 
-The catalogue becomes `PermissionProvider` declarations in the modules that own each permission. The role templates become seeded roles with a scope type. The role by permission table becomes the seed data and the test matrix in [testing and verification](testing-and-verification.md). Work packages W2.2 and W2.3 in the [implementation plan](implementation-plan.md).
+Existing platform permissions (`access.roles.*`, `identity.users.*`, `audit.*`) are unchanged.
+
+## Rules the documents state that no permission grants
+
+- **Nobody can override a conflict**, including the HOD and Super Admin ([conflict rules](../../modules/lecture-rescheduling/rules/conflict-rules.md)). No permission for it exists.
+- A Student cannot raise a ticket, open an issue or see a ticket or its log. A Student sees the live timetable only. Students see the result of a change, not the ticket.
+- CR and BR have no assign powers.
+
+## Not granted, because the documents do not say
+
+These are denied. Each is a question in [open-questions.md](open-questions.md), and granting one later is a role change and a rule, not a redesign.
+
+- Who may raise a permanent change beyond the HOD, and whether an HOD's own permanent change needs a second approver.
+- Whether an HOD, Super HOD or Super Admin may self-approve.
+- What a faculty member who is not on a ticket, a Super HOD (beyond scope) or a Super Admin may see of tickets, other than the flat audit view.
+- How a cross-department case is decided beyond "the department of the lecture's division".
+- Who can revert a permanent change other than an HOD or Super HOD.
+
+## From this model to the system
+
+- The catalogue is declared as `PermissionProvider` entries by the `academic` module in Phase 2. When the ticket and timetable modules exist, their owners can take over the declarations. The names stay.
+- The role templates are seeded roles with the scope types above.
+- The rules are the policy in the `academic` module, with one test for every row, allowed and denied. See [testing and verification](testing-and-verification.md).

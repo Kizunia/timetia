@@ -20,7 +20,7 @@ The intended design for Timetia's authentication and authorization. It is a prop
 
 ### 1. Identity (unchanged, renamed)
 
-Keycloak holds credentials. The backend validates the token, then maps the `sub` to a `user_profile`. Timetia changes only names (realm, clients, audience, cookies, the CSRF header, environment variables) and, if the owner decides, turns self-registration off ([OQ-A8](open-questions.md)). Plan: Phase 1, W1.6 and W1.8.
+Keycloak holds credentials. The backend validates the token, then maps the `sub` to a `user_profile`. Timetia changes identity-facing names (realm, clients, audience, cookies, the CSRF header, the page brand) and turns self-registration off ([ADR 0005](../../decisions/0005-identity-hardening-decisions.md)). Plan: Phase 1, W1.6 and W1.8.
 
 ### 2. Scoped role assignments
 
@@ -31,33 +31,27 @@ A role assignment gains a **scope**: global, department, division or batch, and 
 - Optional validity dates exist only if CR and BR roles are to expire at term end ([OQ-A2](open-questions.md)).
 - Platform roles (`Administrator`, `User`, custom roles) stay as they are, with no scope.
 
-**Storage is a decision for work package W2.1.** Two options:
+**Storage is decided** ([ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md)): the access tables are extended. A role gets an optional scope type (`GLOBAL`, `DEPARTMENT`, `DIVISION`, `BATCH`; none for platform roles). A role assignment gets a scope id (all zeros means no scope), and its key becomes user, role and scope. The migration is additive.
 
-| Option | What changes | For | Against |
-| --- | --- | --- | --- |
-| A. Extend the access tables: a scope type on `role`, a scope id on `role_assignment` | Kibootia's `access` module | One source of truth. The last-administrator and role-in-use rules stay correct. A scoped role cannot be made global by the old endpoint. | Edits the internals of a Kibootia module, which [ADR 0002](../../decisions/0002-scoped-roles-on-the-current-kibootia-contract.md) says to avoid beyond small fixes. |
-| B. A separate Timetia table of scoped assignments | Nothing in `access` | Foundation untouched. | Two assignment sources. The role screens, the role-in-use check and the permission lookup must all know both. The old endpoint could still assign a Timetia role without scope. |
-
-Recommended: **A**, recorded in a new project ADR (PLAT-0004) before W2.1 is built. This is [OQ-A14](open-questions.md).
+Two invariants are enforced when a role is created or edited: a role that holds any policy-decided permission must have a scope type, and a role that has a scope type holds only policy-decided permissions. The older role endpoint assigns only unscoped roles. A role that needs a scope is assigned through the scoped-role endpoint, which checks the scope.
 
 ### 3. Scope-aware policy and list filter
 
 The contract Timetia extends has `can`, `require`, `scopeFor` and a per-record rule hook (`ResourcePolicy`). Timetia adds, without changing those signatures:
 
-- A **Timetia policy** for module records. For each action it decides from the caller's scoped assignments and the record's facts. It narrows access. It never widens it beyond what a permission allows.
-- A **scope filter** for lists: for an action, the caller's reach as "everything" or a set of department, division and batch ids with their descendants, which a query can apply in the database. This is what `scopeFor` (all, own, none) cannot express.
-
-The exact shape is confirmed against the code in W2.4 before any change.
+- **Policy-decided permissions.** A permission can be declared as decided per record. The flat checks (`@RequiresPermission`, the permission-only `can` and `scopeFor`) never satisfy it, and the built-in Administrator does not hold it implicitly. It is used only by checking a record, where a module's policy decides from the caller's grants and the record's facts. Forgetting the record check denies instead of over-allowing. An `@RequiresPermission` that names such a permission stops the application at startup.
+- **Grants.** A generic platform port returns the caller's grants for an action as a kind and an optional id. The platform does not know the words department, division or batch. The Timetia module declares those kinds.
+- **A Timetia policy** (module `academic`) that implements the rules in the [role and scope model](role-and-scope-model.md) from the grants and the facts.
+- **A reach for lists.** For an action, the caller's reach as "everything" or a set of ids per kind, which a query can apply in the database. This is what `scopeFor` (all, own, none) cannot express. The relation part of a list (my own tickets) comes from the module's own columns.
 
 ### 4. Ports Timetia code implements
 
 | Port | Purpose | Likely owner |
 | --- | --- | --- |
-| Scope directory | Does this department, division or batch exist, and what are its parents and children | The owner of department, division and batch reference data ([OQ-A1](open-questions.md)) |
-| Person directory | Which faculty or student record belongs to this user | The owner of faculty and student records |
-| Ticket access facts | The facts of one ticket that rights depend on (see [role and scope model](role-and-scope-model.md)) | The lecture-rescheduling module |
+| Scope directory | Does this department, division or batch exist. Without an implementation, assigning a scoped role is refused | The owner of department, division and batch reference data |
+| Ticket and lecture access facts | The facts that rights depend on, with people as user ids (see [role and scope model](role-and-scope-model.md)) | The lecture-rescheduling and timetable modules |
 
-Security code defines each port. The owners implement them. Until an implementation exists, tests use fakes.
+Security code defines each port. The owners implement them. Until an implementation exists, tests use fakes. A person directory is deferred, because the facts carry user ids.
 
 ### 5. Provisioning and administration
 
