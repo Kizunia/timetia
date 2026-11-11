@@ -276,6 +276,17 @@ class NotesApiIT {
 	}
 
 	@Test
+	@DisplayName("update-any without view-any changes nothing: the caller cannot see the note, so it is 404 (a role needs both)")
+	void updateAnyNeedsViewAny() throws Exception {
+		String id = created(ALICE, "Alice's");
+		GrantedPermissions.grant(NotesPermissions.UPDATE_ANY);
+
+		update(BOB, id, "Moderated", 0).andExpect(status().isNotFound());
+
+		assertThat(jdbc.queryForObject("select title from note", String.class)).isEqualTo("Alice's");
+	}
+
+	@Test
 	@DisplayName("deleting hides the note, keeps the row, audits it and raises a durable event that is handled")
 	void deleteOwnNote() throws Exception {
 		String id = created(ALICE, "Doomed");
@@ -303,7 +314,10 @@ class NotesApiIT {
 		mvc.perform(as(BOB, delete("/api/v1/notes/" + id))).andExpect(status().isForbidden());
 
 		assertThat(count("select count(*) from note where deleted_at is null")).isEqualTo(1);
-		assertThat(count("select count(*) from audit_entry")).isZero();
+		// The refused deletion changes nothing, so it is not audited as a change; the refusal itself is a security event.
+		assertThat(count("select count(*) from audit_entry where action not like 'security.%'")).isZero();
+		assertThat(count("select count(*) from audit_entry where action = 'security.access.denied' "
+				+ "and changes like '%notes.notes.delete%'")).isEqualTo(1);
 	}
 
 	@Test

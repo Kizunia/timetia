@@ -55,8 +55,10 @@ class SecurityConfiguration {
 
 	@Bean
 	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ProblemFactory problemFactory,
-			ObjectProvider<TenantResolver> tenantResolver, ObjectProvider<RequestGate> gate) throws Exception {
-		ProblemDetailsHandlers problems = new ProblemDetailsHandlers(problemFactory);
+			ObjectProvider<TenantResolver> tenantResolver, ObjectProvider<RequestGate> gate,
+			ObjectProvider<SecurityEvents> securityEvents) throws Exception {
+		SecurityEvents events = securityEvents.getIfAvailable(() -> SecurityEvents.NONE);
+		ProblemDetailsHandlers problems = new ProblemDetailsHandlers(problemFactory, events);
 		TenantContextFilter tenantFilter = new TenantContextFilter(
 				tenantResolver.getIfAvailable(TenantResolver::singleTenant));
 		// Binds the tenant once the bearer token has authenticated the caller (ADR 0028).
@@ -64,7 +66,7 @@ class SecurityConfiguration {
 		// Then the module that owns user profiles admits or refuses the caller (ADR 0041).
 		RequestGate requestGate = gate.getIfAvailable();
 		if (requestGate != null) {
-			http.addFilterAfter(new RequestGateFilter(requestGate, problemFactory), TenantContextFilter.class);
+			http.addFilterAfter(new RequestGateFilter(requestGate, problemFactory, events), TenantContextFilter.class);
 		}
 		http
 			.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated())

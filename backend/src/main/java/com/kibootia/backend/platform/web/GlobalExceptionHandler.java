@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
@@ -36,9 +37,12 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.kibootia.backend.platform.authorization.EmailNotVerifiedException;
+import com.kibootia.backend.platform.authorization.PermissionDeniedException;
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.errors.ApiFieldError;
 import com.kibootia.backend.platform.errors.ProblemCodes;
+import com.kibootia.backend.platform.security.CurrentActor;
+import com.kibootia.backend.platform.security.SecurityEvents;
 
 /**
  * Turns every failure into the Problem Details shape of ADR 0043 and the status table of the API conventions. Spring's
@@ -56,8 +60,11 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private final ProblemFactory problems;
 
-	GlobalExceptionHandler(ProblemFactory problems) {
+	private final SecurityEvents events;
+
+	GlobalExceptionHandler(ProblemFactory problems, ObjectProvider<SecurityEvents> events) {
 		this.problems = problems;
+		this.events = events.getIfAvailable(() -> SecurityEvents.NONE);
 	}
 
 	@Override
@@ -135,7 +142,11 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(AccessDeniedException.class)
 	ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
 		// Raised by method security, after the filter chain; the filter chain's own 403 has the same shape.
-		if (ex instanceof EmailNotVerifiedException) {
+		boolean unverified = ex instanceof EmailNotVerifiedException;
+		String permission = (ex instanceof PermissionDeniedException denied) ? denied.permission() : null;
+		CurrentActor.userId()
+			.ifPresent((actor) -> this.events.accessDenied(actor, permission, unverified ? "email_not_verified" : "forbidden"));
+		if (unverified) {
 			return respond(request, HttpStatus.FORBIDDEN, ProblemCodes.EMAIL_NOT_VERIFIED,
 					"Verify your email address to do this.");
 		}

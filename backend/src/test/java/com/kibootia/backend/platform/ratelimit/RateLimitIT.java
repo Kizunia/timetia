@@ -38,6 +38,11 @@ class RateLimitIT extends AdminApiTest {
 			.andExpect(header().string("Retry-After", org.hamcrest.Matchers.matchesPattern("[1-9][0-9]*")))
 			.andExpect(jsonPath("$.code").value("platform.rate_limited"));
 
+		org.assertj.core.api.Assertions.assertThat(count("select count(*) from audit_entry "
+				+ "where action = 'security.rate-limit.exceeded' and changes like '%invitations%'"))
+			.as("the refusal is recorded as a security event")
+			.isEqualTo(1);
+
 		post(user(ALICE), "/api/v1/users", "{\"email\":\"four@kibootia.test\"}").andExpect(status().isCreated());
 		org.assertj.core.api.Assertions.assertThat(this.keycloak.countCalls("createUser")).as("a refused invitation creates nothing")
 			.isEqualTo(3);

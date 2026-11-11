@@ -2,6 +2,7 @@ package com.kibootia.backend.platform.ratelimit;
 
 import java.time.Duration;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -11,11 +12,14 @@ import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import com.kibootia.backend.platform.authorization.Authorization;
 import com.kibootia.backend.platform.errors.ApiException;
+import com.kibootia.backend.platform.security.SecurityEvents;
 
 /**
  * The in-app rate limiter for sensitive actions (API conventions). One token bucket per user and category, held in
@@ -35,10 +39,22 @@ public class RateLimiter {
 
 	private final Authorization authorization;
 
+	private final SecurityEvents events;
+
 	private final Map<RateLimitCategory, Limiter> limiters = new EnumMap<>(RateLimitCategory.class);
 
+	@Autowired
+	RateLimiter(Authorization authorization, RateLimitProperties properties, ObjectProvider<SecurityEvents> events) {
+		this(authorization, properties, events.getIfAvailable(() -> SecurityEvents.NONE));
+	}
+
 	RateLimiter(Authorization authorization, RateLimitProperties properties) {
+		this(authorization, properties, SecurityEvents.NONE);
+	}
+
+	RateLimiter(Authorization authorization, RateLimitProperties properties, SecurityEvents events) {
 		this.authorization = authorization;
+		this.events = events;
 		properties.effective().forEach((category, limit) -> this.limiters.put(category,
 				new Limiter(limit.capacity(), limit.period())));
 	}
@@ -56,6 +72,7 @@ public class RateLimiter {
 	public void acquire(RateLimitCategory category, UUID user) {
 		ConsumptionProbe probe = this.limiters.get(category).bucketOf(user).tryConsumeAndReturnRemaining(1);
 		if (!probe.isConsumed()) {
+			this.events.rateLimited(user, category.name().toLowerCase(Locale.ROOT).replace('_', '-'));
 			throw ApiException.tooManyRequests("Too many requests. Wait a moment and try again.",
 					Duration.ofNanos(probe.getNanosToWaitForRefill()));
 		}

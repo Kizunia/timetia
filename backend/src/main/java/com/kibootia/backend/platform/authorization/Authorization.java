@@ -165,8 +165,7 @@ public class Authorization {
 	 * what they can do about it; everyone else gets a plain denial.
 	 */
 	AccessDeniedException denied(String action) {
-		return caller().emailVerified() ? new AccessDeniedException("Not allowed: " + action)
-				: new EmailNotVerifiedException();
+		return caller().emailVerified() ? new PermissionDeniedException(action) : new EmailNotVerifiedException();
 	}
 
 }

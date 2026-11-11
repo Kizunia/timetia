@@ -34,9 +34,12 @@ final class RequestGateFilter extends OncePerRequestFilter {
 
 	private final ProblemFactory problems;
 
-	RequestGateFilter(RequestGate gate, ProblemFactory problems) {
+	private final SecurityEvents events;
+
+	RequestGateFilter(RequestGate gate, ProblemFactory problems, SecurityEvents events) {
 		this.gate = gate;
 		this.problems = problems;
+		this.events = events;
 	}
 
 	@Override
@@ -51,6 +54,10 @@ final class RequestGateFilter extends OncePerRequestFilter {
 			this.gate.admit(token);
 		}
 		catch (ApiException refusal) {
+			if (refusal.status() == HttpStatus.FORBIDDEN) {
+				// A known user was refused (a disabled or deleted account). A 401 or 503 says nothing about a user.
+				CurrentActor.userId().ifPresent((actor) -> this.events.accountRefused(actor, refusal.code()));
+			}
 			ProblemDetail problem = this.problems.create(refusal.status(), refusal.code(), refusal.getMessage());
 			this.problems.withErrors(problem, refusal.errors());
 			refusal.headers().forEach((name, values) -> values.forEach((value) -> response.addHeader(name, value)));
