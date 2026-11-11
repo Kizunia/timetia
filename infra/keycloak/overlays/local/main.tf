@@ -62,7 +62,7 @@ module "base" {
   smtp = {
     host = "mailpit"
     port = 1025
-    from = "kibootia@localhost"
+    from = "timetia@localhost"
   }
 }
 
@@ -72,7 +72,7 @@ resource "keycloak_user" "demo_admin" {
   realm_id       = module.base.realm_id
   username       = "demo-admin"
   enabled        = true
-  email          = "demo-admin@kibootia.localhost"
+  email          = "demo-admin@timetia.localhost"
   email_verified = true
   first_name     = "Demo"
   last_name      = "Administrator"
@@ -87,7 +87,7 @@ resource "keycloak_user" "demo" {
   realm_id       = module.base.realm_id
   username       = "demo"
   enabled        = true
-  email          = "demo@kibootia.localhost"
+  email          = "demo@timetia.localhost"
   email_verified = true
   first_name     = "Demo"
   last_name      = "User"

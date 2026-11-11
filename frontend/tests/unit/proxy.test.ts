@@ -72,7 +72,7 @@ describe("/api proxy: authentication", () => {
     const response = await proxyApi(request("/api/v1/me", { cookie: await sessionCookie({ accessExpiresAt: NOW_S + 5 }) }), deps);
     expect(response.status).toBe(200);
     expect(sent(upstream.fetch).headers.get("authorization")).toBe("Bearer access-2");
-    expect(setCookiesOf(response).some((cookie) => cookie.startsWith("kibootia_session.0="))).toBe(true);
+    expect(setCookiesOf(response).some((cookie) => cookie.startsWith("timetia_session.0="))).toBe(true);
   });
 
   it("refreshes once when several requests arrive together", async () => {
@@ -131,7 +131,7 @@ describe("/api proxy: streaming", () => {
       method: "POST",
       body,
       duplex: "half",
-      headers: { origin: "http://localhost:3000", "x-kibootia-request": "1", cookie: await sessionCookie() },
+      headers: { origin: "http://localhost:3000", "x-timetia-request": "1", cookie: await sessionCookie() },
     } as RequestInit);
     await proxyApi(incoming, makeDeps({ fetch: upstream.fetch as typeof fetch }));
     const { init } = sent(upstream.fetch);

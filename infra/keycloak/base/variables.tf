@@ -1,6 +1,6 @@
 variable "realm_name" {
   type    = string
-  default = "kibootia"
+  default = "timetia"
 }
 
 variable "public_base_url" {
@@ -23,7 +23,7 @@ variable "admin_client_secret" {
 variable "api_audience" {
   description = "Audience the Spring resource server requires in access tokens."
   type        = string
-  default     = "kibootia-api"
+  default     = "timetia-api"
 }
 
 variable "ssl_required" {

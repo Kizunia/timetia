@@ -11,8 +11,8 @@ describe("OIDC client setup", () => {
     const login = await oidc.createLogin("http://localhost:3000/auth/callback");
     const url = new URL(login.url);
     expect(url.origin).toBe("http://localhost:8180");
-    expect(url.pathname).toBe("/realms/kibootia/protocol/openid-connect/auth");
-    expect(url.searchParams.get("client_id")).toBe("kibootia-web");
+    expect(url.pathname).toBe("/realms/timetia/protocol/openid-connect/auth");
+    expect(url.searchParams.get("client_id")).toBe("timetia-web");
     expect(url.searchParams.get("redirect_uri")).toBe("http://localhost:3000/auth/callback");
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
@@ -38,7 +38,7 @@ describe("OIDC client setup", () => {
   it("ends the Keycloak session at the public address and returns to this site", () => {
     const url = new URL(oidc.endSessionUrl("the-id-token"));
     expect(url.origin).toBe("http://localhost:8180");
-    expect(url.pathname).toBe("/realms/kibootia/protocol/openid-connect/logout");
+    expect(url.pathname).toBe("/realms/timetia/protocol/openid-connect/logout");
     expect(url.searchParams.get("id_token_hint")).toBe("the-id-token");
     expect(url.searchParams.get("post_logout_redirect_uri")).toBe("http://localhost:3000");
   });

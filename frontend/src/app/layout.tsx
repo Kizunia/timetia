@@ -6,8 +6,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/lib/query";
 
 export const metadata: Metadata = {
-  title: "Kibootia",
-  description: "Kibootia application starter",
+  title: "Timetia",
+  description: "Timetia lecture rescheduling",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

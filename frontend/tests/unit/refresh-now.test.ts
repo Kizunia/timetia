@@ -57,7 +57,7 @@ describe("refreshing the session on demand (the 'I have verified' button)", () =
 
     expect(response.status).toBe(204);
     expect(oidc.refresh).toHaveBeenCalledOnce();
-    expect(response.headers.getSetCookie().some((cookie) => cookie.startsWith("kibootia_session.0="))).toBe(true);
+    expect(response.headers.getSetCookie().some((cookie) => cookie.startsWith("timetia_session.0="))).toBe(true);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 

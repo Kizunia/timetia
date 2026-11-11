@@ -11,9 +11,9 @@ export const NOW_S = Math.floor(NOW_MS / 1000);
 
 export const config: Config = {
   publicBaseUrl: "http://localhost:3000",
-  issuer: "http://localhost:8180/realms/kibootia",
-  internalIssuer: "http://keycloak:8080/realms/kibootia",
-  clientId: "kibootia-web",
+  issuer: "http://localhost:8180/realms/timetia",
+  internalIssuer: "http://keycloak:8080/realms/timetia",
+  clientId: "timetia-web",
   clientSecret: "client-secret-for-tests",
   sessionSecret: "0123456789abcdef0123456789abcdef0123456789",
   apiBaseUrl: "http://api.internal:8080",
@@ -29,14 +29,14 @@ export const freshTokens: Tokens = {
 export function fakeOidc(overrides: Partial<Oidc> = {}): Oidc {
   return {
     createLogin: vi.fn(async () => ({
-      url: "http://localhost:8180/realms/kibootia/protocol/openid-connect/auth?state=s1",
+      url: "http://localhost:8180/realms/timetia/protocol/openid-connect/auth?state=s1",
       state: "s1",
       nonce: "n1",
       codeVerifier: "v1",
     })),
     exchangeCode: vi.fn(async () => freshTokens),
     refresh: vi.fn(async () => freshTokens),
-    endSessionUrl: vi.fn((idToken) => `http://localhost:8180/realms/kibootia/protocol/openid-connect/logout?hint=${idToken ?? "none"}`),
+    endSessionUrl: vi.fn((idToken) => `http://localhost:8180/realms/timetia/protocol/openid-connect/logout?hint=${idToken ?? "none"}`),
     ...overrides,
   };
 }
@@ -79,7 +79,7 @@ export function request(path: string, init: RequestInit & { cookie?: string; csr
   if (cookie) headers.set("cookie", cookie);
   if (csrf) {
     headers.set("origin", config.publicBaseUrl);
-    headers.set("x-kibootia-request", "1");
+    headers.set("x-timetia-request", "1");
   }
   return new Request(`${config.publicBaseUrl}${path}`, { ...rest, headers });
 }

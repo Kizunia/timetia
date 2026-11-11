@@ -1,7 +1,7 @@
 import { problem } from "./problem";
 
 /** Required on every request that changes state. The generated API client and the sign-out button both send it. */
-export const CSRF_HEADER = "x-kibootia-request";
+export const CSRF_HEADER = "x-timetia-request";
 export const CSRF_HEADER_VALUE = "1";
 
 const SAFE_METHODS = new Set(["GET", "HEAD"]);

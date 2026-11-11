@@ -115,7 +115,7 @@ describe("POST /auth/logout", () => {
     expect(noOrigin.status).toBe(403);
     expect(setCookiesOf(noOrigin)).toEqual([]);
     const foreign = await logout(
-      request("/auth/logout", { method: "POST", cookie: await sessionCookie(), headers: { origin: "https://evil.example", "x-kibootia-request": "1" } }),
+      request("/auth/logout", { method: "POST", cookie: await sessionCookie(), headers: { origin: "https://evil.example", "x-timetia-request": "1" } }),
       deps,
     );
     expect(foreign.status).toBe(403);

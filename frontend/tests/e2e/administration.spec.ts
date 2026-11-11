@@ -64,7 +64,7 @@ test("the bootstrap administrator signs in and finds the administration area, wh
   await admin.getByRole("link", { name: "Administration" }).click();
   await expect(admin).toHaveURL(/\/admin\/users$/);
   await expect(admin.getByRole("heading", { name: "Users" })).toBeVisible();
-  await expect(admin.getByTestId("user-row").filter({ hasText: "demo-admin@kibootia.localhost" })).toBeVisible();
+  await expect(admin.getByTestId("user-row").filter({ hasText: "demo-admin@timetia.localhost" })).toBeVisible();
   await expectNoAccessibilityViolations(admin);
 
   for (const [link, heading] of [
@@ -111,7 +111,7 @@ test("invites a user with that role, and Keycloak mails the invitation", async (
 
   const mail = await mailTo(admin.request, invitee);
   expect(mail.subject.length).toBeGreaterThan(0);
-  expect(keycloakLink(mail)).toContain("/realms/kibootia/");
+  expect(keycloakLink(mail)).toContain("/realms/timetia/");
 });
 
 test("the invitee follows the link, sets a password and signs in as a user with both roles", async () => {
@@ -179,7 +179,7 @@ test("taking a role away applies on the user's next request", async () => {
 });
 
 test("the last administrator can neither disable themselves nor lose the administrator role", async () => {
-  await openUser(admin, "demo-admin@kibootia.localhost");
+  await openUser(admin, "demo-admin@timetia.localhost");
   await expect(admin.getByRole("button", { name: "Disable", exact: true })).toHaveCount(0);
   await expect(admin.getByRole("button", { name: "Delete", exact: true })).toHaveCount(0);
 

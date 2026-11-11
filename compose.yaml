@@ -173,8 +173,8 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/kibootia
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
-      KIBOOTIA_SECURITY_ISSUER: http://localhost:8180/realms/kibootia
-      KIBOOTIA_SECURITY_JWK_SET_URI: http://keycloak:8080/realms/kibootia/protocol/openid-connect/certs
+      KIBOOTIA_SECURITY_ISSUER: http://localhost:8180/realms/timetia
+      KIBOOTIA_SECURITY_JWK_SET_URI: http://keycloak:8080/realms/timetia/protocol/openid-connect/certs
       # The Admin API of Keycloak, reached on the internal address, with the service account that may only manage users.
       KIBOOTIA_IDENTITY_KEYCLOAK_BASE_URL: http://keycloak:8080
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:?Set KEYCLOAK_ADMIN_CLIENT_SECRET in .env}
@@ -221,8 +221,8 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_BASE_URL: http://localhost:3470
-      KEYCLOAK_ISSUER: http://localhost:8180/realms/kibootia
-      KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8080/realms/kibootia
+      KEYCLOAK_ISSUER: http://localhost:8180/realms/timetia
+      KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8080/realms/timetia
       KEYCLOAK_WEB_CLIENT_SECRET: ${KEYCLOAK_WEB_CLIENT_SECRET:?Set KEYCLOAK_WEB_CLIENT_SECRET in .env}
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
       API_BASE_URL: http://backend:8080

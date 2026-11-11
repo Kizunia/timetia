@@ -10,7 +10,7 @@ export default async function Home() {
 
   return (
     <PageShell signedInOnly={false}>
-      <h1 className="text-3xl font-semibold tracking-tight">Kibootia</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Timetia</h1>
       {me ? (
         <div className="mt-6 space-y-3">
           <p data-testid="signed-in">You are signed in.</p>

@@ -44,7 +44,7 @@ function stripTrailingSlash(value: string): string {
 }
 
 export function loadConfig(env: Env = process.env): Config {
-  const issuer = stripTrailingSlash(env.KEYCLOAK_ISSUER || "http://localhost:8180/realms/kibootia");
+  const issuer = stripTrailingSlash(env.KEYCLOAK_ISSUER || "http://localhost:8180/realms/timetia");
   const sessionSecret = required(env, "SESSION_SECRET");
   if (sessionSecret.length < 32) {
     throw new MissingSettingError("SESSION_SECRET", "It must be at least 32 characters; 'pnpm bootstrap' generates one.");
@@ -53,7 +53,7 @@ export function loadConfig(env: Env = process.env): Config {
     publicBaseUrl: stripTrailingSlash(env.PUBLIC_BASE_URL || "http://localhost:3470"),
     issuer,
     internalIssuer: stripTrailingSlash(env.KEYCLOAK_INTERNAL_ISSUER || issuer),
-    clientId: env.KEYCLOAK_WEB_CLIENT_ID || "kibootia-web",
+    clientId: env.KEYCLOAK_WEB_CLIENT_ID || "timetia-web",
     clientSecret: required(env, "KEYCLOAK_WEB_CLIENT_SECRET"),
     sessionSecret,
     apiBaseUrl: stripTrailingSlash(env.API_BASE_URL || "http://localhost:8080"),

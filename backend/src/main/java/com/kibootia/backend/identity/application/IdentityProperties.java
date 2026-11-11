@@ -35,8 +35,8 @@ public record IdentityProperties(String bootstrapAdminEmail,
 	 * @param readTimeout how long to wait for an answer
 	 */
 	public record Keycloak(@DefaultValue("http://localhost:8180") @NotBlank String baseUrl,
-			@DefaultValue("kibootia") @NotBlank String realm, @DefaultValue("kibootia-web") @NotBlank String webClientId,
-			@DefaultValue("kibootia-admin") @NotBlank String clientId, String clientSecret,
+			@DefaultValue("timetia") @NotBlank String realm, @DefaultValue("timetia-web") @NotBlank String webClientId,
+			@DefaultValue("timetia-admin") @NotBlank String clientId, String clientSecret,
 			@DefaultValue("3s") @NotNull Duration connectTimeout, @DefaultValue("10s") @NotNull Duration readTimeout) {
 
 	}

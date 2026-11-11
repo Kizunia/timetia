@@ -127,7 +127,7 @@ test("asked directly, the API refuses a disguised file, one over the limit and o
     const send = async (blob: Blob, name: string) => {
       const form = new FormData();
       form.append("file", blob, name);
-      const response = await fetch("/api/v1/me/avatar", { method: "PUT", body: form, headers: { "x-kibootia-request": "1" } });
+      const response = await fetch("/api/v1/me/avatar", { method: "PUT", body: form, headers: { "x-timetia-request": "1" } });
       const body = (await response.json().catch(() => null)) as { code?: string } | null;
       return { status: response.status, code: body?.code };
     };
@@ -172,9 +172,9 @@ test("an administrator sees the user's photo on the user's page, and the page ha
   await expectLoaded(admin.getByTestId("avatar").locator("img").first(), 256);
   // The list shows it too, found by search so that it does not matter how many other users the stack holds.
   await admin.goto("/admin/users");
-  await admin.getByLabel("Search").fill("demo@kibootia.localhost");
+  await admin.getByLabel("Search").fill("demo@timetia.localhost");
   await admin.getByRole("button", { name: "Search" }).click();
-  const row = admin.getByTestId("user-row").filter({ hasText: "demo@kibootia.localhost" });
+  const row = admin.getByTestId("user-row").filter({ hasText: "demo@timetia.localhost" });
   await expect(row).toHaveCount(1);
   await expect(row.getByTestId("avatar").locator("img")).toHaveCount(1);
   await expectNoAccessibilityViolations(admin);

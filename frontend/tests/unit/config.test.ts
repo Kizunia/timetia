@@ -9,17 +9,17 @@ describe("frontend settings", () => {
     const config = loadConfig(valid);
     expect(config).toMatchObject({
       publicBaseUrl: "http://localhost:3470",
-      issuer: "http://localhost:8180/realms/kibootia",
-      internalIssuer: "http://localhost:8180/realms/kibootia",
+      issuer: "http://localhost:8180/realms/timetia",
+      internalIssuer: "http://localhost:8180/realms/timetia",
       apiBaseUrl: "http://localhost:8080",
-      clientId: "kibootia-web",
+      clientId: "timetia-web",
     });
   });
 
   it("keeps the public and internal Keycloak addresses apart", () => {
-    const config = loadConfig({ ...valid, KEYCLOAK_INTERNAL_ISSUER: "http://keycloak:8080/realms/kibootia/" });
-    expect(config.issuer).toBe("http://localhost:8180/realms/kibootia");
-    expect(config.internalIssuer).toBe("http://keycloak:8080/realms/kibootia");
+    const config = loadConfig({ ...valid, KEYCLOAK_INTERNAL_ISSUER: "http://keycloak:8080/realms/timetia/" });
+    expect(config.issuer).toBe("http://localhost:8180/realms/timetia");
+    expect(config.internalIssuer).toBe("http://keycloak:8080/realms/timetia");
   });
 
   it("names the missing setting without printing any value", () => {

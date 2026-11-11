@@ -26,7 +26,7 @@ export function SiteHeader({ me }: { me: Me | null }) {
     <header className="border-b">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
         <Link href="/" className="text-lg font-semibold tracking-tight">
-          Kibootia
+          Timetia
         </Link>
         <nav aria-label="Main" className="flex flex-1 flex-wrap items-center gap-1">
           {me && (

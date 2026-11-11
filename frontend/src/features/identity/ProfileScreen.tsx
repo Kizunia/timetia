@@ -24,7 +24,7 @@ const THEMES: { value: Me["theme"]; label: string }[] = [
 
 /**
  * The signed-in user's own profile (ADR 0041). Name, email and password belong to Keycloak and are changed in its account
- * console, which is linked; what Kibootia keeps is the photo and the preferences. Viewing it works before the email
+ * console, which is linked; what Timetia keeps is the photo and the preferences. Viewing it works before the email
  * address is verified, changing the photo or a preference does not.
  */
 export function ProfileScreen({ accountUrl }: { accountUrl: string }) {

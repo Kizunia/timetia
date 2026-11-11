@@ -18,8 +18,8 @@ export interface Session {
   sessionExpiresAt: number;
 }
 
-export const SESSION_COOKIE = "kibootia_session";
-export const LOGIN_COOKIE = "kibootia_login";
+export const SESSION_COOKIE = "timetia_session";
+export const LOGIN_COOKIE = "timetia_login";
 
 /** Below the 4096-byte cookie limit once the name and attributes are added. */
 export const CHUNK_SIZE = 3600;
@@ -28,7 +28,7 @@ const SESSION_MAX_AGE_SECONDS = 10 * 60 * 60;
 
 function key(secret: string) {
   // HKDF keeps the cookie key independent of the raw secret and gives the 32 bytes A256GCM needs.
-  return createSecretKey(Buffer.from(hkdfSync("sha256", secret, "", "kibootia-session-cookie", 32)));
+  return createSecretKey(Buffer.from(hkdfSync("sha256", secret, "", "timetia-session-cookie", 32)));
 }
 
 export async function seal(payload: Record<string, unknown>, secret: string, ttlSeconds: number): Promise<string> {
