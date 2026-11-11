@@ -43,6 +43,9 @@ class JpaRoleStore implements RoleStore {
 
 	private static final String USER_DESCRIPTION = "Given to everyone who signs in.";
 
+	/** The scope id of an assignment that has no place (migration V202611121000). */
+	static final byte[] NO_SCOPE = new byte[16];
+
 	private final RoleRepository roles;
 
 	private final JdbcClient jdbc;
@@ -59,8 +62,8 @@ class JpaRoleStore implements RoleStore {
 	}
 
 	@Override
-	public Role insert(String name, String description, Set<String> permissions) {
-		RoleEntity entity = this.roles.saveAndFlush(new RoleEntity(name, description, null));
+	public Role insert(String name, String description, String scopeType, Set<String> permissions) {
+		RoleEntity entity = this.roles.saveAndFlush(new RoleEntity(name, description, null, scopeType));
 		insertPermissions(entity.getId(), permissions);
 		return toRole(entity, permissions, 0);
 	}
@@ -140,9 +143,9 @@ class JpaRoleStore implements RoleStore {
 	@Override
 	public void ensureBuiltInRoles(Set<String> userRolePermissions) {
 		this.roles.findByBuiltIn(Role.BuiltIn.ADMIN)
-			.orElseGet(() -> this.roles.save(new RoleEntity("Administrator", ADMIN_DESCRIPTION, Role.BuiltIn.ADMIN)));
+			.orElseGet(() -> this.roles.save(new RoleEntity("Administrator", ADMIN_DESCRIPTION, Role.BuiltIn.ADMIN, null)));
 		RoleEntity user = this.roles.findByBuiltIn(Role.BuiltIn.USER)
-			.orElseGet(() -> this.roles.save(new RoleEntity("User", USER_DESCRIPTION, Role.BuiltIn.USER)));
+			.orElseGet(() -> this.roles.save(new RoleEntity("User", USER_DESCRIPTION, Role.BuiltIn.USER, null)));
 		this.roles.flush();
 		for (String permission : userRolePermissions) {
 			// The seed row records that the user role has been offered this permission. Only the first offer adds it, so
@@ -166,11 +169,29 @@ class JpaRoleStore implements RoleStore {
 	@Override
 	public Set<UUID> roleIdsOf(UUID userId) {
 		return new LinkedHashSet<>(this.jdbc
-			.sql("select role_id from role_assignment where tenant_id = :tenant and user_id = :user")
+			.sql("""
+					select ra.role_id from role_assignment ra
+					join role r on r.id = ra.role_id and r.tenant_id = ra.tenant_id
+					where ra.tenant_id = :tenant and ra.user_id = :user and r.scope_type is null
+					""")
 			.param("tenant", tenant())
 			.param("user", UuidBytes.toBytes(userId))
 			.query((rs, row) -> uuid(rs, "role_id"))
 			.list());
+	}
+
+	@Override
+	public List<ScopedAssignment> scopedAssignmentsOf(UUID userId) {
+		return this.jdbc.sql("""
+				select ra.role_id, ra.scope_id from role_assignment ra
+				join role r on r.id = ra.role_id and r.tenant_id = ra.tenant_id
+				where ra.tenant_id = :tenant and ra.user_id = :user and r.scope_type is not null
+				order by ra.role_id, ra.scope_id
+				""")
+			.param("tenant", tenant())
+			.param("user", UuidBytes.toBytes(userId))
+			.query((rs, row) -> new ScopedAssignment(uuid(rs, "role_id"), scopeOf(rs.getBytes("scope_id"))))
+			.list();
 	}
 
 	@Override
@@ -180,7 +201,11 @@ class JpaRoleStore implements RoleStore {
 			return result;
 		}
 		this.jdbc
-			.sql("select user_id, role_id from role_assignment where tenant_id = :tenant and user_id in (:users)")
+			.sql("""
+					select ra.user_id, ra.role_id from role_assignment ra
+					join role r on r.id = ra.role_id and r.tenant_id = ra.tenant_id
+					where ra.tenant_id = :tenant and ra.user_id in (:users) and r.scope_type is null
+					""")
 			.param("tenant", tenant())
 			.param("users", userIds.stream().map(UuidBytes::toBytes).toList())
 			.query((rs, row) -> {
@@ -216,12 +241,35 @@ class JpaRoleStore implements RoleStore {
 	}
 
 	@Override
-	public void unassign(UUID userId, UUID roleId) {
-		this.jdbc
-			.sql("delete from role_assignment where tenant_id = :tenant and user_id = :user and role_id = :role")
+	public void assign(UUID userId, UUID roleId, UUID scopeId, UUID assignedBy) {
+		this.jdbc.sql("""
+				insert ignore into role_assignment (tenant_id, user_id, role_id, scope_id, assigned_at, assigned_by)
+				values (:tenant, :user, :role, :scope, :at, :by)
+				""")
 			.param("tenant", tenant())
 			.param("user", UuidBytes.toBytes(userId))
 			.param("role", UuidBytes.toBytes(roleId))
+			.param("scope", scope(scopeId))
+			.param("at", LocalDateTime.ofInstant(this.clock.instant(), ZoneOffset.UTC))
+			.param("by", UuidBytes.toBytes(assignedBy))
+			.update();
+	}
+
+	@Override
+	public void unassign(UUID userId, UUID roleId) {
+		unassign(userId, roleId, null);
+	}
+
+	@Override
+	public void unassign(UUID userId, UUID roleId, UUID scopeId) {
+		this.jdbc.sql("""
+				delete from role_assignment
+				where tenant_id = :tenant and user_id = :user and role_id = :role and scope_id = :scope
+				""")
+			.param("tenant", tenant())
+			.param("user", UuidBytes.toBytes(userId))
+			.param("role", UuidBytes.toBytes(roleId))
+			.param("scope", scope(scopeId))
 			.update();
 	}
 
@@ -272,7 +320,7 @@ class JpaRoleStore implements RoleStore {
 
 	private static Role toRole(RoleEntity entity, Set<String> permissions, int assignedUsers) {
 		return new Role(entity.getId(), entity.getVersion(), entity.getName(), entity.getDescription(),
-				entity.getBuiltIn(), Set.copyOf(permissions), assignedUsers, entity.getCreatedAt(),
+				entity.getBuiltIn(), entity.getScopeType(), Set.copyOf(permissions), assignedUsers, entity.getCreatedAt(),
 				entity.getUpdatedAt());
 	}
 
@@ -310,6 +358,15 @@ class JpaRoleStore implements RoleStore {
 		Set<String> added = new TreeSet<>(permissions);
 		added.removeAll(current);
 		insertPermissions(roleId, added);
+	}
+
+	/** The place of a stored assignment: null for the all-zero id, which means no place. */
+	private static UUID scopeOf(byte[] stored) {
+		return java.util.Arrays.equals(stored, NO_SCOPE) ? null : UuidBytes.fromBytes(stored);
+	}
+
+	private static byte[] scope(UUID scopeId) {
+		return (scopeId == null) ? NO_SCOPE : UuidBytes.toBytes(scopeId);
 	}
 
 	private static byte[] tenant() {

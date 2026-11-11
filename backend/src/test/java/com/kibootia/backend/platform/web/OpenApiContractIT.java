@@ -88,7 +88,8 @@ class OpenApiContractIT {
 				"/api/v1/failed-events", "/api/v1/failed-events/{id}/retry", "/api/v1/permissions", "/api/v1/roles",
 				"/api/v1/roles/{id}", "/api/v1/users", "/api/v1/users/{id}", "/api/v1/users/{id}/invitation",
 				"/api/v1/users/{id}/disable", "/api/v1/users/{id}/enable", "/api/v1/users/{id}/restore",
-				"/api/v1/users/{id}/erase", "/api/v1/users/{userId}/roles", "/api/v1/audit-entries");
+				"/api/v1/users/{id}/erase", "/api/v1/users/{userId}/roles", "/api/v1/users/{userId}/scoped-roles",
+				"/api/v1/audit-entries");
 	}
 
 	@Test

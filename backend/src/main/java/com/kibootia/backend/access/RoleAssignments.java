@@ -16,7 +16,11 @@ import java.util.UUID;
  */
 public interface RoleAssignments {
 
-	/** Every permission the user holds through their roles; for the administrator role, every declared permission. */
+	/**
+	 * Every permission the user holds through their roles; for the administrator role, every declared flat permission.
+	 * A policy-decided permission held in any place is included, as a hint for the interface: a decision about a record
+	 * is made by the decision point, never from this list.
+	 */
 	Set<String> permissionsOf(UUID userId);
 
 	/** The user's roles, built-in ones first. */

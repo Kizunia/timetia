@@ -12,11 +12,13 @@ import java.util.UUID;
  * @param name unique among live roles of the tenant
  * @param description what the role is for
  * @param builtIn which protected role this is, or null for a role an administrator created
+ * @param scopeType the kind of place the role is assigned in ({@code GLOBAL} or a kind a module declares), or null for a
+ *        platform role that carries no policy-decided permission (Timetia ADR 0004)
  * @param permissions what the role allows; for the administrator role this is every declared permission, computed
  * @param assignedUsers how many users hold the role
  */
-public record Role(UUID id, long version, String name, String description, BuiltIn builtIn, Set<String> permissions,
-		int assignedUsers, Instant createdAt, Instant updatedAt) {
+public record Role(UUID id, long version, String name, String description, BuiltIn builtIn, String scopeType,
+		Set<String> permissions, int assignedUsers, Instant createdAt, Instant updatedAt) {
 
 	/** The roles the foundation creates and protects. */
 	public enum BuiltIn {
@@ -31,6 +33,11 @@ public record Role(UUID id, long version, String name, String description, Built
 
 	public boolean isBuiltIn() {
 		return this.builtIn != null;
+	}
+
+	/** Whether the role carries policy-decided permissions and so is assigned within a scope. */
+	public boolean isScoped() {
+		return this.scopeType != null;
 	}
 
 }

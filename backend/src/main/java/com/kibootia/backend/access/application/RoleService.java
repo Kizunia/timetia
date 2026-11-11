@@ -9,11 +9,13 @@ import java.util.regex.Pattern;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kibootia.backend.access.AccessPermissions;
 import com.kibootia.backend.access.domain.PermissionRegistry;
+import com.kibootia.backend.access.domain.ScopeKinds;
 import com.kibootia.backend.audit.AuditEntry;
 import com.kibootia.backend.audit.AuditLog;
 import com.kibootia.backend.platform.authorization.Authorization;
@@ -57,13 +59,19 @@ public class RoleService {
 
 	private final RateLimiter rateLimiter;
 
+	private final ScopeKinds scopeKinds;
+
+	private final BuiltInRoles builtIns;
+
 	RoleService(RoleStore roles, PermissionRegistry registry, Authorization authorization, AuditLog auditLog,
-			RateLimiter rateLimiter) {
+			RateLimiter rateLimiter, ScopeKinds scopeKinds, BuiltInRoles builtIns) {
 		this.roles = roles;
 		this.registry = registry;
 		this.authorization = authorization;
 		this.auditLog = auditLog;
 		this.rateLimiter = rateLimiter;
+		this.scopeKinds = scopeKinds;
+		this.builtIns = builtIns;
 	}
 
 	/** Every permission the modules declare, for the role editor. */
@@ -90,14 +98,17 @@ public class RoleService {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		String name = validName(role.name());
 		Set<String> permissions = validPermissions(role.permissions());
+		String scopeType = validScopeType(role.scopeType());
+		requireConsistent(scopeType, permissions);
 		requireGrantable(permissions);
 		if (this.roles.nameInUse(name, null)) {
 			throw nameInUse();
 		}
-		Role created = this.roles.insert(name, role.description().strip(), permissions);
-		this.auditLog.record(AuditEntry.of("access.role.created", "role", created.id())
+		Role created = this.roles.insert(name, role.description().strip(), scopeType, permissions);
+		AuditEntry entry = AuditEntry.of("access.role.created", "role", created.id())
 			.withChange("roleName", name)
-			.withChange("permissions", summarise(permissions, Set.of())));
+			.withChange("permissions", summarise(permissions, Set.of()));
+		this.auditLog.record((scopeType == null) ? entry : entry.withChange("scopeType", scopeType));
 		return created;
 	}
 
@@ -116,6 +127,7 @@ public class RoleService {
 		Set<String> permissions = validPermissions(changes.permissions());
 		Set<String> added = difference(permissions, current.permissions());
 		Set<String> removed = difference(current.permissions(), permissions);
+		requireConsistent(current.scopeType(), permissions);
 		requireGrantable(added);
 		if (!name.equals(current.name()) && this.roles.nameInUse(name, id)) {
 			throw nameInUse();
@@ -150,15 +162,66 @@ public class RoleService {
 			return role;
 		}
 		Set<String> all = new TreeSet<>();
-		this.registry.all().forEach((permission) -> all.add(permission.name()));
-		return new Role(role.id(), role.version(), role.name(), role.description(), role.builtIn(), all,
+		this.registry.all()
+			.stream()
+			.filter((permission) -> !permission.policyDecided())
+			.forEach((permission) -> all.add(permission.name()));
+		return new Role(role.id(), role.version(), role.name(), role.description(), role.builtIn(), role.scopeType(), all,
 				role.assignedUsers(), role.createdAt(), role.updatedAt());
 	}
 
-	/** A role can only be given what its editor holds, or editing roles would be a way to gain permissions. */
+	/**
+	 * A role can only be given what its editor holds, or editing roles would be a way to gain permissions. A
+	 * policy-decided permission is held through assignments in places, so no editor holds it as such: only an
+	 * administrator may put one in a role (Timetia ADR 0004).
+	 */
 	private void requireGrantable(Set<String> permissions) {
 		for (String permission : permissions) {
-			this.authorization.require(permission);
+			if (this.registry.isPolicyDecided(permission)) {
+				if (!this.roles.roleIdsOf(this.authorization.currentUserId()).contains(this.builtIns.admin().id())) {
+					throw new AccessDeniedException("Only an administrator can put '" + permission + "' in a role");
+				}
+			}
+			else {
+				this.authorization.require(permission);
+			}
+		}
+	}
+
+	/** An empty scope type means a platform role; otherwise it must be GLOBAL or a kind a module declared. */
+	private String validScopeType(String requested) {
+		if (requested == null || requested.isBlank()) {
+			return null;
+		}
+		String scopeType = requested.strip();
+		if (!this.scopeKinds.isKnown(scopeType)) {
+			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.",
+					List.of(new ApiFieldError("scopeType", "unknown_scope_type",
+							"must be one of " + new TreeSet<>(this.scopeKinds.all()))));
+		}
+		return scopeType;
+	}
+
+	/**
+	 * The two rules that keep scoped roles apart from platform roles (Timetia ADR 0004): a role that holds a
+	 * policy-decided permission has a scope type, so it is never assigned without a place; and a role with a scope type
+	 * holds only policy-decided permissions, so a flat permission is never held in a place that does not limit it.
+	 */
+	private void requireConsistent(String scopeType, Set<String> permissions) {
+		List<ApiFieldError> errors = new ArrayList<>();
+		for (String permission : permissions) {
+			boolean decided = this.registry.isPolicyDecided(permission);
+			if (decided && scopeType == null) {
+				errors.add(new ApiFieldError("permissions", "scope_type_required",
+						"'" + permission + "' is decided per record, so the role needs a scope type"));
+			}
+			else if (!decided && scopeType != null) {
+				errors.add(new ApiFieldError("permissions", "not_scopeable",
+						"'" + permission + "' is not decided per record, so a role with a scope type cannot hold it"));
+			}
+		}
+		if (!errors.isEmpty()) {
+			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
 		}
 	}
 

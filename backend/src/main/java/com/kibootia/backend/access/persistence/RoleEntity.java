@@ -25,13 +25,18 @@ class RoleEntity extends SoftDeletableEntity {
 	@Column(name = "built_in", length = 20)
 	private String builtIn;
 
+	/** GLOBAL or a kind a module declares, or null for a platform role (Timetia ADR 0004). */
+	@Column(name = "scope_type", length = 20)
+	private String scopeType;
+
 	protected RoleEntity() {
 	}
 
-	RoleEntity(String name, String description, Role.BuiltIn builtIn) {
+	RoleEntity(String name, String description, Role.BuiltIn builtIn, String scopeType) {
 		this.name = name;
 		this.description = description;
 		this.builtIn = (builtIn != null) ? builtIn.name() : null;
+		this.scopeType = scopeType;
 	}
 
 	String getName() {
@@ -40,6 +45,10 @@ class RoleEntity extends SoftDeletableEntity {
 
 	String getDescription() {
 		return this.description;
+	}
+
+	String getScopeType() {
+		return this.scopeType;
 	}
 
 	Role.BuiltIn getBuiltIn() {

@@ -18,6 +18,7 @@ public record RoleResponse(
 		@Schema(requiredMode = REQUIRED) String name,
 		@Schema(requiredMode = REQUIRED) String description,
 		@Schema(nullable = true, allowableValues = { "ADMIN", "USER" }) String builtIn,
+		@Schema(nullable = true, description = "GLOBAL or a kind of place; absent for a platform role") String scopeType,
 		@Schema(requiredMode = REQUIRED) List<String> permissions,
 		@Schema(requiredMode = REQUIRED) int assignedUsers,
 		@Schema(requiredMode = REQUIRED) long version,

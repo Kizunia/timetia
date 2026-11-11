@@ -96,6 +96,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		requireExistingUser(userId);
 		Map<UUID, Role> wanted = rolesById(roleIds);
+		requireUnscoped(wanted.values());
 		Set<UUID> current = this.roles.roleIdsOf(userId);
 		Role admin = this.builtIns.admin();
 
@@ -133,9 +134,14 @@ public class RoleAssignmentService implements RoleAssignments {
 	@NoAuthorization("callers authorize; a user reads their own permissions and an administrator reads another's")
 	public Set<String> permissionsOf(UUID userId) {
 		Set<String> permissions = new TreeSet<>();
-		for (Role role : this.roles.findAll(this.roles.roleIdsOf(userId))) {
+		Set<UUID> held = new LinkedHashSet<>(this.roles.roleIdsOf(userId));
+		this.roles.scopedAssignmentsOf(userId).forEach((assignment) -> held.add(assignment.roleId()));
+		for (Role role : this.roles.findAll(held)) {
 			if (role.builtIn() == Role.BuiltIn.ADMIN) {
-				this.registry.all().forEach((permission) -> permissions.add(permission.name()));
+				this.registry.all()
+					.stream()
+					.filter((permission) -> !permission.policyDecided())
+					.forEach((permission) -> permissions.add(permission.name()));
 			}
 			else {
 				role.permissions().stream().filter(this.registry::isRegistered).forEach(permissions::add);
@@ -191,6 +197,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		}
 		this.authorization.require(AccessPermissions.ASSIGN_ROLES);
 		Map<UUID, Role> wanted = rolesById(new LinkedHashSet<>(roleIds));
+		requireUnscoped(wanted.values());
 		Role admin = this.builtIns.admin();
 		if (wanted.containsKey(admin.id())) {
 			requireAdministrator();
@@ -277,6 +284,23 @@ public class RoleAssignmentService implements RoleAssignments {
 					this.authorization.require(permission);
 				}
 			}
+		}
+	}
+
+	/**
+	 * A role with a scope type is assigned within a place, through the scoped-role endpoint; it cannot be given here,
+	 * where it would have no place (Timetia ADR 0004).
+	 */
+	private static void requireUnscoped(Collection<Role> given) {
+		List<ApiFieldError> errors = new ArrayList<>();
+		for (Role role : given) {
+			if (role.isScoped()) {
+				errors.add(new ApiFieldError("roleIds", "scope_required",
+						"'" + role.name() + "' is assigned within a scope; use the scoped roles of the user"));
+			}
+		}
+		if (!errors.isEmpty()) {
+			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
 		}
 	}
 

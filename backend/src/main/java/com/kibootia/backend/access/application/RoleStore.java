@@ -16,7 +16,8 @@ import org.springframework.data.domain.Pageable;
  */
 public interface RoleStore {
 
-	Role insert(String name, String description, Set<String> permissions);
+	/** Creates a role. {@code scopeType} is null for a platform role (Timetia ADR 0004). */
+	Role insert(String name, String description, String scopeType, Set<String> permissions);
 
 	Optional<Role> find(UUID id);
 
@@ -46,18 +47,35 @@ public interface RoleStore {
 	/** Locks the role's row until the transaction ends, so concurrent changes to who holds it take turns. */
 	void lock(UUID roleId);
 
+	/** The platform roles the user holds: roles with no scope type. Roles with a scope type are in {@link #scopedAssignmentsOf}. */
 	Set<UUID> roleIdsOf(UUID userId);
 
-	/** The role IDs of several users at once. A user who holds no role is absent from the map. */
+	/** The roles with a scope type that the user holds, one per role and place (Timetia ADR 0004). */
+	List<ScopedAssignment> scopedAssignmentsOf(UUID userId);
+
+	/** The role IDs of several users at once, without a place. A user who holds no role is absent from the map. */
 	java.util.Map<UUID, Set<UUID>> roleIdsOfAll(Collection<UUID> userIds);
 
-	/** The IDs of every user who holds the role. */
+	/** The IDs of every user who holds the role, in any place. */
 	List<UUID> holdersOf(UUID roleId);
 
+	/** Gives the role without a place. */
 	void assign(UUID userId, UUID roleId, UUID assignedBy);
 
+	/** Gives the role in a place; {@code scopeId} is null for the global scope. */
+	void assign(UUID userId, UUID roleId, UUID scopeId, UUID assignedBy);
+
+	/** Takes the role away, without a place. */
 	void unassign(UUID userId, UUID roleId);
 
+	/** Takes the role away in one place; {@code scopeId} is null for the global scope. */
+	void unassign(UUID userId, UUID roleId, UUID scopeId);
+
 	void unassignAll(UUID userId);
+
+	/** A role held in a place; {@code scopeId} is null for a role whose scope type is GLOBAL. */
+	record ScopedAssignment(UUID roleId, UUID scopeId) {
+
+	}
 
 }

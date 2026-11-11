@@ -8,6 +8,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 public record PermissionResponse(
 		@Schema(requiredMode = REQUIRED) String name,
 		@Schema(requiredMode = REQUIRED) String description,
-		@Schema(requiredMode = REQUIRED) boolean grantedToUserRole) {
+		@Schema(requiredMode = REQUIRED) boolean grantedToUserRole,
+		@Schema(description = "Decided per record, held only through a role that applies within a scope") boolean policyDecided) {
 
 }

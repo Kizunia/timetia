@@ -15,7 +15,7 @@ final class RoleMapper {
 	}
 
 	static NewRole toNewRole(CreateRoleRequest request) {
-		return new NewRole(request.name(), request.description(), request.permissions());
+		return new NewRole(request.name(), request.description(), request.scopeType(), request.permissions());
 	}
 
 	static RoleChanges toChanges(UpdateRoleRequest request) {
@@ -24,7 +24,8 @@ final class RoleMapper {
 
 	static RoleResponse toResponse(Role role) {
 		return new RoleResponse(role.id(), role.name(), role.description(),
-				(role.builtIn() != null) ? role.builtIn().name() : null, role.permissions().stream().sorted().toList(),
+				(role.builtIn() != null) ? role.builtIn().name() : null, role.scopeType(),
+				role.permissions().stream().sorted().toList(),
 				role.assignedUsers(), role.version(), role.createdAt(), role.updatedAt());
 	}
 
@@ -37,7 +38,8 @@ final class RoleMapper {
 	}
 
 	static PermissionResponse toResponse(Permission permission) {
-		return new PermissionResponse(permission.name(), permission.description(), permission.grantedToUserRole());
+		return new PermissionResponse(permission.name(), permission.description(), permission.grantedToUserRole(),
+				permission.policyDecided());
 	}
 
 }

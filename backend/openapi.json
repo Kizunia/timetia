@@ -84,6 +84,11 @@
             },
             "type" : "array",
             "uniqueItems" : true
+          },
+          "scopeType" : {
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
           }
         },
         "required" : [ "description", "name", "permissions" ],
@@ -341,6 +346,10 @@
           },
           "name" : {
             "type" : "string"
+          },
+          "policyDecided" : {
+            "description" : "Decided per record, held only through a role that applies within a scope",
+            "type" : "boolean"
           }
         },
         "required" : [ "description", "grantedToUserRole", "name" ],
@@ -419,6 +428,20 @@
         "required" : [ "code", "status", "title" ],
         "type" : "object"
       },
+      "ReplaceScopedRolesRequest" : {
+        "properties" : {
+          "assignments" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ScopedRoleAssignmentRequest"
+            },
+            "maxItems" : 200,
+            "minItems" : 0,
+            "type" : "array"
+          }
+        },
+        "required" : [ "assignments" ],
+        "type" : "object"
+      },
       "ReplaceUserRolesRequest" : {
         "properties" : {
           "roleIds" : {
@@ -465,6 +488,10 @@
             },
             "type" : "array"
           },
+          "scopeType" : {
+            "description" : "GLOBAL or a kind of place; absent for a platform role",
+            "type" : [ "string", "null" ]
+          },
           "updatedAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -491,6 +518,40 @@
           }
         },
         "required" : [ "builtIn", "id", "name" ],
+        "type" : "object"
+      },
+      "ScopedRoleAssignmentRequest" : {
+        "properties" : {
+          "roleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "scopeId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "roleId" ],
+        "type" : "object"
+      },
+      "ScopedRoleResponse" : {
+        "properties" : {
+          "roleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "roleName" : {
+            "type" : "string"
+          },
+          "scopeId" : {
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
+          "scopeType" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "roleId", "roleName", "scopeType" ],
         "type" : "object"
       },
       "UpdateNoteRequest" : {
@@ -3494,6 +3555,184 @@
           }
         },
         "tags" : [ "user-roles" ]
+      }
+    },
+    "/api/v1/users/{userId}/scoped-roles" : {
+      "get" : {
+        "operationId" : "scopedUserRolesGet",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScopedRoleResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "scoped-user-roles" ]
+      },
+      "put" : {
+        "operationId" : "scopedUserRolesReplace",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReplaceScopedRolesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScopedRoleResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "scoped-user-roles" ]
       }
     }
   },

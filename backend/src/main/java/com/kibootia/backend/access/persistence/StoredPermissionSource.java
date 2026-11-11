@@ -16,7 +16,8 @@ import com.kibootia.backend.platform.persistence.UuidBytes;
  * A caller's permissions from the roles stored in the database (ADR 0025, ADR 0044). Each call is one indexed query on
  * the caller's assignments, so a role change, a removal or a disabled account applies on the very next request, on any
  * number of application instances, with no cache to invalidate. The administrator role has no permission rows: it
- * holds every permission the modules declare.
+ * holds every flat permission the modules declare. Only roles without a scope type count here; a role that carries
+ * policy-decided permissions is read through {@link StoredScopedGrants}.
  *
  * <p>A stored permission that no module declares any more is ignored, so removing a module cannot leave a role
  * pointing at something that does not exist.
@@ -42,7 +43,7 @@ class StoredPermissionSource implements PermissionSource {
 				from role_assignment ra
 				join role r on r.id = ra.role_id and r.tenant_id = ra.tenant_id and r.deleted_at is null
 				left join role_permission rp on rp.role_id = r.id and rp.tenant_id = r.tenant_id
-				where ra.tenant_id = :tenant and ra.user_id = :user
+				where ra.tenant_id = :tenant and ra.user_id = :user and r.scope_type is null
 				""")
 			.param("tenant", UuidBytes.toBytes(caller.tenantId()))
 			.param("user", UuidBytes.toBytes(caller.userId()))
@@ -58,7 +59,11 @@ class StoredPermissionSource implements PermissionSource {
 			})
 			.list();
 		if (administrator[0]) {
-			this.registry.all().forEach((permission) -> permissions.add(permission.name()));
+			// Policy-decided permissions are not held implicitly, not even by the administrator (Timetia ADR 0004).
+			this.registry.all()
+				.stream()
+				.filter((permission) -> !permission.policyDecided())
+				.forEach((permission) -> permissions.add(permission.name()));
 		}
 		return permissions;
 	}
