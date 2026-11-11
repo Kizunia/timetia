@@ -22,14 +22,14 @@ class ModularityTest {
 	@Test
 	void coreModulesExist() {
 		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
-		assertThat(names).contains("access", "audit", "identity", "platform");
+		assertThat(names).contains("academic", "access", "audit", "identity", "platform");
 	}
 
 	/** Every module is one of the known ones, so a stray package cannot become a module unnoticed. */
 	@Test
 	void everyModuleIsKnown() {
 		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
-		assertThat(names).isSubsetOf("access", "audit", "files", "identity", "notes", "platform");
+		assertThat(names).isSubsetOf("academic", "access", "audit", "files", "identity", "notes", "platform");
 	}
 
 	@Test
@@ -47,6 +47,7 @@ class ModularityTest {
 		assertThat(dependenciesOf("identity")).contains("access", "platform");
 		assertThat(dependenciesOf("access")).contains("platform");
 		assertThat(dependenciesOf("audit")).contains("platform");
+		assertThat(dependenciesOf("academic")).as("academic seeds roles through access").contains("access", "platform");
 		assertThat(dependenciesOf("platform")).as("platform depends on no other module (rule 8)").isEmpty();
 	}
 
