@@ -144,9 +144,39 @@ class ResourceServerIT {
 	@Test
 	@DisplayName("rejects a service-account token even when its audience is correct")
 	void serviceAccountToken() throws Exception {
-		String token = TestKeys.token((claims) -> claims.claim("preferred_username", "service-account-kibootia-admin")
-			.claim("client_id", "kibootia-admin"));
+		String token = TestKeys.token((claims) -> claims.claim("preferred_username", "service-account-timetia-admin")
+			.claim("client_id", "timetia-admin"));
 		assertRejected(me(token));
+	}
+
+	@Test
+	@DisplayName("rejects a token that is not valid yet")
+	void notYetValidToken() throws Exception {
+		assertRejected(me(TestKeys.token((claims) -> claims.notBeforeTime(Date.from(Instant.now().plusSeconds(600))))));
+	}
+
+	@Test
+	@DisplayName("tolerates a clock difference of up to a minute and no more")
+	void clockSkew() throws Exception {
+		me(TestKeys.token((claims) -> claims.issueTime(Date.from(Instant.now().minusSeconds(330)))
+			.expirationTime(Date.from(Instant.now().minusSeconds(30))))).andExpect(status().isOk());
+		assertRejected(me(TestKeys.token((claims) -> claims.issueTime(Date.from(Instant.now().minusSeconds(420)))
+			.expirationTime(Date.from(Instant.now().minusSeconds(120))))));
+	}
+
+	@Test
+	@DisplayName("rejects a token with no signature, and a token signed with a shared secret instead of Keycloak's key")
+	void unsignedAndSharedSecretTokens() throws Exception {
+		assertRejected(me(TestKeys.unsignedToken()));
+		assertRejected(me(TestKeys.tokenSignedWithSharedSecret()));
+	}
+
+	@Test
+	@DisplayName("rejects an ID token, a refresh token and a token with no type, even with the right audience")
+	void onlyAccessTokensAreAccepted() throws Exception {
+		assertRejected(me(TestKeys.token((claims) -> claims.claim("typ", "ID"))));
+		assertRejected(me(TestKeys.token((claims) -> claims.claim("typ", "Refresh"))));
+		assertRejected(me(TestKeys.token((claims) -> claims.claim("typ", null))));
 	}
 
 	@Test

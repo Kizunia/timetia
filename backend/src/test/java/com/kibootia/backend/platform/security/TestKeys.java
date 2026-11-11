@@ -16,10 +16,12 @@ import java.util.function.Consumer;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
 import com.sun.net.httpserver.HttpServer;
 
@@ -29,9 +31,9 @@ import com.sun.net.httpserver.HttpServer;
  */
 final class TestKeys {
 
-	static final String ISSUER = "http://localhost:8180/realms/kibootia";
+	static final String ISSUER = "http://localhost:8180/realms/timetia";
 
-	static final String AUDIENCE = "kibootia-api";
+	static final String AUDIENCE = "timetia-api";
 
 	private static final String KEY_ID = "test-key";
 
@@ -64,20 +66,44 @@ final class TestKeys {
 		});
 	}
 
-	private static String sign(RSAKey key, Consumer<JWTClaimsSet.Builder> customizer) {
+	/** A token with the right claims and no signature at all ({@code alg: none}). */
+	static String unsignedToken() {
+		return new PlainJWT(baseClaims().build()).serialize();
+	}
+
+	/** A token with the right claims signed with a shared secret instead of Keycloak's RSA key. */
+	static String tokenSignedWithSharedSecret() {
+		try {
+			SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.HS256).keyID(KEY_ID).build(),
+					baseClaims().build());
+			jwt.sign(new MACSigner("0123456789abcdef0123456789abcdef".getBytes(StandardCharsets.UTF_8)));
+			return jwt.serialize();
+		}
+		catch (JOSEException ex) {
+			throw new IllegalStateException(ex);
+		}
+	}
+
+	/** The claims of an access token Keycloak would issue to a signed-in user. */
+	private static JWTClaimsSet.Builder baseClaims() {
 		Instant now = Instant.now();
-		JWTClaimsSet.Builder claims = new JWTClaimsSet.Builder().issuer(ISSUER)
+		return new JWTClaimsSet.Builder().issuer(ISSUER)
 			.audience(List.of(AUDIENCE))
 			.subject("5d1ec1d6-3d0d-4d6e-8a31-6a0b9a1d4c11")
 			.issueTime(Date.from(now))
 			.expirationTime(Date.from(now.plusSeconds(300)))
 			.jwtID(UUID.randomUUID().toString())
+			.claim("typ", "Bearer")
 			.claim("preferred_username", "demo")
 			.claim("email", "demo@kibootia.localhost")
 			.claim("email_verified", true)
 			.claim("name", "Demo User")
 			.claim("given_name", "Demo")
 			.claim("family_name", "User");
+	}
+
+	private static String sign(RSAKey key, Consumer<JWTClaimsSet.Builder> customizer) {
+		JWTClaimsSet.Builder claims = baseClaims();
 		customizer.accept(claims);
 		try {
 			SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(key.getKeyID()).build(),
