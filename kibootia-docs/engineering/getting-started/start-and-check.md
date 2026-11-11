@@ -14,7 +14,7 @@ Configure and start every part of Kibootia, know what it does today and what it 
 
 ## What exists today
 
-Milestones 0 to 4 are built ([roadmap](../../product/roadmap/README.md), [implementation status](../../product/roadmap/implementation-status.md)).
+Milestones 0 to 5 are built ([roadmap](../../product/roadmap/README.md), [implementation status](../../product/roadmap/implementation-status.md)).
 
 | Area | What you can do or see | Built in |
 |---|---|---|
@@ -22,7 +22,7 @@ Milestones 0 to 4 are built ([roadmap](../../product/roadmap/README.md), [implem
 | Protected API | Spring checks every token (signature, issuer, expiry, audience), refuses machine tokens, and answers every error as RFC 9457 Problem Details with a code and a trace ID | 1, 2 |
 | Observability | One trace across the web app and the API in Grafana, structured JSON logs with the trace ID, a health endpoint | 1 |
 | Platform conventions | UUIDv7 keys, tenant column, soft delete with retention purge, optimistic locking, paging and sorting, a generated OpenAPI description and typed client, durable events with retry, lock-protected jobs, an append-only audit log | 2 |
-| A reference feature | A notes API (create, read, update, delete, restore) that shows every convention. Backend only: there is no screen for it yet | 2 |
+| A reference feature | Notes: write, change, search, sort and page your notes, attach one picture that is kept whole, and delete one. Someone with the permissions sees everyone's notes and the deleted ones and restores a note with its picture. It shows every convention, and it is meant to be copied or deleted | 2, 5 |
 | Profiles | A profile is created the first time someone uses the API; name and email follow Keycloak. The profile page shows them, the roles, and a colour scheme preference | 3 |
 | Roles and permissions | Permissions are defined in code; administrators create and edit roles, give them to users, and a change applies on the user's next request. The administrator role is protected and the last administrator who can sign in cannot be removed | 3 |
 | User administration | Invite by email, disable, enable, delete, restore, and erase for good. Keycloak sends the mail; changes reach Keycloak even after an outage | 3 |
@@ -30,12 +30,13 @@ Milestones 0 to 4 are built ([roadmap](../../product/roadmap/README.md), [implem
 | Audit log screen | Every administrative change, newest first, with who did it and to whom; an erased user shows as "deleted user" | 3 |
 | Rate limiting | Invitations, verification mail and administrative actions are limited per user, answering 429 with `Retry-After` | 3 |
 | Avatars and object storage | Upload, replace and remove a photo on your profile (JPEG, PNG or WebP, up to 5 MB). The server stores a square 64 and 256 pixel copy and drops everything else in the file, such as the camera's location. Others see your photo only with the permission to see profiles. The files live in RustFS, an S3-compatible server; the module can be switched off | 4 |
-| Quality gates | Architecture rules, 341 backend tests, 168 frontend tests, 22 end-to-end tests with accessibility checks, container image scan and secret scan, all in CI (milestone 4: run 42873216224) | 0 to 4 |
+| Module removal | The example feature is deleted with one script and the application still builds; files and telemetry export can be switched off with one setting each. [Recipes](../../recipes/README.md) | 5 |
+| Quality gates | Architecture rules shown to fire, 404 backend tests, 196 frontend tests, 31 end-to-end tests with accessibility checks, container image scan and secret scan, and the module-removal job. In CI for milestone 4 (run 42873216224). For milestone 5 the backend and frontend tests passed locally, the end-to-end story is written and has not run, and there is no CI run yet | 0 to 5 |
 
 **Not built yet:**
 
 - Files other than avatars: the storage module is generic, but only the avatar uses it so far. An administrator cannot remove someone else's photo.
-- A screen for the notes example, and the check that the application still builds with a module removed ([milestone 5](../../product/roadmap/milestone-5-example-feature.md)).
+- Several pictures per note, other kinds of files (documents), and names instead of short IDs for the writers in the notes list.
 - The production deployment, the production start-up guards and the first release ([milestone 6](../../product/roadmap/milestone-6-production-readiness.md)).
 - A screen for failed events (the API exists: `GET /api/v1/failed-events`).
 - Changing your name, email or password inside Kibootia: those stay in Keycloak's account console, which the profile page links to.
@@ -124,15 +125,18 @@ Do these in order; each builds on the one before. Use a private window for the s
 | 17 | The photo is private and resized | As `demo-admin`, open the user `demo` under **Administration, Users**. Then open <http://localhost:9001> and sign in with the two storage keys from `.env` | The administrator sees the photo; a user without the permission to see profiles is refused (403) when asking for someone else's. In the console the bucket `kibootia` holds two small PNGs for the photo (64 and 256 pixels), not your original, and no public link exists |
 | 18 | Replace and remove | **Replace photo**, then **Remove photo** | The picture changes, then the initials come back. The files of removed photos stay (hidden) for 30 days, and are removed with the user when the user is erased |
 | 19 | One trace across both applications | In Grafana, Explore, the Tempo data source, search service `kibootia-backend` | A trace that starts in the web app and continues into the API |
+| 20 | Notes | As `demo`, open **Notes**, **New note**, write a title and some text, **Create note**. Then **Add a picture** and choose a wide image | "Note created", then "Picture saved"; the picture is shown whole and in proportion (not a square). Change the text and save; search for a word from it |
+| 21 | Notes are private, and an administrator can see and restore them | As `demo-admin`, open **Notes**, choose **Everyone's notes**, open the note, **Delete note**; then choose **Deleted notes** and **Restore** | `demo` sees only their own notes and no **Show** choice; the administrator sees the note with its writer, deletes it, finds it under Deleted notes, and after Restore it is back with its picture |
 
 **The same checks, automated.** These cover steps 2 to 13 against the running stack, each page with an accessibility check:
 
 | Command | What it runs | Needs |
 |---|---|---|
 | `pnpm --filter kibootia-frontend exec playwright install chromium` | Installs the test browser, once | Nothing running |
-| `pnpm --filter kibootia-frontend test:e2e` | 22 browser tests: sign-in, administration from invitation to erasure, registration with verification, denied access, and the avatar story (the last 8 are the avatar story) | The stack running (step 3), with the `files` profile |
-| `cd backend && ./mvnw verify` | 103 fast and 238 integration tests, including the Keycloak adapter against a real Keycloak and Mailpit, and the storage contract against a real RustFS | Docker, JDK 25 |
-| `pnpm --filter kibootia-frontend lint`, `typecheck`, `test` | Lint, type check and 168 unit tests | Nothing running |
+| `pnpm --filter kibootia-frontend test:e2e` | 31 browser tests: sign-in, administration from invitation to erasure, registration with verification, denied access, the avatar story (8 tests) and the notes story (9 tests) | The stack running (step 3), with the `files` profile |
+| `node scripts/remove-module.mjs notes --dry-run` | Lists what removing the example feature would do; without `--dry-run` it does it ([recipe](../../recipes/remove-notes.md)). Run it on a throwaway copy | Nothing |
+| `cd backend && ./mvnw verify` | 135 fast and 269 integration tests, including the Keycloak adapter against a real Keycloak and Mailpit, and the storage contract against a real RustFS | Docker, JDK 25 |
+| `pnpm --filter kibootia-frontend lint`, `typecheck`, `test` | Lint, type check and 196 unit tests | Nothing running |
 
 The end-to-end tests create their own users, roles and audit entries, so after running them the lists in the app hold test data. `pnpm reset` clears it.
 

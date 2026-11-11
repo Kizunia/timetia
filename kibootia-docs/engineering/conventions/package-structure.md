@@ -26,7 +26,7 @@ com.kibootia.backend
 ├─ access/     permissions, roles, assignments, decision point
 ├─ audit/      append-only audit log and viewer
 ├─ files/      file metadata, validation, image processing, jobs; s3/ is the adapter of the S3 port
-└─ notes/      deletable example feature (working name)
+└─ notes/      the example feature, Notes: a reference to copy ([guide](../guides/add-a-feature.md)) and a module to delete ([recipe](../../recipes/remove-notes.md))
 ```
 
 - Every module may depend on `platform`. `platform` holds no business logic.
@@ -52,7 +52,7 @@ identity/
 
 ## Infrastructure-backed modules
 
-A module that depends on infrastructure (today `files` and the observability configuration) also has an on/off property `kibootia.<module>.enabled`, its own Flyway migration folder and a Compose profile ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)). Every module keeps its migrations in its own folder.
+A module that depends on infrastructure (today `files` and the observability configuration) also has an on/off property `kibootia.<module>.enabled`, its own Flyway migration folder and a Compose profile ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)). Every module keeps its migrations in its own folder. A default-on module that needs no infrastructure, such as `notes`, has no switch: a fork removes it by deleting it, and nothing outside it may depend on it (architecture rule 5, `REMOVABLE_MODULES` in `ArchitectureTest`).
 
 ## Frontend
 

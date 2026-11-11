@@ -69,9 +69,9 @@ None recorded yet. A combination is recorded here only after a passing CI run co
 | Docker Compose with a TLS reverse proxy (for example Caddy) | core | selected; proxy candidate | Local stack and single-server production | [0037](../decisions/0037-single-server-compose-reference-deployment.md), [0040](../decisions/0040-local-development-topology-and-setup.md) |
 | pnpm scripts with Node scripts | core | selected | Cross-platform setup, start and reset | [0040](../decisions/0040-local-development-topology-and-setup.md) |
 
-## Recipes (planned; none written yet)
+## Recipes (integration recipes planned; none written yet)
 
-Named in plain text because the `recipes/` area is created with the first real recipe ([ADR 0036](../decisions/0036-technology-catalogue-and-recipes-areas.md)).
+The [recipes/](../recipes/README.md) area exists since milestone 5 ([ADR 0036](../decisions/0036-technology-catalogue-and-recipes-areas.md)) and holds the removal recipes of the default-on modules. The integration recipes below are named in plain text until they are written, in milestone 6.
 
 | Recipe | Tier | Why a recipe and not a module |
 |---|---|---|

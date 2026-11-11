@@ -49,7 +49,7 @@ Names only. Defaults are local-development values; production values come from t
 | `kibootia.security.jwk-set-uri` (`KIBOOTIA_SECURITY_JWK_SET_URI`) | Backend | Where signing keys are fetched; internal in the `apps` profile | No |
 | `kibootia.security.audience` (`KIBOOTIA_SECURITY_AUDIENCE`) | Backend | `kibootia-api` | No |
 | `management.server.port` | Backend | 8090, bound to loopback; health only | No |
-| `kibootia.observability.enabled` (`KIBOOTIA_OBSERVABILITY_ENABLED`) | Backend, Next.js | `true`; `false` stops the OTLP export (trace IDs are still created and logged) | No |
+| `kibootia.observability.enabled` (`KIBOOTIA_OBSERVABILITY_ENABLED`) | Backend, Next.js | `true`; `false` stops the OTLP export (trace IDs are still created and logged) ([recipe](../../recipes/disable-observability.md)) | No |
 | `management.opentelemetry.tracing.export.otlp.endpoint` | Backend | The local LGTM traces endpoint | No |
 | `PUBLIC_BASE_URL` | Next.js | `http://localhost:3470`; the web app's public origin, used for redirect URIs and the CSRF Origin check | No |
 | `KEYCLOAK_ISSUER` | Next.js | Public realm URL; browsers are sent here | No |
@@ -82,7 +82,7 @@ Names only.
 
 | Setting | Read by | Default and notes | Secret |
 |---|---|---|---|
-| `kibootia.files.enabled` (`KIBOOTIA_FILES_ENABLED`) | Backend, Compose | `true`. With `false` the files module is absent: no storage client, jobs, listener or permissions, no storage setting is needed, and the avatar endpoints answer 404 `files.disabled` | No |
+| `kibootia.files.enabled` (`KIBOOTIA_FILES_ENABLED`) | Backend, Compose | `true`. With `false` the files module is absent: no storage client, jobs, listener or permissions, no storage setting is needed, and the avatar endpoints and any feature's picture endpoints (a note's) answer 404 `files.disabled` ([recipe](../../recipes/disable-files.md)) | No |
 | `kibootia.files.access-key` (`KIBOOTIA_FILES_ACCESS_KEY`) | Backend, Compose (RustFS) | Required while the module is on; startup fails naming it when missing. Generated into `.env` | Yes |
 | `kibootia.files.secret-key` (`KIBOOTIA_FILES_SECRET_KEY`) | Backend, Compose (RustFS) | Required while the module is on. Generated into `.env` | Yes |
 | `kibootia.files.endpoint` (`KIBOOTIA_FILES_ENDPOINT`) | Backend | `http://localhost:9000`; `http://rustfs:9000` in Compose. The S3 API address as the backend reaches it | No |

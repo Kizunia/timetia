@@ -25,7 +25,8 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 | [shared/](shared/README.md) | Glossary of terms used across documents |
 | [architecture/](architecture/README.md) | System design: boundaries, identity, data, API, communication |
 | [technology/](technology/README.md) | Technology catalogue: tier, selection and reasoning, including technologies not selected |
-| [engineering/](engineering/README.md) | Local setup, conventions, testing and verification |
+| [engineering/](engineering/README.md) | Local setup, conventions, guides (adding a feature), testing and verification |
+| [recipes/](recipes/README.md) | Removing or switching off what ships by default, and optional integrations |
 | [operations/](operations/README.md) | Configuration, deployment, monitoring, secrets, threat model |
 | [decisions/](decisions/README.md) | Architecture decision records, the [central ADR index](decisions/INDEX.md) and [open questions](decisions/open-questions.md) |
 

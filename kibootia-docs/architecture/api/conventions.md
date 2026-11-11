@@ -70,6 +70,7 @@ RFC 9457 Problem Details with Kibootia extensions:
 - Response: `{ "items": [...], "page": { "number", "size", "totalElements", "totalPages" } }`.
 - Parameters: `page`, `size` (default 20, maximum 100), `sort=field,asc|desc`. Sortable fields are an allow-list per endpoint.
 - Filters are named query parameters per endpoint (`?status=active&q=ann`). There is no generic filter language.
+- Deleted records are not listed by default. Where they can be listed (`GET /api/v1/notes?deleted=true`), that is an administrative view: it needs the permission to restore records, lists everyone's, and is `403` without it.
 - Offset paging is the default; keyset paging is documented for large tables.
 - What a caller may see in a list is decided by the authorization scope ([authorization](../identity/authorization.md)).
 
@@ -83,10 +84,11 @@ RFC 9457 Problem Details with Kibootia extensions:
 
 Decision: [ADR 0029](../../decisions/0029-s3-object-storage-contract.md), [ADR 0051](../../decisions/0051-milestone-4-implementation-decisions.md). Verified (CI run 42873216224, 2026-11-10).
 
-- An upload is `multipart/form-data` with one part named `file`, sent with `PUT` to the resource it belongs to (`/api/v1/me/avatar`). The answer is the changed resource, not the file.
+- An upload is `multipart/form-data` with one part named `file`, sent with `PUT` to the resource it belongs to (`/api/v1/me/avatar`, or `/api/v1/notes/{id}/attachment` for a file that belongs to a record). The answer is the changed resource, not the file.
 - A file is shown from an endpoint of its own (`GET /api/v1/users/{id}/avatar?size=SMALL|LARGE`), never from a public address, so the permission is checked on every view. The response has a fixed `Content-Type`, `X-Content-Type-Options: nosniff`, a `Content-Security-Policy` of `default-src 'none'; sandbox`, an `ETag`, and `Cache-Control: private, no-cache`; a request with a matching `If-None-Match` is answered 304 after the check.
 - Upload errors: 413 `files.too_large` (the category's limit, 5 MB for an avatar) or `platform.payload_too_large` (above the multipart ceiling), 415 `files.unsupported_type` (decided from the bytes), 400 `files.invalid_image` (damaged, empty, or over 40 megapixels), 429 with `Retry-After`, 503 when the storage server cannot be reached, 404 `files.disabled` when the module is switched off.
-- A resource that has a file carries a nullable `avatarVersion`, the file's ID. It changes with every upload and is what the interface puts in the image address to refresh a cached copy.
+- A resource that has a file carries a nullable version of it (`avatarVersion`, `attachmentVersion`), the file's ID. It changes with every upload and is what the interface puts in the image address to refresh a cached copy.
+- A file that belongs to a record follows the record: it is shown at `GET /api/v1/notes/{id}/attachment?size=PREVIEW|FULL`, whoever may see the record may see it, whoever may change the record may attach, replace or remove it, a record the caller may not see answers `404` for its file too, and a record with no file answers `404` `notes.attachment_not_found`. Attaching a file does not change the record's `version`. A rendition can keep the whole image in proportion (the longest side is the size, never enlarged) or be cut to a square, as the category says.
 
 ## Testing
 

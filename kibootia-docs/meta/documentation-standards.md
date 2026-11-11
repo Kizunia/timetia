@@ -32,7 +32,7 @@ The rules describe the tree as it exists. They are written to be forked: a downs
 | [operations/](../operations/README.md) | Configuration, deployment, monitoring, secrets | Application design |
 | [decisions/](../decisions/README.md) | ADRs, the [central index](../decisions/INDEX.md), [open questions](../decisions/open-questions.md) | Descriptions of current behavior |
 | [technology/](../technology/README.md) | The technology catalogue: tier, selection and rationale link per technology, including technologies considered and not selected | Whether a technology is planned, observed or verified (that is [implementation status](../product/roadmap/implementation-status.md)) |
-| `recipes/` (created with the first real recipe) | Task-oriented guides for optional integrations, one per document, of type `recipe` | Behavior that ships by default |
+| [recipes/](../recipes/README.md) | Task-oriented guides for removing or switching off what ships by default and for optional integrations, one per document, of type `recipe` | Behavior that ships by default |
 | `temp/` | Source or scratch material the permanent docs were derived from. Non-authoritative and not kept in step with changes | Anything other documents rely on |
 
 Rules for areas:

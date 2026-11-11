@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** verified (CI run 42780048416, 2026-11-10). `frontend/` holds the Next.js 16 application with the BFF session, the `/api/*` proxy, the forced session refresh (`/auth/refresh`), and the screens of milestone 3: profile, users, roles and audit log, on shadcn/ui, TanStack Query, React Hook Form with Zod and the generated API client. 144 Vitest tests, lint, type check and the build pass, and 14 Playwright tests pass against the full Compose stack, each page with an axe check. **Not built yet:** the files screens (milestone 4) and the example feature's screen (milestone 5).
+> **Implementation:** verified (CI run 42780048416, 2026-11-10). `frontend/` holds the Next.js 16 application with the BFF session, the `/api/*` proxy, the forced session refresh (`/auth/refresh`), and the screens of milestone 3: profile, users, roles and audit log, on shadcn/ui, TanStack Query, React Hook Form with Zod and the generated API client. 144 Vitest tests, lint, type check and the build pass, and 14 Playwright tests pass against the full Compose stack, each page with an axe check. Milestone 4 added the photo on the profile page, and milestone 5 added the notes screens (list, editor, picture) as the reference feature; both are observed in a local run and have not passed in CI yet.
 
 Decisions: [ADR 0021](../decisions/0021-frontend-beside-backend-in-one-repository.md), [ADR 0026](../decisions/0026-nextjs-bff-session.md), [ADR 0038](../decisions/0038-frontend-stack.md), [ADR 0042](../decisions/0042-bff-api-proxy-and-csrf.md), [ADR 0043](../decisions/0043-http-api-conventions.md).
 
@@ -47,7 +47,7 @@ The proxy attaches the token, checks CSRF (matching `Origin` plus the custom req
 
 ## Conventions
 
-- **Folders:** one feature folder per backend module under `src/features`, mirroring [package structure](../engineering/conventions/package-structure.md) (`identity`, `access`, `audit` so far). Each holds its API hooks and screens; the pages in `src/app` only compose them.
+- **Folders:** one feature folder per backend module under `src/features`, mirroring [package structure](../engineering/conventions/package-structure.md) (`identity`, `access`, `audit`, `notes`). Each holds its API hooks and screens; the pages in `src/app` only compose them. A feature that can be removed is listed in `src/modules.ts`, which gives the shell its navigation link and the paths that need a signed-in user, between `module:<name>:start` and `module:<name>:end` lines that the removal script deletes ([recipe](../recipes/remove-notes.md)).
 - **API client:** generated from the committed `openapi.json`; never hand-written request types.
 - **Data:** server components for first loads; TanStack Query for client data that changes.
 - **Forms:** React Hook Form with Zod for usability; the server's validation is authoritative. Validation errors come back as Problem Details `errors` and are mapped onto form fields.

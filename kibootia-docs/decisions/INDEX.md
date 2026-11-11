@@ -65,5 +65,6 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0049 | Milestone 2 implementation decisions | platform | accepted | 2026-11-09 | [0049](0049-milestone-2-implementation-decisions.md) |
 | 0050 | Milestone 3 implementation decisions | platform | accepted | 2026-11-10 | [0050](0050-milestone-3-implementation-decisions.md) |
 | 0051 | Milestone 4 implementation decisions | platform | accepted | 2026-11-10 | [0051](0051-milestone-4-implementation-decisions.md) |
+| 0052 | Milestone 5 implementation decisions | platform | accepted | 2026-11-11 | [0052](0052-milestone-5-implementation-decisions.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.

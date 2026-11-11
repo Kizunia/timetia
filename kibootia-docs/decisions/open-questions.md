@@ -4,13 +4,15 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-09
+- **Last updated:** 2026-11-11
 
 > **Implementation:** not applicable (list).
 
 Live list of unresolved decisions, deviations observed in the repository and checks that must pass before a decision is final. Remove an entry (and note it in the relevant document or ADR) when it is resolved. All entries are owned by ishanKulkarni13 until reassigned.
 
 Resolved on 2026-10-28 and removed: OQ-02, OQ-03, OQ-04, OQ-06, OQ-20, OQ-22, OQ-23, OQ-25, OQ-27, OQ-28, OQ-29, OQ-31 (versions aside) and OQ-34; see ADRs [0023](0023-template-fork-adoption-model.md) to [0038](0038-frontend-stack.md).
+
+Resolved on 2026-11-11 and removed: OQ-37 (the owner kept the name "Notes" for the example feature; [0052](0052-milestone-5-implementation-decisions.md)).
 
 Resolved on 2026-11-10 and removed: OQ-40 (RustFS 1.0.4 passed 12 contract tests, including presigned PUT and GET, in a local run and in CI run 42873216224; [0051](0051-milestone-4-implementation-decisions.md)).
 
@@ -35,5 +37,4 @@ Each check runs in the milestone that first needs it. A failed check leads to th
 | ID | Question | Blocks |
 |---|---|---|
 | OQ-36 | Production SMTP settings for Keycloak (any provider; the backend sends no mail, [ADR 0041](0041-user-lifecycle-and-account-model.md)) | [Milestone 6](../product/roadmap/milestone-6-production-readiness.md) documentation only |
-| OQ-37 | Final name of the example feature (working name "Notes") | [Milestone 5](../product/roadmap/milestone-5-example-feature.md) |
 | OQ-48 | Kibootia's licence; `pom.xml` has an empty licence | The first release in [milestone 6](../product/roadmap/milestone-6-production-readiness.md); not coding |

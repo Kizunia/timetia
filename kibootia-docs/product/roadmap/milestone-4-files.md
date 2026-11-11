@@ -40,7 +40,7 @@ Level: verified (CI run 42873216224, 2026-11-10, pull request #6). Every row als
 
 ## Deviations and limits
 
-- **No CI job runs every optional module disabled yet.** `FilesDisabledIT` is the check for `files` and runs with the backend tests; the job that builds and starts the application with each optional module removed comes with [milestone 5](milestone-5-example-feature.md).
+- **No CI job runs every optional module disabled yet.** `FilesDisabledIT` is the check for `files` and runs with the backend tests; the job that builds and starts the application with each optional module removed was added in [milestone 5](milestone-5-example-feature.md) (the `module-removal` job; no passing CI run yet).
 - **Replaced and removed avatars stay in storage for the retention period** (30 days), hidden at once, as [ADR 0034](../../decisions/0034-soft-delete-with-retention-purge.md) says. Erasing a user removes everything at once.
 - **Users change only their own avatar.** An administrator cannot remove someone else's; that would be a permission and an audited action of its own.
 - **Presigned transfers exist in the port and no category uses them.** The gate showed they work on RustFS.
