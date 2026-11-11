@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-12
 
-The ordered work to finish Timetia's authentication and authorization. **Nothing here is started.** The plan builds on [current state](current-state.md), delivers the [target architecture](target-architecture.md) and fixes the items in the [hardening backlog](hardening-backlog.md).
+The ordered work to finish Timetia's authentication and authorization. The plan builds on [current state](current-state.md), delivers the [target architecture](target-architecture.md) and fixes the items in the [hardening backlog](hardening-backlog.md).
 
 ## Why this order
 
@@ -26,6 +26,22 @@ The inherited foundation works and is tested in Kibootia. The risk is not "does 
 | **Both** | Needs agreement before either side builds |
 
 Each work package ends with a check that can be shown to someone else.
+
+## Status on 2026-11-12
+
+Phases 0 and 1 are implemented and Phase 2 is in progress. Nothing of Phase 3 or Phase 4 is started. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). Nothing is called verified without a named CI run, and no CI run has been made of these changes.
+
+| Work package | Status |
+| --- | --- |
+| W0.1 to W0.4 | Done. The decisions are in [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md) and [ADR 0005](../../decisions/0005-identity-hardening-decisions.md); defaults and open questions are in [open questions](open-questions.md). OQ-A10 stays open for Phase 3. |
+| W1.1, W1.2 | Implemented, with tests. |
+| W1.3 | Implemented, with tests. First-sign-in, default-role, avatar and audit-view events are not audited yet. |
+| W1.4 | Implemented, with tests. |
+| W1.5 | Pinned by a test; documented. |
+| W1.6 | Configuration changed. The rewritten end-to-end test has not been run. |
+| W1.7 | Implemented, with tests: token type, not-before, clock skew, unsigned and shared-secret tokens, a 403 for `enable`. The test for health on a merged port is replaced by the production guard. |
+| W1.8 | Done for identity-facing names. The test realm used by `KeycloakAdminAdapterIT` keeps its own names. |
+| W2.1 to W2.8 | In progress; see [implementation notes](#phase-2-notes) below as they land. |
 
 ## Phase 0: Decide and document
 

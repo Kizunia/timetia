@@ -16,7 +16,7 @@ Work packages are in the [implementation plan](implementation-plan.md).
 
 ### R1. A role can be assigned by someone who does not hold its permissions
 
-- **Severity:** high. **Work package:** W1.1. **Checked by reading.**
+- **Severity:** high. **Work package:** W1.1. **Checked by reading.** **Status: fixed in code (2026-11-12).** `RoleAssignmentService.requireGrantable` runs in `replaceRolesOfUser` and `assignInitialRoles`; an administrator may give any role. Tests: `AccessApiIT.aRoleCanOnlyBeGivenByAHolderOfItsPermissions`, `UserAdministrationIT.invitingCannotGrantMoreThanTheInviterHolds`. Both were run without the fix and failed (403 expected, 200 or 201 returned), then run with it and passed.
 - **Evidence:** `access/application/RoleAssignmentService.replaceRolesOfUser` and `assignInitialRoles` only restrict the Administrator role (`requireAdministrator`). They do not apply the rule that `RoleService.requireGrantable` applies when a role is edited, which is that the editor must hold every permission being added. `identity/application/UserAdministration.invite` calls `assignInitialRoles`, so invitations have the same gap.
 - **Impact:** a person with only the permission to assign roles can give any existing custom role to anyone, **including themselves**, and so gain every permission in it.
 - **Fix:** when a role is added to a person, the giver must hold every permission in that role. The Administrator role keeps its rule. The check runs in both the role assignment and the invitation path.
@@ -25,7 +25,7 @@ Work packages are in the [implementation plan](implementation-plan.md).
 
 ### R2. No rule stops disabling or deleting an administrator
 
-- **Severity:** medium. **Work package:** W1.2.
+- **Severity:** medium. **Work package:** W1.2. **Status: fixed in code (2026-11-12).** `UserAdministration.requireMayActOn` refuses a non-administrator on disable, enable, delete, restore and erase of an administrator. Test: `UserAdministrationIT.onlyAnAdministratorActsOnAnAdministrator` (failed without the fix, passes with it). The old test that expected the last-administrator conflict from a non-administrator was replaced, because that call is now a 403. The last-administrator conflict on **role removal** is still tested in `AccessApiIT`; on disable and delete it is now unreachable through the API, because the only person who may act on an administrator is another administrator who can sign in.
 - **Evidence:** `identity/application/UserAdministration.disable`, `enable`, `delete`, `restore` and `erase` check a permission and protect only the last active administrator and oneself.
 - **Impact:** a holder of the disable or delete permission can lock out any administrator but the last.
 - **Fix:** only an administrator may act on an administrator account. Define the same rule for enable, restore and erase.
@@ -33,7 +33,7 @@ Work packages are in the [implementation plan](implementation-plan.md).
 
 ### R3. The documented production guard does not exist
 
-- **Severity:** medium. **Work package:** W1.4.
+- **Severity:** medium. **Work package:** W1.4. **Status: fixed in code (2026-11-12).** `RequiredSettingsEnvironmentPostProcessor` checks the settings when `kibootia.environment=production` ([ADR 0005](../../decisions/0005-identity-hardening-decisions.md)). Tests in `RequiredSettingsTest`.
 - **Evidence:** Kibootia's [token validation](../../../kibootia-docs/architecture/identity/token-validation.md) says startup fails when development defaults are detected. No such code was found. The defaults in `application.properties` point at the local Keycloak address.
 - **Impact:** a production deployment could start with local issuer settings and fail confusingly, or with weak settings and not fail.
 - **Fix:** in a production profile, refuse to start if the issuer, key address or audience are the development defaults, or if required secrets are blank (the secret check partly exists in `platform/config/RequiredSettingsEnvironmentPostProcessor`).
@@ -41,7 +41,7 @@ Work packages are in the [implementation plan](implementation-plan.md).
 
 ### R4. Anyone can register in Keycloak
 
-- **Severity:** medium, depends on [OQ-A8](open-questions.md). **Work package:** W1.6.
+- **Severity:** medium. **Work package:** W1.6. **Status: fixed in configuration (2026-11-12).** `registration_allowed = false` in `infra/keycloak/base/main.tf` ([ADR 0005](../../decisions/0005-identity-hardening-decisions.md)). The end-to-end test in `frontend/tests/e2e/registration.spec.ts` was rewritten to expect no sign-up; **it has not been run** (it needs the whole stack). The old end-to-end test of the unverified-email flow is gone, because that flow needed registration; the rules are still covered by backend tests with tokens.
 - **Evidence:** `infra/keycloak/base/main.tf` sets `registration_allowed = true`. A registrant is created as an active user with the default `User` role at first sign-in.
 - **Impact:** Timetia's users are seeded, so open registration creates accounts nobody expects. Today the default role carries only note permissions. After Timetia permissions exist, the default role must stay empty of them.
 - **Fix:** apply the owner's decision. If registration is turned off, invitation and import remain the way in. Either way, keep Timetia permissions out of the default role.
@@ -49,14 +49,14 @@ Work packages are in the [implementation plan](implementation-plan.md).
 
 ### R5. `update-any` without `view-any` returns 404
 
-- **Severity:** low. **Work package:** W1.5.
+- **Severity:** low. **Work package:** W1.5. **Status: pinned (2026-11-12).** Decision: a role needs both `view-any` and `update-any` to change someone else's note. `NotesApiIT.updateAnyNeedsViewAny` pins it. No code change.
 - **Evidence:** in `notes/application/NoteService` and `NoteAttachmentService`, an update first calls `visible(id)`, which requires the view permission. A role with only the update-any permission is told the record does not exist.
 - **Impact:** confusing behavior; no data leak. It matters as the pattern other modules will copy.
 - **Fix:** decide whether update implies view, and make the code and a test agree. Document the answer in the [integration contract](integration-contract.md).
 
 ### R7. Refusals and sensitive reads are not recorded
 
-- **Severity:** medium. **Work package:** W1.3.
+- **Severity:** medium. **Work package:** W1.3. **Status: fixed in code (2026-11-12).** `SecurityEvents` (platform) with `SecurityEventRecorder` (audit) records `security.access.denied`, `security.account.refused` and `security.rate-limit.exceeded`, throttled per user (`kibootia.audit.security-events.max-per-minute`, default 20). A 401 is logged and not written to the database. Tests: `SecurityEventsIT`, `SecurityEventsThrottleIT`, `RateLimitIT`. Not done: first-sign-in provisioning, the default role grant, avatar changes and viewing the audit log are still not audited.
 - **Evidence:** `audit/AuditEntry.failedWith` is not called by production code. `platform/web/GlobalExceptionHandler` does not log an access denial. 401 and 403 responses, disabled-account refusals and rate-limit refusals are not audited. Also not audited: first sign-in provisioning, the default role grant, avatar changes and viewing the audit log.
 - **Impact:** no trace of attempted misuse, and no answer to "who looked at the audit log".
 - **Fix:** record refusals as security events with user ids only (never tokens, emails or names), rate-limited so a flood cannot fill the table. Add the missing administration events.
@@ -66,8 +66,8 @@ Work packages are in the [implementation plan](implementation-plan.md).
 
 | ID | Finding | Evidence | Plan |
 | --- | --- | --- | --- |
-| R6 | The health endpoints are public only because they are on a separate port. If that port setting is removed they would be public on the API port. The bind address is fixed to the local machine, which breaks container probes without an override. | `platform/security/SecurityConfiguration`, `management.server.port` and `management.server.address` in `application.properties` | W1.7: add a test for the merged-port case. Decide the override for deployment. |
-| T1 | No check on the token type or the authorized party. ID and refresh tokens are kept out only because Keycloak adds the audience to access tokens only. | `SecurityConfiguration.jwtDecoder` | W1.7 test; decide whether to add a check |
+| R6 | **Fixed in code and configuration (2026-11-12): the production guard refuses health on the API port, and the container-probe override is documented in `application.properties`.** The health endpoints are public only because they are on a separate port. If that port setting is removed they would be public on the API port. The bind address is fixed to the local machine, which breaks container probes without an override. | `platform/security/SecurityConfiguration`, `management.server.port` and `management.server.address` in `application.properties` | W1.7: add a test for the merged-port case. Decide the override for deployment. |
+| T1 | **Fixed (2026-11-12): `UserTokenValidator` requires `typ` = `Bearer`; tests in `ResourceServerIT`.** No check on the token type or the authorized party. ID and refresh tokens are kept out only because Keycloak adds the audience to access tokens only. | `SecurityConfiguration.jwtDecoder` | W1.7 test; decide whether to add a check |
 | T2 | Service-account tokens are recognized by claim shape (`client_id`, a `service-account-` username). | `platform/security/UserTokenValidator` | Accept with a test, or replace with a positive check |
 | T3 | Email verification is read from the token while a copy sits in the database. They can disagree for up to the token lifetime (5 minutes). | `Authorization.caller()`, `ProfileGate` | Accept; document |
 | T4 | Only six administration and upload paths are rate limited. Reads, such as user search and the audit list, are not. | `platform/ratelimit/*` | Decide after the first Timetia endpoints exist |
