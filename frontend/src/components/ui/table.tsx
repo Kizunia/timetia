@@ -3,11 +3,21 @@
 import * as React from "react"
 import { cn } from "cn"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+/**
+ * `scrollLabel` makes the scrolling wrapper a labelled region that the keyboard can reach. Give it to a table that can be
+ * wider than its container (a long report): without it a keyboard user cannot scroll sideways, and the accessibility check
+ * fails for any table that overflows. Left out, nothing is added to the tab order.
+ */
+function Table({
+  className,
+  scrollLabel,
+  ...props
+}: React.ComponentProps<"table"> & { scrollLabel?: string }) {
   return (
     <div
       data-slot="table-container"
       className="relative w-full overflow-x-auto"
+      {...(scrollLabel ? { role: "region", tabIndex: 0, "aria-label": scrollLabel } : {})}
     >
       <table
         data-slot="table"

@@ -50,7 +50,15 @@ export function NoteEditor({ noteId }: { noteId?: string }) {
           ← All notes
         </Link>
       </p>
-      {noteId && note.isError && <ErrorAlert error={note.error} title="The note could not be opened" />}
+      {noteId && note.isError && (
+        <>
+          {/* The form's heading only exists once a note has loaded; every page has a level-one heading. */}
+          <h1 id="note-heading" className="sr-only">
+            Note
+          </h1>
+          <ErrorAlert error={note.error} title="The note could not be opened" />
+        </>
+      )}
       {noteId && note.isPending && <Skeleton className="h-48 w-full" aria-label="Loading the note" />}
       {(!noteId || note.data) && (
         // Keyed by the version, so the form starts again from the server's note after a save. Attaching a picture does not

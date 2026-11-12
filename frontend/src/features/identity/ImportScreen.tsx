@@ -183,7 +183,7 @@ function Report({ report }: { report: UserImportReport }) {
         {counts.notProcessed > 0 && (
           <p className="text-sm">Some rows were not reached. Send the same file again to finish them.</p>
         )}
-        <Table>
+        <Table scrollLabel="Import report">
           <TableCaption className="sr-only">The rows of the file and what happens to each</TableCaption>
           <TableHeader>
             <TableRow>
