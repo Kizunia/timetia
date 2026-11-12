@@ -57,8 +57,9 @@ public class ProfileService {
 		boolean verified = this.authorization.isEmailVerified();
 		Set<String> permissions = verified ? this.roleAssignments.permissionsOf(id) : Set.of();
 		boolean filesRunning = this.files.getIfAvailable() != null;
+		boolean administrator = verified && this.roleAssignments.holdsAdministratorRole(id);
 		return new MyProfile(profile, verified, permissions, this.roleAssignments.rolesOf(id), filesRunning,
-				filesRunning);
+				filesRunning, administrator);
 	}
 
 	@Transactional

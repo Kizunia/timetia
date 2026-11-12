@@ -23,6 +23,7 @@ public record MeResponse(
 		@Schema(requiredMode = REQUIRED) List<UserRoleResponse> roles,
 			@Schema(nullable = true, description = "Changes whenever the avatar does; null when there is none. Use it to refresh a cached image.") UUID avatarVersion,
 			@Schema(requiredMode = REQUIRED, description = "False when the files module is switched off; then there are no avatars.") boolean avatarsEnabled,
-			@Schema(requiredMode = REQUIRED, description = "False when the files module is switched off; then no feature can keep a file, such as a note's picture.") boolean filesEnabled) {
+			@Schema(requiredMode = REQUIRED, description = "False when the files module is switched off; then no feature can keep a file, such as a note's picture.") boolean filesEnabled,
+			@Schema(requiredMode = REQUIRED, description = "True when the user is an administrator (Super Admin) with a verified address. A hint for showing controls; the backend decides every request.") boolean administrator) {
 
 }

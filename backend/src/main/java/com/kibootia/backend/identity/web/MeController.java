@@ -68,7 +68,8 @@ class MeController {
 		return new MeResponse(profile.id(), profile.username(), profile.email(), me.emailVerified(),
 				profile.displayName(), profile.status().name(), profile.theme().name(),
 				me.permissions().stream().sorted().toList(),
-				UserRoleResponse.of(me.roles()), profile.avatarFileId(), me.avatarsEnabled(), me.filesEnabled());
+				UserRoleResponse.of(me.roles()), profile.avatarFileId(), me.avatarsEnabled(), me.filesEnabled(),
+				me.administrator());
 	}
 
 }
