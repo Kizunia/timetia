@@ -73,7 +73,7 @@ The new tests of R1, R2 and the policy were also run against deliberately broken
 Known gaps:
 
 - No test makes a real Keycloak token pass through the new type check. `ResourceServerIT` uses signed test tokens that carry `typ: Bearer` as Keycloak's access tokens do.
-- The end-to-end tests (`frontend/tests/e2e`) **were run locally on 2026-11-12**, after the renames and the removal of registration (see "Phase 3 completion and Phase 4" below): 39 passed. They had never passed before; the first run failed on stale names and on accessibility. **They have not run in CI.**
+- The end-to-end tests (`frontend/tests/e2e`) **were run locally on 2026-11-12**, after the renames and the removal of registration (see "Phase 3 completion and Phase 4" below): 39 passed. They had never passed before; the first run failed on stale names and on accessibility. **They then ran in CI** ([CI run 43249358335](https://github.com/ishanKulkarni13/Kibootia/actions/runs/43249358335), 39 passed, 3 skipped).
 - The old end-to-end test of the unverified-email flow is gone, because that flow needed self-registration. The rules are covered by backend tests with tokens.
 - The disable and delete safeguard for the last administrator is not reachable through the API any more (only an administrator can act on an administrator), so it has no API test; the same safeguard on role removal is tested in `AccessApiIT`.
 - Nothing tests the scoped model against a real department, division or batch module, because none exists. In the same way, the import of HOD, CR, BR and Student rows is tested only with a stand-in scope directory, and in the browser only as a refusal.
@@ -113,10 +113,11 @@ The end-to-end tests, the Docker image builds and the changed Keycloak configura
 
 ### Phase 3 completion and Phase 4, 2026-11-12 (evening)
 
-Same machine. **Observed, not verified: none is a CI run.** The Timetia stack was started from this branch (`docker compose up --build`: real Keycloak 26, MySQL, Mailpit, the object store, and both application images), with the stack of the developer's Kibootia project stopped meanwhile and started again afterwards.
+Same machine. The local numbers below are **observed**; the CI row is the one that is **verified** (same code, `eee70f7`). The Timetia stack was started from this branch (`docker compose up --build`: real Keycloak 26, MySQL, Mailpit, the object store, and both application images), with the stack of the developer's Kibootia project stopped meanwhile and started again afterwards.
 
 | What | Result |
 | --- | --- |
+| **CI, PR #8 at `eee70f7`: [CI run 43249358335](https://github.com/ishanKulkarni13/Kibootia/actions/runs/43249358335)** | **All nine jobs succeeded:** backend build and test, frontend lint, type check, test and build, the four module-removal builds, container build and vulnerability scan, secret scan, and the end-to-end job (`playwright test`: 42 tests, **39 passed, 3 skipped**, 1.6 minutes). The 3 skipped are the bootstrap spec, which needs a fresh environment with its own address and was run by hand. This is the named run that makes the items it covers **verified** in the sense above |
 | Backend, `./mvnw -B -o clean verify`, on the final code | 217 unit tests and 344 integration tests, 0 failures, 0 errors, BUILD SUCCESS. Includes `ModularityTest`, `ArchitectureTest` and `OpenApiContractIT`; `openapi.json` did not change (no API change) |
 | Frontend | `lint` and `typecheck` clean; 25 test files and 215 tests passed; `next build` succeeded |
 | End to end, first run | 3 failed, 15 did not run (serial stories stop at a failure), 19 passed. **Every failure was an accessibility violation** found by axe on screens that had never been checked: destructive and muted text under the 4.5:1 contrast minimum, a table that scrolled sideways without keyboard access, a page with no level-one heading. Fixed (`fix(frontend)`), after computing the contrast ratios |

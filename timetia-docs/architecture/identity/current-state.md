@@ -14,7 +14,7 @@ Paths below are under `backend/src/main/java/com/kibootia/backend/` unless they 
 
 ## What Timetia has changed since inheriting it (2026-11-12)
 
-The classification below describes the inherited code as audited on 2026-11-11. Phases 0 to 2 of the [implementation plan](implementation-plan.md) have since changed it. The changes are in the repository with tests; none has a CI run yet.
+The classification below describes the inherited code as audited on 2026-11-11. Phases 0 to 2 of the [implementation plan](implementation-plan.md) have since changed it. The changes are in the repository with tests, and the code passed [CI run 43249358335](https://github.com/ishanKulkarni13/Kibootia/actions/runs/43249358335) (PR #8, commit `eee70f7`).
 
 | Area | Change | Where |
 | --- | --- | --- |

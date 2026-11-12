@@ -29,7 +29,7 @@ Each work package ends with a check that can be shown to someone else.
 
 ## Status on 2026-11-12
 
-Phases 0, 1 and 2 are implemented. Phase 3 is implemented and, since the local end-to-end run described in [testing and verification](testing-and-verification.md), **shown working against a real Keycloak, MySQL and mail catcher for everything that does not need a scope directory**; what needs one is blocked on its owner (see the gates below). Phase 4 is **partly done**: the worked example, the test fixtures and the per-role end-to-end tests for the roles that can be given are in; the teammate review and the roles that need places are not. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). **Nothing is called verified without a named CI run** (see the CI line there).
+Phases 0, 1 and 2 are implemented. Phase 3 is implemented and, since the local end-to-end run described in [testing and verification](testing-and-verification.md), **shown working against a real Keycloak, MySQL and mail catcher for everything that does not need a scope directory**; what needs one is blocked on its owner (see the gates below). Phase 4 is **partly done**: the worked example, the test fixtures and the per-role end-to-end tests for the roles that can be given are in; the teammate review and the roles that need places are not. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). **Nothing is called verified without a named CI run.** There is one for the code: [CI run 43249358335](https://github.com/ishanKulkarni13/Kibootia/actions/runs/43249358335) on PR #8 at commit `eee70f7`, all nine jobs green, including the end-to-end suite (39 passed, 3 skipped). It does not cover the bootstrap run, the runbook, the roles that need places or the teammate review.
 
 | Work package | Status |
 | --- | --- |
@@ -55,7 +55,7 @@ Phases 0, 1 and 2 are implemented. Phase 3 is implemented and, since the local e
 | W3.4 | Written: [provisioning runbook](../../operations/provisioning.md), then **followed by its author** against the local stack (first Super Admin, check, import, repeat, the `account_without_profile` recovery) and corrected. **Not yet followed by someone else**, which is the condition for done. Production steps have not been run: there is no production environment. |
 | W4.1 | Done as a test: `AuthorizationWorkedExampleIT`, a ticket service written as another module would write it (record check with 404 and 403, a list filtered from `reach`, the module's own state rule), with a test that its list agrees with the single-record decision for every person and ticket. Quoted in the [integration contract](integration-contract.md). It is not an HTTP endpoint and not a production module. |
 | W4.2 | Done: `AcademicApiTest`, so "HOD of department A" is one line. |
-| W4.3 | **Partly done.** End-to-end tests with accessibility checks exist for Super Admin, Super HOD and Faculty (`provisioning.spec`, `bootstrap.spec`, `identity.spec`). HOD, CR, BR and Student are blocked on the scope directory. Not yet run in CI: the branch has not been pushed. |
+| W4.3 | **Partly done.** End-to-end tests with accessibility checks exist for Super Admin, Super HOD and Faculty (`provisioning.spec`, `bootstrap.spec`, `identity.spec`). HOD, CR, BR and Student are blocked on the scope directory. Ran in CI: 39 passed (the bootstrap spec needs its own environment and was run by hand). |
 | W4.4 | **Not done.** It needs a teammate. A task brief for it is in the [handover checklist](handover-checklist.md). |
 | W4.5 | **Partly done: 3 of 7.** The three that needed only a pointer are done. The four that need a product decision (shared courses, student ticket visibility, the wording of Super Admin's powers, STRUCTURE.md) are open; see [open questions](open-questions.md). The done-when ("the list is empty") is not met. |
 
@@ -65,7 +65,7 @@ Phases 0, 1 and 2 are implemented. Phase 3 is implemented and, since the local e
 
 | Part of the gate | State |
 | --- | --- |
-| An end-to-end test runs against the local stack | **Met locally** (39 passed on a fresh stack, 2026-11-12). Not in CI. |
+| An end-to-end test runs against the local stack | **Met**: 39 passed on a fresh local stack and again in [CI run 43249358335](https://github.com/ishanKulkarni13/Kibootia/actions/runs/43249358335). |
 | Super Admin, Super HOD and Faculty each sign in | **Met locally.** They are imported, invited, accept, sign in, see no administration and are refused by the API. |
 | They "see the right things" | **Not demonstrable through the application.** No endpoint or screen yet uses the permissions of these roles, and a person cannot see their own roles in a place. The permissions are proven in integration tests with the real decision point (`AcademicAuthorizationIT`, the worked example), not through HTTP. |
 | HOD, CR, BR and Student sign in with the right scope | **Blocked.** Nothing implements `ScopeDirectory` ([OQ-A15](open-questions.md)); the application refuses these roles, which is the correct behavior and is itself tested end to end. |

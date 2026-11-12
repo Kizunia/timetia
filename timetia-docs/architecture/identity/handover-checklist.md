@@ -6,16 +6,16 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-12
 
-What "complete" means for Timetia's authentication and authorization, and what is handed to the other developers. **No item is ticked yet**, because ticking needs a named CI run or a reviewed document and neither exists. The italic note under an item says what has been shown locally on 2026-11-12, so the next person knows what is left. See [testing and verification](testing-and-verification.md) for the runs.
+What "complete" means for Timetia's authentication and authorization, and what is handed to the other developers. **Three items are ticked**, each backed by the named CI run of PR #8 at commit `eee70f7` ([CI run 43249358335](https://github.com/ishanKulkarni13/Kibootia/actions/runs/43249358335): backend, frontend, the module matrix, container build and scan, secret scan, and the end-to-end suite, 39 passed). Nothing is ticked on the strength of a local run alone. The italic note under an item says what is shown and what is left. See [testing and verification](testing-and-verification.md) for the runs.
 
 ## Complete means
 
 ### Behavior
 
 - [ ] A seeded user of each role signs in with Keycloak and sees what the [role and scope model](role-and-scope-model.md) allows and nothing else. *Shown locally for Super Admin, Super HOD and Faculty (imported, invited, signed in, no administration, API refuses the import). **Not shown** for HOD, CR, BR and Student (no scope directory, [OQ-A15](open-questions.md)), and not shown through HTTP for any Timetia permission, because no endpoint uses them yet.*
-- [ ] Every documented rule in the model has an allowed and a denied test, and they pass in a named CI run. *The tests exist and passed in local runs. No CI run.*
-- [ ] Revocation works: a removed role stops working on the next request. *Tested at the decision point (`AuthorizationWorkedExampleIT.changesApplyAtOnce`, `AcademicAuthorizationIT`) and in the browser for a platform role (`administration.spec`). Local runs only.*
-- [ ] The unknown-registrant and disabled-account cases behave as decided ([OQ-A8](open-questions.md)). *Registration is off and its address is refused (`registration.spec`); a disabled user is refused on their next request (`administration.spec`). Local runs only.*
+- [ ] Every documented rule in the model has an allowed and a denied test, and they pass in a named CI run. *The backend suite passes in the named CI run. **Whether every row of the model has its tests was not re-audited in this pass**; the earlier claim rests on `AcademicAccessPolicyTest`, and the rules marked `?` in the model (OQ-A11, OQ-A12) are denied and not tested as allowed.*
+- [x] Revocation works: a removed role stops working on the next request. *Tested at the decision point for roles in places (`AuthorizationWorkedExampleIT.changesApplyAtOnce`, `AcademicAuthorizationIT`) and in the browser for a platform role (`administration.spec`, "taking a role away applies on the user's next request"). Both pass in the named CI run.*
+- [x] The unknown-registrant and disabled-account cases behave as decided ([OQ-A8](open-questions.md)). *Registration is off and its address is refused (`registration.spec`); a disabled user is refused on their next request (`administration.spec`). Both pass in the named CI run.*
 
 ### Security
 
@@ -26,14 +26,14 @@ What "complete" means for Timetia's authentication and authorization, and what i
 
 ### Operations
 
-- [ ] Users and assignments can be imported, repeatedly and safely, by someone following the runbook. *Phase 3: implemented and tested locally; the [runbook](../../operations/provisioning.md) has not been followed by anyone else; rows for HOD, CR, BR and Student are refused until a scope directory exists ([OQ-A15](open-questions.md)).*
-- [ ] Super Admin can change an assignment in the browser. *Phase 3: the screen exists and is unit-tested; no browser run, and a role that needs a place fails closed for the same reason.*
-- [ ] A fresh environment reaches a working Super Admin without manual database work. *Phase 3: implemented and tested with a stand-in identity provider; not run against Keycloak.*
+- [ ] Users and assignments can be imported, repeatedly and safely, by someone following the runbook. *Check, import, repeat ("Already there") and the `account_without_profile` recovery were run against the real stack, and the import is covered in CI by `provisioning.spec` and `UserImportIT`. The [runbook](../../operations/provisioning.md) was followed by its author only, not by anyone else, so this stays open. Rows for HOD, CR, BR and Student are refused until a scope directory exists ([OQ-A15](open-questions.md)).*
+- [ ] Super Admin can change an assignment in the browser. *The screen is unit-tested and, in the browser (CI), shows the refusal when HOD in a department is added. **A successful add or removal in the browser was not exercised**, and a role that needs a place fails closed for the same reason as the import.*
+- [ ] A fresh environment reaches a working Super Admin without manual database work. *Run against a real Keycloak on a fresh environment on 2026-11-12 (`bootstrap.spec`: invited at startup, resent after a restart, administrator at first sign-in, audited once, the seeded demo administrator not promoted). **By hand, not in CI**, because it needs an environment with no administrator; see "Verifying the bootstrap" in the testing guide.*
 - [ ] The identity names are Timetia's, and the setup steps use no `kibootia` name except where deliberately kept.
 
 ### Delivery
 
-- [ ] The backend, frontend, drift, module and end-to-end checks pass, with the end-to-end run named in the documents.
+- [x] The backend, frontend, drift, module and end-to-end checks pass, with the end-to-end run named in the documents. *[CI run 43249358335](https://github.com/ishanKulkarni13/Kibootia/actions/runs/43249358335) at `eee70f7`: all nine jobs succeeded; the end-to-end job ran 42 tests, 39 passed and 3 skipped (the bootstrap spec, which needs its own fresh environment and was run by hand).*
 - [ ] The handover review passed: a teammate added a protected endpoint using only the documents.
 
 ## Task brief for the handover review (W4.4)
