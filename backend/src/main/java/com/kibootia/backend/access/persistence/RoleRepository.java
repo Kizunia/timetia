@@ -26,6 +26,9 @@ interface RoleRepository extends JpaRepository<RoleEntity, UUID> {
 	@Query("select count(r) > 0 from RoleEntity r where r.name = :name and (:except is null or r.id <> :except)")
 	boolean nameInUse(String name, UUID except);
 
+	@Query("select r from RoleEntity r where r.name = :name and r.scopeType is not null")
+	Optional<RoleEntity> findScopedByName(String name);
+
 	List<RoleEntity> findAllByIdIn(Collection<UUID> ids);
 
 	/** {@code SELECT ... FOR UPDATE}: whoever holds the lock decides who may hold the role until the transaction ends. */

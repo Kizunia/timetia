@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -12,9 +13,11 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kibootia.backend.access.AccessPermissions;
+import com.kibootia.backend.access.ScopedAssignments;
 import com.kibootia.backend.audit.AuditEntry;
 import com.kibootia.backend.audit.AuditLog;
 import com.kibootia.backend.platform.authorization.Authorization;
@@ -41,12 +44,18 @@ import com.kibootia.backend.platform.ratelimit.RateLimiter;
  * <li>The role must have a scope type. A platform role is assigned through {@link RoleAssignmentService}.</li>
  * <li>A {@code GLOBAL} role takes no place; every other scope type needs one, and the place must exist. With no
  * {@link ScopeDirectory} to ask, a place cannot be validated, so it cannot be assigned (fail closed).</li>
+ * <li>A place is named by its id or by its code, never both. Both are checked against the same directory.</li>
  * </ul>
+ *
+ * <p>The same rules serve the API (which sets the whole set of a user's scoped roles) and the provisioning import
+ * ({@link ScopedAssignments}, which only adds), so a file cannot do what the screen would refuse.
  */
 @Service
-public class ScopedAssignmentService {
+public class ScopedAssignmentService implements ScopedAssignments {
 
 	public static final String SCOPE_UNVALIDATED = "access.scope_unvalidated";
+
+	public static final String ASSIGNMENT_NOT_FOUND = "access.assignment_not_found";
 
 	private final RoleStore roles;
 
@@ -97,10 +106,8 @@ public class ScopedAssignmentService {
 		Map<UUID, Role> found = new HashMap<>();
 		this.roles.findAll(requested.stream().map(NewScopedRole::roleId).distinct().toList())
 			.forEach((role) -> found.put(role.id(), role));
-		validate(requested, found);
+		Set<RoleStore.ScopedAssignment> target = validate(requested, found);
 
-		Set<RoleStore.ScopedAssignment> target = new LinkedHashSet<>();
-		requested.forEach((assignment) -> target.add(new RoleStore.ScopedAssignment(assignment.roleId(), assignment.scopeId())));
 		List<RoleStore.ScopedAssignment> current = this.roles.scopedAssignmentsOf(userId);
 		Map<UUID, Role> everyRole = new HashMap<>(found);
 		this.roles.findAll(current.stream().map(RoleStore.ScopedAssignment::roleId).distinct().toList())
@@ -122,11 +129,100 @@ public class ScopedAssignmentService {
 		return view(userId);
 	}
 
+	/**
+	 * Gives the user one more scoped role and leaves the rest alone. Unlike
+	 * {@link #replaceScopedRolesOfUser}, a screen that has not seen a newer change cannot overwrite it. Holding it already
+	 * changes nothing and is not an error.
+	 */
+	@Transactional(isolation = Isolation.READ_COMMITTED)
+	@RequiresPermission(AccessPermissions.ASSIGN_ROLES)
+	public List<ScopedRole> addScopedRole(UUID userId, NewScopedRole wanted) {
+		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
+		requireAdministrator();
+		requireExistingUser(userId);
+		Map<UUID, Role> found = new HashMap<>();
+		this.roles.findAll(List.of(wanted.roleId())).forEach((role) -> found.put(role.id(), role));
+		for (RoleStore.ScopedAssignment assignment : validate(Set.of(wanted), found)) {
+			if (this.roles.assignIfAbsent(userId, assignment.roleId(), assignment.scopeId(),
+					this.authorization.currentUserId())) {
+				this.auditLog.record(entry("access.role.assigned", userId, found.get(assignment.roleId()), assignment));
+			}
+		}
+		return view(userId);
+	}
+
+	/** Takes away one scoped role in one place, and says 404 when the user does not hold it there. */
+	@Transactional(isolation = Isolation.READ_COMMITTED)
+	@RequiresPermission(AccessPermissions.ASSIGN_ROLES)
+	public List<ScopedRole> removeScopedRole(UUID userId, UUID roleId, UUID scopeId) {
+		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
+		requireAdministrator();
+		requireExistingUser(userId);
+		RoleStore.ScopedAssignment assignment = new RoleStore.ScopedAssignment(roleId, scopeId);
+		Role role = this.roles.find(roleId).orElse(null);
+		if (role == null || !this.roles.scopedAssignmentsOf(userId).contains(assignment)) {
+			throw ApiException.notFound(ASSIGNMENT_NOT_FOUND, "The user does not hold that role there.");
+		}
+		this.roles.unassign(userId, roleId, scopeId);
+		this.auditLog.record(entry("access.role.unassigned", userId, role, assignment));
+		return view(userId);
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// The port the provisioning import uses (Timetia ADR 0006)
+
+	@Override
+	@Transactional(readOnly = true)
+	@RequiresPermission(AccessPermissions.ASSIGN_ROLES)
+	public Resolution resolve(String roleName, String scopeCode) {
+		requireAdministrator();
+		String name = (roleName == null) ? "" : roleName.strip();
+		Role role = name.isEmpty() ? null : this.roles.findScopedByName(name).orElse(null);
+		if (role == null) {
+			boolean platformRole = !name.isEmpty() && this.roles.nameInUse(name, null);
+			return platformRole
+					? Resolution.refused(Failure.ROLE_NOT_ASSIGNABLE,
+							"'" + name + "' is a platform role; a file can only give roles that apply within a scope")
+					: Resolution.refused(Failure.UNKNOWN_ROLE, "There is no role with that name");
+		}
+		Place place = place(role, null, scopeCode);
+		return (place.failure() == null)
+				? Resolution.resolved(role.id(), role.name(), role.scopeType(), place.scopeId())
+				: Resolution.refused(place.failure(), place.message());
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.MANDATORY)
+	@RequiresPermission(AccessPermissions.ASSIGN_ROLES)
+	public boolean addIfMissing(UUID userId, Resolution resolution) {
+		requireAdministrator();
+		if (resolution == null || !resolution.isResolved()) {
+			throw new IllegalArgumentException("Only a resolved assignment can be added");
+		}
+		requireExistingUser(userId);
+		// Do not trust the resolution: a role may have been deleted, or a place removed, since it was made.
+		Role role = this.roles.find(resolution.roleId()).filter(Role::isScoped).orElse(null);
+		if (role == null) {
+			throw refusal(Failure.UNKNOWN_ROLE, "There is no role " + resolution.roleId());
+		}
+		Place place = place(role, resolution.scopeId(), null);
+		if (place.failure() != null) {
+			throw refusal(place.failure(), place.message());
+		}
+		RoleStore.ScopedAssignment assignment = new RoleStore.ScopedAssignment(role.id(), place.scopeId());
+		boolean added = this.roles.assignIfAbsent(userId, role.id(), place.scopeId(), this.authorization.currentUserId());
+		if (added) {
+			this.auditLog.record(entry("access.role.assigned", userId, role, assignment));
+		}
+		return added;
+	}
+
 	// ---------------------------------------------------------------------------------------------------------------
 
-	private void validate(Set<NewScopedRole> requested, Map<UUID, Role> found) {
+	/** Checks every requested assignment and returns the set to hold. Collects the field errors of all of them. */
+	private Set<RoleStore.ScopedAssignment> validate(Set<NewScopedRole> requested, Map<UUID, Role> found) {
 		List<ApiFieldError> errors = new ArrayList<>();
-		ScopeDirectory scopes = null;
+		Set<RoleStore.ScopedAssignment> target = new LinkedHashSet<>();
 		for (NewScopedRole assignment : requested) {
 			Role role = found.get(assignment.roleId());
 			if (role == null) {
@@ -136,34 +232,74 @@ public class ScopedAssignmentService {
 				errors.add(new ApiFieldError("assignments", "role_not_scoped",
 						"'" + role.name() + "' has no scope type; give it with the roles of the user"));
 			}
-			else if (GrantedScope.GLOBAL.equals(role.scopeType())) {
-				if (assignment.scopeId() != null) {
-					errors.add(new ApiFieldError("assignments", "scope_not_allowed",
-							"'" + role.name() + "' applies everywhere and takes no scope"));
-				}
-			}
-			else if (assignment.scopeId() == null) {
-				errors.add(new ApiFieldError("assignments", "scope_required",
-						"'" + role.name() + "' needs a " + role.scopeType().toLowerCase() + " to apply to"));
-			}
 			else {
-				if (scopes == null) {
-					// Fail closed: with nothing to ask, a place cannot be checked, so no role can be given in one.
-					scopes = this.directory.getIfAvailable();
-					if (scopes == null) {
-						throw ApiException.conflict(SCOPE_UNVALIDATED,
-								"Scopes cannot be checked yet, because nothing provides them. Only global roles can be given.");
-					}
+				Place place = place(role, assignment.scopeId(), assignment.scopeCode());
+				if (place.failure() == Failure.SCOPE_UNVALIDATED) {
+					throw refusal(place.failure(), place.message());
 				}
-				if (!scopes.exists(role.scopeType(), assignment.scopeId())) {
-					errors.add(new ApiFieldError("assignments", "unknown_scope",
-							"There is no " + role.scopeType().toLowerCase() + " " + assignment.scopeId()));
+				else if (place.failure() != null) {
+					errors.add(new ApiFieldError("assignments", code(place.failure()), place.message()));
+				}
+				else {
+					target.add(new RoleStore.ScopedAssignment(role.id(), place.scopeId()));
 				}
 			}
 		}
 		if (!errors.isEmpty()) {
 			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
 		}
+		return target;
+	}
+
+	/**
+	 * The one rule set for where a role applies. The place is named by {@code scopeId} or by {@code scopeCode} (a blank
+	 * code is no code). Returns the place's id (null for a global role) or the rule it broke.
+	 */
+	private Place place(Role role, UUID scopeId, String scopeCode) {
+		boolean named = scopeCode != null && !scopeCode.isBlank();
+		if (named && scopeId != null) {
+			return Place.refused(Failure.SCOPE_AMBIGUOUS, "Name the place by its id or by its code, not both");
+		}
+		if (GrantedScope.GLOBAL.equals(role.scopeType())) {
+			return (scopeId != null || named)
+					? Place.refused(Failure.SCOPE_NOT_ALLOWED, "'" + role.name() + "' applies everywhere and takes no scope")
+					: new Place(null, null, null);
+		}
+		if (scopeId == null && !named) {
+			return Place.refused(Failure.SCOPE_REQUIRED,
+					"'" + role.name() + "' needs a " + role.scopeType().toLowerCase(Locale.ROOT) + " to apply to");
+		}
+		// Fail closed: with nothing to ask, a place cannot be checked, so no role can be given in one.
+		ScopeDirectory scopes = this.directory.getIfAvailable();
+		if (scopes == null) {
+			return Place.refused(Failure.SCOPE_UNVALIDATED,
+					"Scopes cannot be checked yet, because nothing provides them. Only global roles can be given.");
+		}
+		UUID id = scopeId;
+		if (named) {
+			id = scopes.idOf(role.scopeType(), scopeCode).orElse(null);
+			if (id == null) {
+				return Place.refused(Failure.UNKNOWN_SCOPE,
+						"There is no " + role.scopeType().toLowerCase(Locale.ROOT) + " with that code");
+			}
+		}
+		if (!scopes.exists(role.scopeType(), id)) {
+			return Place.refused(Failure.UNKNOWN_SCOPE, "There is no " + role.scopeType().toLowerCase(Locale.ROOT) + " " + id);
+		}
+		return new Place(id, null, null);
+	}
+
+	/** 409 when places cannot be checked at all; otherwise 400 with the rule that was broken. */
+	private static ApiException refusal(Failure failure, String message) {
+		if (failure == Failure.SCOPE_UNVALIDATED) {
+			return ApiException.conflict(SCOPE_UNVALIDATED, message);
+		}
+		return ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.",
+				List.of(new ApiFieldError("assignments", code(failure), message)));
+	}
+
+	private static String code(Failure failure) {
+		return failure.name().toLowerCase(Locale.ROOT);
 	}
 
 	/**
@@ -182,10 +318,31 @@ public class ScopedAssignmentService {
 		Map<UUID, Role> byId = new HashMap<>();
 		this.roles.findAll(assignments.stream().map(RoleStore.ScopedAssignment::roleId).distinct().toList())
 			.forEach((role) -> byId.put(role.id(), role));
-		return assignments.stream()
-			.map((assignment) -> new ScopedRole(assignment.roleId(), byId.get(assignment.roleId()).name(),
-					byId.get(assignment.roleId()).scopeType(), assignment.scopeId()))
-			.toList();
+		Map<String, Map<UUID, String>> codes = codesOf(assignments, byId);
+		return assignments.stream().map((assignment) -> {
+			Role role = byId.get(assignment.roleId());
+			String code = (assignment.scopeId() == null) ? null
+					: codes.getOrDefault(role.scopeType(), Map.of()).get(assignment.scopeId());
+			return new ScopedRole(assignment.roleId(), role.name(), role.scopeType(), assignment.scopeId(), code);
+		}).toList();
+	}
+
+	/** The codes of the places in the assignments, by kind, when something provides places; empty otherwise. */
+	private Map<String, Map<UUID, String>> codesOf(List<RoleStore.ScopedAssignment> assignments, Map<UUID, Role> byId) {
+		ScopeDirectory scopes = this.directory.getIfAvailable();
+		Map<String, Map<UUID, String>> codes = new HashMap<>();
+		if (scopes == null) {
+			return codes;
+		}
+		Map<String, Set<UUID>> idsByKind = new HashMap<>();
+		for (RoleStore.ScopedAssignment assignment : assignments) {
+			if (assignment.scopeId() != null) {
+				idsByKind.computeIfAbsent(byId.get(assignment.roleId()).scopeType(), (kind) -> new LinkedHashSet<>())
+					.add(assignment.scopeId());
+			}
+		}
+		idsByKind.forEach((kind, ids) -> codes.put(kind, scopes.codesOf(kind, ids)));
+		return codes;
 	}
 
 	private static AuditEntry entry(String action, UUID userId, Role role, RoleStore.ScopedAssignment assignment) {
@@ -202,16 +359,32 @@ public class ScopedAssignmentService {
 		}
 	}
 
-	/**
-	 * A role assignment as it is shown: the role, its scope type and the place; {@code scopeId} is null for a global
-	 * role.
-	 */
-	public record ScopedRole(UUID roleId, String roleName, String scopeType, UUID scopeId) {
+	/** Where a role applies, or the rule that was broken. */
+	private record Place(UUID scopeId, Failure failure, String message) {
+
+		static Place refused(Failure failure, String message) {
+			return new Place(null, failure, message);
+		}
 
 	}
 
-	/** One assignment a caller asks for; {@code scopeId} is null for a global role. */
-	public record NewScopedRole(UUID roleId, UUID scopeId) {
+	/**
+	 * A role assignment as it is shown: the role, its scope type and the place; {@code scopeId} is null for a global
+	 * role, and {@code scopeCode} is null when there is no place or nothing provides the codes.
+	 */
+	public record ScopedRole(UUID roleId, String roleName, String scopeType, UUID scopeId, String scopeCode) {
+
+	}
+
+	/**
+	 * One assignment a caller asks for. The place is {@code scopeId} or {@code scopeCode}, never both; both are null for a
+	 * global role.
+	 */
+	public record NewScopedRole(UUID roleId, UUID scopeId, String scopeCode) {
+
+		public NewScopedRole(UUID roleId, UUID scopeId) {
+			this(roleId, scopeId, null);
+		}
 
 	}
 

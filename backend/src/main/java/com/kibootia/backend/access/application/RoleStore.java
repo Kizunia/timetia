@@ -30,6 +30,12 @@ public interface RoleStore {
 	boolean nameInUse(String name, UUID except);
 
 	/**
+	 * The live role with exactly this name, but only when it has a scope type: a platform role (the administrator, the user
+	 * role, a custom one) is never found here, so what finds roles by name cannot hand one out (Timetia ADR 0006).
+	 */
+	Optional<Role> findScopedByName(String name);
+
+	/**
 	 * Changes a role if it is still at {@code expectedVersion}, otherwise fails with an optimistic locking failure. A
 	 * change to the permissions alone also advances the version.
 	 */
@@ -64,6 +70,12 @@ public interface RoleStore {
 
 	/** Gives the role in a place; {@code scopeId} is null for the global scope. */
 	void assign(UUID userId, UUID roleId, UUID scopeId, UUID assignedBy);
+
+	/**
+	 * Gives the role in a place unless the user already holds it there, and says whether it did. Two requests at the same
+	 * moment give it once, and only one of them is told so; {@code scopeId} is null for the global scope.
+	 */
+	boolean assignIfAbsent(UUID userId, UUID roleId, UUID scopeId, UUID assignedBy);
 
 	/** Takes the role away, without a place. */
 	void unassign(UUID userId, UUID roleId);

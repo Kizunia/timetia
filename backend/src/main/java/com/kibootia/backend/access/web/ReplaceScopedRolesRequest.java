@@ -9,7 +9,8 @@ import jakarta.validation.constraints.Size;
 
 /**
  * The body of {@code PUT /api/v1/users/{id}/scoped-roles}: the roles the user should hold within scopes from now on. A
- * role that applies everywhere takes no {@code scopeId}; every other needs one.
+ * role that applies everywhere takes no {@code scopeId}; every other needs one. This replaces the whole set, so a screen
+ * that may be out of date uses the one-assignment endpoints instead ({@link AddScopedRoleRequest}).
  */
 public record ReplaceScopedRolesRequest(@NotNull @Size(max = 200) List<@NotNull @Valid ScopedRoleAssignmentRequest> assignments) {
 

@@ -51,6 +51,19 @@ class ScopedAssignmentsWithoutDirectoryIT extends AdminApiTest {
 	}
 
 	@Test
+	@DisplayName("naming the place by its code fails closed in the same way, and so does adding one assignment")
+	void codesFailClosed() throws Exception {
+		String hod = roleId("HOD");
+
+		post(admin(), "/api/v1/users/" + ALICE + "/scoped-roles", "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"CSE\"}")
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("access.scope_unvalidated"));
+		post(admin(), "/api/v1/users/" + ALICE + "/scoped-roles",
+				"{\"roleId\":\"" + hod + "\",\"scopeId\":\"" + Facts.DEPARTMENT_A + "\"}").andExpect(status().isConflict());
+		assertThat(count("select count(*) from role_assignment where role_id = unhex(?)", hod.replace("-", ""))).isZero();
+	}
+
+	@Test
 	@DisplayName("a role that applies everywhere is still given, because it names no place")
 	void globalRolesStillWork() throws Exception {
 		put(admin(), "/api/v1/users/" + ALICE + "/scoped-roles", "{\"assignments\":[{\"roleId\":\"" + roleId("Faculty") + "\"}]}")

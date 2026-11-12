@@ -175,6 +175,83 @@ class ScopedAssignmentsApiIT extends AdminApiTest {
 		get(admin(), scopedRoles(ALICE)).andExpect(jsonPath("$[0].roleName").value("HOD"));
 	}
 
+	// --- one assignment at a time, and places named by code ----------------------------------------------------------------
+
+	@Test
+	@DisplayName("adding or removing one assignment leaves the others alone, so a screen that is out of date cannot undo another change; a repeat adds nothing")
+	void oneAtATime() throws Exception {
+		String hod = roleId("HOD");
+		String faculty = roleId("Faculty");
+		put(admin(), scopedRoles(ALICE), body(assignment(hod, Facts.DEPARTMENT_A))).andExpect(status().isOk());
+
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + faculty + "\"}").andExpect(status().isOk())
+			.andExpect(jsonPath("$.length()").value(2));
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + faculty + "\"}").andExpect(status().isOk())
+			.andExpect(jsonPath("$.length()").value(2));
+		assertThat(count("select count(*) from audit_entry where action = 'access.role.assigned'")).as("HOD and Faculty, once each")
+			.isEqualTo(2);
+
+		delete(admin(), scopedRoles(ALICE) + "/" + hod + "?scopeId=" + Facts.DEPARTMENT_A).andExpect(status().isOk())
+			.andExpect(jsonPath("$.length()").value(1))
+			.andExpect(jsonPath("$[0].roleName").value("Faculty"));
+		assertThat(count("select count(*) from audit_entry where action = 'access.role.unassigned'")).isEqualTo(1);
+		delete(admin(), scopedRoles(ALICE) + "/" + hod + "?scopeId=" + Facts.DEPARTMENT_A).andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("access.assignment_not_found"));
+		// A global role is removed without a place; naming one finds nothing.
+		delete(admin(), scopedRoles(ALICE) + "/" + faculty + "?scopeId=" + Facts.DEPARTMENT_A).andExpect(status().isNotFound());
+		delete(admin(), scopedRoles(ALICE) + "/" + faculty).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+	}
+
+	@Test
+	@DisplayName("a place can be named by its code: the same rules as by id, the code is shown back, and a code of another kind finds nothing")
+	void byCode() throws Exception {
+		this.directory.add(AcademicScopes.DEPARTMENT, Facts.DEPARTMENT_B, "ME");
+		this.directory.add(AcademicScopes.DIVISION, Facts.DIVISION_2, "CSE-B");
+		String hod = roleId("HOD");
+		String faculty = roleId("Faculty");
+
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"ME\"}").andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].scopeId").value(Facts.DEPARTMENT_B.toString()))
+			.andExpect(jsonPath("$[0].scopeCode").value("ME"));
+		get(admin(), scopedRoles(ALICE)).andExpect(jsonPath("$[0].scopeCode").value("ME"));
+		// A place that has no code is still shown by its id.
+		put(admin(), scopedRoles(ALICE), body(assignment(hod, Facts.DEPARTMENT_A))).andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].scopeId").value(Facts.DEPARTMENT_A.toString()))
+			.andExpect(jsonPath("$[0].scopeCode").doesNotExist());
+
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"NOPE\"}").andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("unknown_scope"));
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"CSE-B\"}").andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("unknown_scope"));
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"ME\",\"scopeId\":\"" + Facts.DEPARTMENT_B + "\"}")
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("scope_ambiguous"));
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + hod + "\"}").andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("scope_required"));
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + faculty + "\",\"scopeCode\":\"ME\"}").andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("scope_not_allowed"));
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + builtInRoleId("USER") + "\"}").andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("role_not_scoped"));
+		post(admin(), scopedRoles(UUID.randomUUID()), "{\"roleId\":\"" + faculty + "\"}").andExpect(status().isNotFound());
+		get(admin(), scopedRoles(BOB)).andExpect(jsonPath("$.length()").value(0));
+	}
+
+	@Test
+	@DisplayName("only an administrator adds or removes one, even with the permission to assign roles")
+	void oneAtATimeOnlyAdministrators() throws Exception {
+		String assigners = createRole("Assigners", "access.roles.view", "access.roles.assign");
+		setRoles(ALICE, builtInRoleId("USER"), assigners);
+		String faculty = roleId("Faculty");
+		put(admin(), scopedRoles(BOB), body(assignment(faculty, null))).andExpect(status().isOk());
+
+		post(user(ALICE), scopedRoles(ALICE), "{\"roleId\":\"" + faculty + "\"}").andExpect(status().isForbidden());
+		post(user(ALICE), scopedRoles(BOB), "{\"roleId\":\"" + faculty + "\"}").andExpect(status().isForbidden());
+		delete(user(ALICE), scopedRoles(BOB) + "/" + faculty).andExpect(status().isForbidden());
+		delete(user(BOB), scopedRoles(BOB) + "/" + faculty).andExpect(status().isForbidden());
+		get(admin(), scopedRoles(BOB)).andExpect(jsonPath("$.length()").value(1));
+		get(admin(), scopedRoles(ALICE)).andExpect(jsonPath("$.length()").value(0));
+	}
+
 	// --- the rules for roles ------------------------------------------------------------------------------------------
 
 	@Test

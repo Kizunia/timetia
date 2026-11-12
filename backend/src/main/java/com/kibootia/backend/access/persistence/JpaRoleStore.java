@@ -98,6 +98,11 @@ class JpaRoleStore implements RoleStore {
 	}
 
 	@Override
+	public Optional<Role> findScopedByName(String name) {
+		return this.roles.findScopedByName(name).map((entity) -> toRoles(List.of(entity)).get(0));
+	}
+
+	@Override
 	public Role update(UUID id, long expectedVersion, String name, String description, Set<String> permissions) {
 		RoleEntity entity = this.roles.findById(id).orElseThrow();
 		if (entity.getVersion() != expectedVersion) {
@@ -253,6 +258,23 @@ class JpaRoleStore implements RoleStore {
 			.param("at", LocalDateTime.ofInstant(this.clock.instant(), ZoneOffset.UTC))
 			.param("by", UuidBytes.toBytes(assignedBy))
 			.update();
+	}
+
+	@Override
+	public boolean assignIfAbsent(UUID userId, UUID roleId, UUID scopeId, UUID assignedBy) {
+		// "insert ignore" reports 0 rows when the primary key (tenant, user, role, scope) exists, so exactly one of two
+		// concurrent requests sees 1.
+		return this.jdbc.sql("""
+				insert ignore into role_assignment (tenant_id, user_id, role_id, scope_id, assigned_at, assigned_by)
+				values (:tenant, :user, :role, :scope, :at, :by)
+				""")
+			.param("tenant", tenant())
+			.param("user", UuidBytes.toBytes(userId))
+			.param("role", UuidBytes.toBytes(roleId))
+			.param("scope", scope(scopeId))
+			.param("at", LocalDateTime.ofInstant(this.clock.instant(), ZoneOffset.UTC))
+			.param("by", UuidBytes.toBytes(assignedBy))
+			.update() == 1;
 	}
 
 	@Override
