@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-12
 
 What "complete" means for Timetia's authentication and authorization, and what is handed to the other developers. **No item is done yet.** Tick an item only with evidence, such as a named CI run or a reviewed document.
 
@@ -26,9 +26,9 @@ What "complete" means for Timetia's authentication and authorization, and what i
 
 ### Operations
 
-- [ ] Users and assignments can be imported, repeatedly and safely, by someone following the runbook.
-- [ ] Super Admin can change an assignment in the browser.
-- [ ] A fresh environment reaches a working Super Admin without manual database work.
+- [ ] Users and assignments can be imported, repeatedly and safely, by someone following the runbook. *Phase 3: implemented and tested locally; the [runbook](../../operations/provisioning.md) has not been followed by anyone else; rows for HOD, CR, BR and Student are refused until a scope directory exists ([OQ-A15](open-questions.md)).*
+- [ ] Super Admin can change an assignment in the browser. *Phase 3: the screen exists and is unit-tested; no browser run, and a role that needs a place fails closed for the same reason.*
+- [ ] A fresh environment reaches a working Super Admin without manual database work. *Phase 3: implemented and tested with a stand-in identity provider; not run against Keycloak.*
 - [ ] The identity names are Timetia's, and the setup steps use no `kibootia` name except where deliberately kept.
 
 ### Delivery

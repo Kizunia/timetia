@@ -20,6 +20,10 @@ Decisions about authentication and authorization that the documents and the code
 | OQ-A1 Who owns department, division and batch data? | Not security. A scope directory port, failing closed until implemented | [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md) |
 | OQ-A8 Self-registration | Off in the Timetia realm | [ADR 0005](../../decisions/0005-identity-hardening-decisions.md) |
 | OQ-A13 How far does the rename go? | Identity-facing names only | [ADR 0005](../../decisions/0005-identity-hardening-decisions.md) |
+| OQ-A10 How do students get accounts? | Like everyone else: an account and an invitation email each, from the email in the data. The owner confirmed thousands of emails are acceptable and that every student's address will be in the data | [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md) |
+| What does a repeated import do to roles a person already has? | Nothing: an import only adds. Removals are made one at a time in the screen | [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md) |
+| How does a file name a department, division or batch? | By its code. The scope directory port looks codes up and still fails closed | [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md) |
+| How does a fresh environment get its first Super Admin? | The application invites the configured address at startup while no administrator exists; they become Super Admin at first sign-in | [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md) |
 
 ### Defaults taken, for the owner to confirm or change
 
@@ -32,14 +36,29 @@ These were not chosen by the owner. They are the author's defaults, recorded in 
 | OQ-A4 Are Faculty and Student roles | Role templates that carry permissions. Relations come from the facts. |
 | OQ-A5 Who may revert a change that is not an exchange or a substitute | The author, any type except permanent. An HOD or Super HOD, any change in scope. A permanent change only by an HOD or Super HOD. |
 
-## Open: not needed for Phases 0 to 2
+### Defaults taken in Phase 3, for the owner to confirm or change
 
-### OQ-A10. How do students get accounts, and from where do their email addresses come?
+Recorded in [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md), points 5 to 14. Each is one rule and one test.
 
-- **Why it matters:** students are read-only users who see the timetable and notifications, so each needs a Keycloak account with an email address. The module's data list says contacts are not in the export. Inviting thousands of students by email is a real operation.
-- **Depends on it:** the import in Phase 3 (W3.1, W3.4).
-- **Options:** import with college emails and invite everyone; or create accounts on demand at first contact with a trusted sign-in; or defer student accounts and ship faculty, HOD and representatives first.
-- **Recommendation:** ask the product owner which sources of student email exist. Until then plan the import for staff and representatives, and design the format so students can be added.
+| Question | Default |
+| --- | --- |
+| Who may run an import? | Only the Super Admin (the built-in Administrator), whatever other permissions a person holds |
+| May a file give any role? | Only roles that apply within a scope. A platform role, the Administrator role least of all, is refused |
+| What if one row of a person is wrong? | None of that person's rows is applied; other people are unaffected |
+| How big may a file be? | 1000 rows, 512 KB; ten real imports an hour; one at a time; two minutes |
+| What if the first Super Admin never accepts the invitation? | A restart sends the link again while there is still no administrator |
+
+## Open
+
+### OQ-A15. Who provides departments, divisions and batches, with their codes?
+
+- **Why it matters:** until something implements `ScopeDirectory`, no role that needs a place (HOD, CR, BR, Student) can be given by the screen or by an import, and the Phase 3 gate (a seeded user of each role signs in) cannot be met. Super HOD and Faculty work today.
+- **Depends on it:** the Phase 3 gate, and the Phase 4 per-role end-to-end tests.
+- **What it must provide:** `exists(kind, id)`, `idOf(kind, code)` and `codesOf(kind, ids)` for the kinds `DEPARTMENT`, `DIVISION` and `BATCH`, with one rule: within a tenant and a kind a code names at most one live place, compared the same way every time. A division called `A` in several departments does not satisfy it; `CSE-A` does.
+- **Options:** the owner of the timetable and academic reference data implements the port when their module exists (the contract is in the [integration contract](integration-contract.md)); or security owns minimal reference tables (rejected in [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md)); or a directory read from configuration for local use (rejected: it invents data).
+- **Recommendation:** ask the owner of the academic data to implement the port, and agree the code format with them first, because the codes are what people will write in files.
+
+## Open: not needed for Phases 0 to 3
 
 ### OQ-A6. What happens when an HOD is absent?
 

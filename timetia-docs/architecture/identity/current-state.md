@@ -30,8 +30,16 @@ The classification below describes the inherited code as audited on 2026-11-11. 
 | Role rules | A role with a policy-decided permission needs a scope type; a role with one holds only those; only an administrator puts one in a role | `access/application/RoleService` |
 | Timetia roles and rules | The permission catalogue, the six role templates (seeded at startup) and the per-record policy | module `academic`: `AcademicPermissions`, `AcademicRoles`, `AcademicAccessPolicy`, `RoleTemplateSeeder` |
 | Contract for other modules | Facts interfaces, `Authorization.reach`, `ScopeDirectory` | `academic/*AccessFacts`, `platform/authorization` |
+| Provisioning import (Phase 3) | `POST /api/v1/user-imports?dryRun=`: a CSV of people and scoped roles, Super Admin only, add only, a person's rows together or not at all, bounded and audited | `identity/application/UserImportService`, `ImportCsv`, `UserImportProperties`; `identity/web/UserImportsController` |
+| Scope codes (Phase 3) | `ScopeDirectory` gains `idOf(kind, code)` and `codesOf(kind, ids)`; a place can be named by code | `platform/authorization/ScopeDirectory`, `access/application/ScopedAssignmentService` |
+| One assignment at a time (Phase 3) | `POST` adds and `DELETE …/{roleId}?scopeId=` removes one scoped role; the whole-set `PUT` stays | `access/web/ScopedUserRolesController`, `ScopedAssignmentService.addScopedRole`, `removeScopedRole` |
+| Published port for the import (Phase 3) | `access.ScopedAssignments`: resolve a role name and a place code, add if missing. Administrators only; only roles with a scope type | `access/ScopedAssignments`, `ScopedAssignmentService` |
+| First Super Admin (Phase 3) | At startup, with the bootstrap address set and no administrator, the application invites it; the person becomes administrator at their first sign-in | `identity/application/BootstrapAdministratorInvitation`, `ProfileGate` |
+| `administrator` on `GET /me` (Phase 3) | A hint for showing administrator-only controls | `identity/application/ProfileService`, `identity/web/MeResponse` |
+| Screens (Phase 3) | "Roles in a place" on the user page; an Import section | `frontend/src/features/access/ScopedRolesEditor.tsx`, `features/identity/ImportScreen.tsx` |
+| Rate limit (Phase 3) | A new `imports` category, ten an hour | `platform/ratelimit/RateLimitCategory` |
 
-Still true of the application: no module provides departments, divisions and batches, so a role that needs a place cannot be assigned (it is refused), and no module yet implements the facts interfaces. See the [integration contract](integration-contract.md).
+Still true of the application: no module provides departments, divisions and batches, so a role that needs a place cannot be assigned (it is refused) by the screen or by an import, and no module yet implements the facts interfaces. See the [integration contract](integration-contract.md) and [OQ-A15](open-questions.md).
 
 ## Classification
 
@@ -67,7 +75,7 @@ The Playwright end-to-end tests run only nightly, on manual start, or on pull re
 
 ### Missing for Timetia
 
-Department, division and batch scope. The seven Timetia roles. A permission catalogue for the module. The link between a user and a faculty or student record. Rights that depend on a ticket's relations (author, requested reviewer, affected faculty). Import of students, faculty and HODs. Timetia names in the realm, clients and cookies. Any test of these.
+The source of department, division and batch data (the scope itself, the roles and the import exist; the places do not). The link between a user and a faculty or student record. Rights that depend on a ticket's relations (author, requested reviewer, affected faculty): the policy exists, nothing supplies the facts. A production Keycloak configuration. Per-role end-to-end tests.
 
 ## The request path today
 

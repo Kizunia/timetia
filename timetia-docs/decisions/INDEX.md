@@ -15,3 +15,4 @@ Every ADR in the project, in one table. Update this file in the same change as a
 | PLAT-0003 | Role administration by import and Super Admin | platform | Accepted | 2026-11-11 | [0003-role-administration-by-import-and-super-admin.md](0003-role-administration-by-import-and-super-admin.md) |
 | PLAT-0004 | Scoped assignments and policy-decided permissions | platform | Accepted | 2026-11-12 | [0004-scoped-assignments-and-policy-decided-permissions.md](0004-scoped-assignments-and-policy-decided-permissions.md) |
 | PLAT-0005 | Identity hardening decisions | platform | Accepted | 2026-11-12 | [0005-identity-hardening-decisions.md](0005-identity-hardening-decisions.md) |
+| PLAT-0006 | Provisioning and the first Super Admin | platform | Accepted | 2026-11-12 | [0006-provisioning-and-bootstrap.md](0006-provisioning-and-bootstrap.md) |

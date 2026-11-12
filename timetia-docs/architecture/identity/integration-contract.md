@@ -71,6 +71,20 @@ Rules for the facts:
 - Rights that come from a relation (my own tickets) are not in the reach. Add them from your own data: `or author_user_id = :me`. The permissions that are relation-based are listed in the model.
 - Apply the session rule yourself for lists: a division grant gives theory lectures only and a batch grant lab and tutorial lectures only, for the permissions that say so in the model. For a single record the policy applies it for you.
 
+### The scope directory (for the owner of department, division and batch data)
+
+The module that owns departments, divisions and batches provides one bean implementing `com.kibootia.backend.platform.authorization.ScopeDirectory`. Nothing else in the security code needs to change. It answers for the current tenant and for the kinds `DEPARTMENT`, `DIVISION` and `BATCH` (the constants in `AcademicScopes`):
+
+| Method | Answers |
+| --- | --- |
+| `boolean exists(String kind, UUID id)` | Whether a live place of this kind has this id |
+| `Optional<UUID> idOf(String kind, String code)` | The id of the live place of this kind with this code, or empty. The code is passed **as written in the file or on the screen**; the caller never trims or changes its case, so how codes are compared is your rule, applied the same way every time |
+| `Map<UUID, String> codesOf(String kind, Collection<UUID> ids)` | The code of each of these places, for showing an assignment. An id with no live place is absent |
+
+The rule you must keep: **within a tenant and a kind, a code names at most one live place.** A division called `A` that exists in several departments breaks it; a code such as `CSE-A` does not. The import and the screen name places by code, so people will write these codes in files. Agree the format with the security owner before the data is loaded. A deleted place must not be found by `idOf`, and an assignment to a place that is later deleted stays until an administrator removes it; it then matches no record, and the screen shows its id because `codesOf` has no code for it.
+
+To test your implementation, the tests use `ScopeFixtures.FakeScopeDirectory` (`add(kind, id, code)`); `UserImportIT` and `ScopedAssignmentsApiIT` show what the callers do with it.
+
 ### Tests
 
 - Every endpoint is included automatically in the "401 without a token" sweep in `ResourceServerIT`.
@@ -81,9 +95,8 @@ Rules for the facts:
 
 | Needed | Status |
 | --- | --- |
-| A **scope directory**: something that says a department, division or batch exists | Nobody provides it in the application. The port (`ScopeDirectory`) exists. **Until a module provides it, a role that needs a place cannot be assigned**: the assignment is refused with `access.scope_unvalidated`. Global roles work. The owner of department, division and batch data implements the port. |
+| A **scope directory**: something that says a department, division or batch exists, and what its code is | Nobody provides it in the application. The port (`ScopeDirectory`) exists. **Until a module provides it, a role that needs a place cannot be assigned**, by the screen or by an import: the assignment is refused with `access.scope_unvalidated`. Global roles work. The owner of department, division and batch data implements the port. See "The scope directory" below ([OQ-A15](open-questions.md)). |
 | Facts for tickets, lectures and issues | The interfaces exist. The module that owns the records implements them when it exists. |
-| Assignment from files, and screens that show scope | Phase 3. The assignment API exists: `GET` and `PUT /api/v1/users/{id}/scoped-roles`. |
 | A person directory | Deferred. The facts carry user ids. |
 | Expiry of a role at the end of a term | Not designed. See [OQ-A2](open-questions.md). |
 

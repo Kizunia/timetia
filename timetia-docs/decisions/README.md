@@ -9,3 +9,4 @@ Project-wide ADRs. Module ADRs live in each module and are all listed in [INDEX.
 | [0003-role-administration-by-import-and-super-admin.md](0003-role-administration-by-import-and-super-admin.md) | Users and scoped assignments are imported; Super Admin adjusts them; no delegation in version 1 |
 | [0004-scoped-assignments-and-policy-decided-permissions.md](0004-scoped-assignments-and-policy-decided-permissions.md) | Scope stored in the access tables; policy-decided permissions that flat checks never satisfy; Super Admin is the Administrator role |
 | [0005-identity-hardening-decisions.md](0005-identity-hardening-decisions.md) | Registration off, refusals audited, token type checked, production guard, rename depth |
+| [0006-provisioning-and-bootstrap.md](0006-provisioning-and-bootstrap.md) | Add-only CSV import by Super Admin with places named by code; the application invites the first Super Admin at startup |

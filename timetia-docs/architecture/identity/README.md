@@ -8,7 +8,7 @@
 
 Authentication (who is this person) and authorization (what may they do) for Timetia: what exists, what will be built, the plan to build it and the contract other modules use.
 
-Timetia started as Kibootia's code with no authentication or authorization of its own. Phases 0 to 2 of the [implementation plan](implementation-plan.md) are now implemented: hardening of the inherited foundation, and Timetia's scoped authorization. The [current state](current-state.md) describes the inherited code and what changed. Nothing here is called verified without a named CI run; see [testing and verification](testing-and-verification.md) for what was run locally.
+Timetia started as Kibootia's code with no authentication or authorization of its own. Phases 0 to 3 of the [implementation plan](implementation-plan.md) are now implemented: hardening of the inherited foundation, Timetia's scoped authorization, and provisioning with the first Super Admin. Phase 3 is not complete: roles that need a department, division or batch cannot be given until the owner of that data provides it. The [current state](current-state.md) describes the inherited code and what changed. Nothing here is called verified without a named CI run; see [testing and verification](testing-and-verification.md) for what was run locally.
 
 Read in this order:
 
@@ -24,7 +24,9 @@ Read in this order:
 | [open-questions.md](open-questions.md) | Decisions that still need the owner, with a recommendation each, and document repairs |
 | [handover-checklist.md](handover-checklist.md) | What "complete" means and what the handover package contains |
 
-Decisions: [0001 authentication follows Kibootia](../../decisions/0001-authentication-follows-kibootia.md), [0002 scoped roles on the current Kibootia contract](../../decisions/0002-scoped-roles-on-the-current-kibootia-contract.md), [0003 role administration by import and Super Admin](../../decisions/0003-role-administration-by-import-and-super-admin.md).
+Decisions: [0001 authentication follows Kibootia](../../decisions/0001-authentication-follows-kibootia.md), [0002 scoped roles on the current Kibootia contract](../../decisions/0002-scoped-roles-on-the-current-kibootia-contract.md), [0003 role administration by import and Super Admin](../../decisions/0003-role-administration-by-import-and-super-admin.md), [0004 scoped assignments and policy-decided permissions](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md), [0005 identity hardening decisions](../../decisions/0005-identity-hardening-decisions.md), [0006 provisioning and the first Super Admin](../../decisions/0006-provisioning-and-bootstrap.md).
+
+Operations: [provisioning people and roles](../../operations/provisioning.md), the runbook for the first Super Admin and the import.
 
 Evidence for the findings: [authn-authz-audit](../../research/authn-authz-audit.md).
 

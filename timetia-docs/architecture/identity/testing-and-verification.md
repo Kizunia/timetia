@@ -45,6 +45,20 @@ Phases 1 and 2 added these tests. "Unit" needs no Docker; "IT" is an integration
 | Token: not-before, clock skew of a minute, no signature, shared-secret signature, ID and refresh tokens, no token type | `ResourceServerIT` |
 | Refusals are audited once with ids only, throttled per user, a 401 is not written | `SecurityEventsIT`, `SecurityEventsThrottleIT`, `RateLimitIT` |
 | The production guard | `RequiredSettingsTest` (unit) |
+| The import file: encodings, header, quoting, line ends, bad rows, too many rows | `ImportCsvTest` (unit) |
+| The import creates and invites people once, gives roles in their places, audits with no address; the same file again changes nothing | `UserImportIT.importAndRepeat` |
+| An imported person signs in and holds the permissions of the role in the place | `UserImportIT.importedPersonSignsIn` |
+| An existing person only gets missing roles; a dry run is exact and writes nothing and calls nobody | `UserImportIT.existingPerson`, `dryRun` |
+| A file cannot give the Administrator role or any platform role; every row is checked as the screen would | `UserImportIT.platformRoles`, `rowRules` |
+| A person's rows go together or not at all; repeated lines are skipped; disabled, deleted, ambiguous and orphan accounts are left alone | `UserImportIT.personIsTheUnit`, `duplicateRows`, `disabledAndDeleted`, `accountWithoutProfile` |
+| Identity provider failure for one person leaves nothing for them, the rest carry on; a long outage stops the run | `UserImportIT.identityProviderFails`, `identityProviderDown` |
+| One real import at a time; only an administrator imports, even with every permission the work seems to need, and the refusal is recorded | `UserImportIT.oneAtATime`, `onlyAdministrators` |
+| Unreadable and oversized files are refused with a reason | `UserImportIT.unreadableFiles` |
+| With no scope directory, rows that name a place are refused and nobody is invited for them; global roles import | `UserImportWithoutDirectoryIT`, `ScopedAssignmentsWithoutDirectoryIT.codesFailClosed` |
+| The rate limit on real imports, and the time budget | `UserImportLimitsIT` |
+| Adding or removing one assignment leaves the others alone; places by code, with the same rules as by id; administrators only | `ScopedAssignmentsApiIT.oneAtATime`, `byCode`, `oneAtATimeOnlyAdministrators` |
+| The bootstrap invitation: sent once while no administrator exists, resent before the first sign-in, administrator at first sign-in only for the verified address, nothing once one exists, survives an identity provider outage; a missing or invalid setting does nothing | `BootstrapAdministratorIT`, `BootstrapAdministratorInvitationTest` |
+| The user page and import screen: controls only for an administrator, the right requests, the words for the refusals; the Import section only for an administrator | `scoped-roles-editor.test.tsx`, `import-screen.test.tsx`, `admin-sections.test.tsx` (Vitest) |
 | `update-any` without `view-any` is a 404 | `NotesApiIT` |
 | Module boundaries with the new module; architecture rules | `ModularityTest`, `ArchitectureTest` |
 
@@ -56,7 +70,9 @@ Known gaps:
 - The end-to-end tests (`frontend/tests/e2e`) were **not run** after the renames and the removal of registration: they need the whole stack, whose container names and ports the developer's own Kibootia stack was using. The rewritten `registration.spec.ts` in particular is unproven.
 - The old end-to-end test of the unverified-email flow is gone, because that flow needed self-registration. The rules are covered by backend tests with tokens.
 - The disable and delete safeguard for the last administrator is not reachable through the API any more (only an administrator can act on an administrator), so it has no API test; the same safeguard on role removal is tested in `AccessApiIT`.
-- Nothing tests the scoped model against a real department, division or batch module, because none exists.
+- Nothing tests the scoped model against a real department, division or batch module, because none exists. In the same way, the import of HOD, CR, BR and Student rows is tested only with a stand-in scope directory.
+- The dry run does not contact the identity provider, so no test (and no dry run) shows the case of an address the identity provider has without a profile; the real run reports it as `account_without_profile` (`UserImportIT.accountWithoutProfile`).
+- The compensation of a failed new person (the identity provider's account is removed) is the shared code of an invitation and is tested there (`UserAdministrationIT.failedInvitationLeavesNothing`); the import's own tests show the no-leftovers result for a failure of the identity provider, not for a failure inside the transaction.
 
 ## Local runs, 2026-11-12
 
@@ -68,6 +84,19 @@ Run by hand on one Windows machine with Docker Desktop, `./mvnw -B verify` in `b
 | After Phase 2 | Whole backend suite, 194 unit tests and the integration tests | 306 run, 305 passed, 1 failed: `OpenApiContractIT` expected the old list of API paths. The list was updated, the nested request type renamed and the committed `backend/openapi.json` regenerated; `OpenApiContractIT`, `NotesOpenApiIT` and `ScopedAssignmentsApiIT` then passed when rerun alone |
 | After the last change (`AcademicRolesTest`) | Whole backend suite | The 200 unit tests passed. **The integration suite did not run: Docker Desktop had stopped.** It was not rerun in full on the final commit |
 | Frontend | `pnpm install --frozen-lockfile`, `api:generate`, `lint`, `typecheck`, `test` | Installed; the generated client changed by additions only and is committed; lint and typecheck clean; 22 test files and 196 tests passed. `next build` was not run |
+
+### Phase 3, 2026-11-12
+
+Same machine, `./mvnw -B -o verify` in `backend` and `pnpm` in `frontend`. **Observed, not verified: none is a CI run.**
+
+| What | Result |
+| --- | --- |
+| Whole backend suite, after the last backend source change | 208 unit tests and 335 integration tests, 0 failures, 0 errors, build success. This includes `ModularityTest`, `ArchitectureTest` and `OpenApiContractIT`, which rewrote `backend/openapi.json` (committed) |
+| After that run | One assertion was added to `UserImportIT.onlyAdministrators` and that test was run alone (passes). The rest of the suite was not run again |
+| Frontend | `api:generate` (the client changed by additions and is committed), `lint` and `typecheck` clean, 25 test files and 215 tests passed, `next build` succeeded |
+| The new tests test the rule | Three rules were broken on purpose and the tests failed, then the code was restored: the administrator check of the import (`UserImportIT.onlyAdministrators`), a platform role findable by name (`UserImportIT.platformRoles`), and the grant at the first sign-in (`BootstrapAdministratorIT.becomesAdministrator`). The first mutation was initially **not** caught, because `access` repeats the administrator check for any row it resolves; the test now also sends a file of nothing but mistakes |
+
+**Not run:** the end-to-end tests (no end-to-end test of the new screens was written either: the stack was not started and a test that was never run is not evidence), the accessibility check of the new screens, a real Keycloak (the import and the bootstrap use the stand-in identity provider), the Docker image builds, the vulnerability and secret scans, anything in CI. One unit-test limitation: in the test browser a chosen file loses its content, so the screen test checks that a multipart `file` part is sent, not what is in it.
 
 An earlier whole-suite run during Phase 1 reported 28 failures and 36 errors. They were not defects: source files were edited while that run was in progress, class files disappeared from the output folder (`NoClassDefFoundError`) and test resources went missing. The same code passed on a clean rerun. Do not edit sources while a build runs.
 

@@ -29,7 +29,7 @@ Each work package ends with a check that can be shown to someone else.
 
 ## Status on 2026-11-12
 
-Phases 0, 1 and 2 are implemented. Nothing of Phase 3 or Phase 4 is started. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). Nothing is called verified without a named CI run, and no CI run has been made of these changes.
+Phases 0, 1 and 2 are implemented. Phase 3 is implemented **except for what needs a scope directory** (see the gates below). Phase 4 is not started. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). Nothing is called verified without a named CI run, and no CI run has been made of these changes.
 
 | Work package | Status |
 | --- | --- |
@@ -49,8 +49,14 @@ Phases 0, 1 and 2 are implemented. Nothing of Phase 3 or Phase 4 is started. "Im
 | W2.6 | Security's half is done: the facts interfaces and the rules. Nothing implements the facts yet, because the ticket and timetable modules do not exist. |
 | W2.7 | Security's half is done: the `ScopeDirectory` port and the fail-closed behavior. **Nothing provides department, division and batch data, so a role that needs a place cannot be assigned in the running application** until its owner implements the port. Tests use a fake. |
 | W2.8 | Done: each assignment and removal writes one audit entry with the role, the scope type and the place. |
+| W3.1 | Implemented, with tests: a CSV import (`POST /api/v1/user-imports`, dry run first), add only, Super Admin only, places named by code, bounded, audited. **Rows that name a place are refused until a scope directory exists**; Super HOD and Faculty import today. Decisions: [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md). |
+| W3.2 | Implemented, with unit tests: "Roles in a place" on the user page (add and remove one assignment at a time, Super Admin only) and an Import screen. **The browser end-to-end test and its accessibility check were not run.** Adding or removing a role that needs a place fails closed for the same reason as W3.1. |
+| W3.3 | Implemented, with tests: the application invites the configured address at startup while no administrator exists, and that person becomes Super Admin at first sign-in. Not run against a real Keycloak. |
+| W3.4 | Written: [provisioning runbook](../../operations/provisioning.md). **Not yet followed by someone else**, which is the condition for done. |
 
 **Gates.** The gates of Phases 1 and 2 below ask for a named CI run and an end-to-end run. **Neither exists**, so the gates are **not met**; the work is implemented and passes the local runs in [testing and verification](testing-and-verification.md). Two further things stand between Phase 2 and a working Timetia: a module that provides departments, divisions and batches (so scoped roles can be given), and teammates implementing the facts for their records.
+
+**The Phase 3 gate is not met, and one part of it is blocked.** It asks for "a seeded user of each role signs in and sees the right things in a local environment, shown in an end-to-end test". Three things are missing: no end-to-end test was run; the runbook has not been followed by someone else; and **HOD, CR, BR and Student cannot be given at all in the running application** because nothing implements `ScopeDirectory` ([OQ-A15](open-questions.md)). What is shown instead is in [testing and verification](testing-and-verification.md): an imported person signs in and holds the permissions of their role, in integration tests with a stand-in directory.
 
 
 ## Phase 0: Decide and document
