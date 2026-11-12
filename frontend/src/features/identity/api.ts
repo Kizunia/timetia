@@ -132,3 +132,38 @@ export function useUpdateTheme() {
     onSuccess: () => client.invalidateQueries({ queryKey: ["me"] }),
   });
 }
+
+export type UserImportReport = components["schemas"]["UserImportResponse"];
+export type UserImportLine = UserImportReport["lines"][number];
+
+/**
+ * Sends a CSV of people and their roles. A dry run says what the file would do and writes nothing; the same file sent for
+ * real is safe to send again. Only a real run changes the lists.
+ */
+export function useUserImport() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ file, dryRun }: { file: File; dryRun: boolean }) =>
+      unwrap(
+        await browserApi().POST("/api/v1/user-imports", {
+          params: { query: { dryRun } },
+          // The generated type of a file part is a string; the body is sent as multipart form data.
+          body: { file: file as unknown as string },
+          bodySerializer: () => {
+            const form = new FormData();
+            form.append("file", file);
+            return form;
+          },
+        }),
+      ),
+    onSuccess: (report) => {
+      if (report.dryRun) return;
+      return Promise.all([
+        client.invalidateQueries({ queryKey: ["users"] }),
+        client.invalidateQueries({ queryKey: ["user"] }),
+        client.invalidateQueries({ queryKey: ["scoped-roles"] }),
+        client.invalidateQueries({ queryKey: ["audit"] }),
+      ]);
+    },
+  });
+}

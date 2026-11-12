@@ -7,6 +7,7 @@ import { ErrorAlert } from "@/components/ErrorAlert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScopedRolesEditor } from "@/features/access/ScopedRolesEditor";
 import { UserRolesEditor } from "@/features/access/UserRolesEditor";
 import { type UserAction, useUser, useUserAction } from "@/features/identity/api";
 import { usePermissions } from "@/features/identity/permissions";
@@ -105,6 +106,21 @@ export function UserDetailScreen({ id }: { id: string }) {
               </CardHeader>
               <CardContent>
                 <UserRolesEditor userId={user.data.id} />
+              </CardContent>
+            </Card>
+          )}
+
+          {has("access.roles.view") && user.data.state !== "DELETED" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Roles in a place</CardTitle>
+                <CardDescription>
+                  Roles such as HOD, CR or Faculty apply to a department, a division, a batch or everywhere. Only an
+                  administrator changes them. A change applies on the user&apos;s next request.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScopedRolesEditor userId={user.data.id} />
               </CardContent>
             </Card>
           )}

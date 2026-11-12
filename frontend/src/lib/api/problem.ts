@@ -79,9 +79,31 @@ const MESSAGES: Record<string, string> = {
   "access.role_in_use": "Users still hold this role. Take it away from them first.",
   "access.last_administrator": "This is the last administrator who can sign in. Make someone else an administrator first.",
   "access.user_not_found": "That user could not be found.",
+  "access.scope_unvalidated":
+    "Departments, divisions and batches cannot be checked yet, because nothing provides them. Only roles that apply everywhere can be given until it does.",
+  "access.assignment_not_found": "The user does not hold that role there. It may have been removed already.",
+  "identity.import_running": "Another import is running. Wait for it to finish, then try again.",
+  "identity.import_too_large": "That file is too large. Split it into smaller files; importing the same file again is harmless.",
   "notes.not_found": "That note could not be found.", // module:notes
   "notes.duplicate_title": "You already have a note with this title.", // module:notes
 };
+
+/** What the rules for giving a role in a place say when a request breaks one (the field error code, not the problem code). */
+const ASSIGNMENT_MESSAGES: Record<string, string> = {
+  unknown_scope: "There is no department, division or batch with that code.",
+  scope_required: "This role applies to one department, division or batch. Enter its code.",
+  scope_not_allowed: "This role applies everywhere. Leave the code empty.",
+  scope_ambiguous: "Name the place by its code only.",
+  role_not_scoped: "That role is not given in a place. Give it with the user's other roles.",
+  unknown_role: "That role no longer exists.",
+};
+
+/** The text for a validation failure of a role assignment, or undefined when it is not one. */
+export function assignmentMessageFor(error: unknown): string | undefined {
+  if (!(error instanceof ApiError) || error.code !== "platform.validation_failed") return undefined;
+  const code = fieldErrors(error.problem).assignments?.code;
+  return code ? ASSIGNMENT_MESSAGES[code] : undefined;
+}
 
 export const GENERIC_MESSAGE = "The request failed.";
 

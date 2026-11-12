@@ -20,6 +20,7 @@ export function meWith(permissions: string[], overrides: Partial<Me> = {}): Me {
     avatarVersion: null,
     avatarsEnabled: true,
     filesEnabled: true,
+    administrator: false,
     ...overrides,
   };
 }

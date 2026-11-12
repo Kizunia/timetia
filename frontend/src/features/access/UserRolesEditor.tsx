@@ -12,7 +12,7 @@ import { type Role, useReplaceUserRoles, useRoles, useUserRoles } from "@/featur
 import { usePermissions } from "@/features/identity/permissions";
 
 /**
- * The roles one user holds, as a checklist of every role. Someone who may assign roles can change it; anyone else who may
+ * The platform roles one user holds, as a checklist of every role that is not given in a place. Someone who may assign roles can change it; anyone else who may
  * see roles sees it read-only. Giving the administrator role needs being an administrator, which the API enforces and
  * explains if it refuses.
  */
@@ -28,7 +28,14 @@ export function UserRolesEditor({ userId }: { userId: string }) {
   // Keyed by what the server holds, so the checklist starts again from it after a save or another admin's change.
   const heldIds = held.data.map((role) => role.id);
   return (
-    <Checklist key={heldIds.join(",")} userId={userId} roles={roles.data.items} initial={heldIds} editable={has("access.roles.assign")} />
+    // Roles that apply within a place are given in the card below, with the place; here they would only be refused.
+    <Checklist
+      key={heldIds.join(",")}
+      userId={userId}
+      roles={roles.data.items.filter((role) => !role.scopeType)}
+      initial={heldIds}
+      editable={has("access.roles.assign")}
+    />
   );
 }
 

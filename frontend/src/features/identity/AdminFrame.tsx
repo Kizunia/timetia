@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { ADMIN_SECTIONS } from "@/components/SiteHeader";
+import { visibleAdminSections } from "@/components/SiteHeader";
 import { usePermissions } from "@/features/identity/permissions";
 import { cn } from "@/lib/utils";
 
@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils";
  * told so instead of getting a page of errors. Hiding links is for usability only; the API refuses the rest.
  */
 export function AdminFrame({ children }: { children: React.ReactNode }) {
-  const { hasAny, has } = usePermissions();
+  const { me } = usePermissions();
   const pathname = usePathname();
-  const sections = ADMIN_SECTIONS.filter((section) => has(section.permission));
+  const sections = visibleAdminSections(me);
 
-  if (!hasAny(...ADMIN_SECTIONS.map((section) => section.permission))) {
+  if (sections.length === 0) {
     return (
       <section aria-labelledby="no-access-heading">
         <h1 id="no-access-heading" className="text-2xl font-semibold tracking-tight">

@@ -5,12 +5,25 @@ import { UserAvatar } from "@/features/identity/UserAvatar";
 import type { Me } from "@/lib/api/client";
 import { moduleLinks } from "@/modules";
 
-/** The sections of the administration area and the permission that shows each one. */
+/** The sections of the administration area, the permission that shows each one, and whether only an administrator gets it. */
 export const ADMIN_SECTIONS = [
   { href: "/admin/users", label: "Users", permission: "identity.profiles.view" },
   { href: "/admin/roles", label: "Roles", permission: "access.roles.view" },
+  { href: "/admin/import", label: "Import", permission: "identity.users.invite", administratorOnly: true },
   { href: "/admin/audit", label: "Audit log", permission: "audit.entries.view" },
 ] as const;
+
+type AdminSection = (typeof ADMIN_SECTIONS)[number];
+
+/**
+ * The sections this user is shown. A usability hint only: the API refuses what a hidden link would have led to, and the
+ * import is refused to anyone who is not an administrator even if they hold the permission.
+ */
+export function visibleAdminSections(me: Pick<Me, "permissions" | "administrator">): AdminSection[] {
+  return ADMIN_SECTIONS.filter(
+    (section) => me.permissions.includes(section.permission) && (!("administratorOnly" in section) || me.administrator),
+  );
+}
 
 const linkClass =
   "rounded-md px-2 py-1 text-sm font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
@@ -20,7 +33,7 @@ const linkClass =
  * backend refuses what a hidden link would have led to.
  */
 export function SiteHeader({ me }: { me: Me | null }) {
-  const sections = me ? ADMIN_SECTIONS.filter((section) => me.permissions.includes(section.permission)) : [];
+  const sections = me ? visibleAdminSections(me) : [];
   const links = me ? moduleLinks(me.permissions) : [];
   return (
     <header className="border-b">
