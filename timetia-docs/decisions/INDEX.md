@@ -16,3 +16,4 @@ Every ADR in the project, in one table. Update this file in the same change as a
 | PLAT-0004 | Scoped assignments and policy-decided permissions | platform | Accepted | 2026-11-12 | [0004-scoped-assignments-and-policy-decided-permissions.md](0004-scoped-assignments-and-policy-decided-permissions.md) |
 | PLAT-0005 | Identity hardening decisions | platform | Accepted | 2026-11-12 | [0005-identity-hardening-decisions.md](0005-identity-hardening-decisions.md) |
 | PLAT-0006 | Provisioning and the first Super Admin | platform | Accepted | 2026-11-12 | [0006-provisioning-and-bootstrap.md](0006-provisioning-and-bootstrap.md) |
+| PLAT-0007 | Users cannot edit their own email or username | platform | Proposed | 2026-11-12 | [0007-users-cannot-edit-their-own-email.md](0007-users-cannot-edit-their-own-email.md) |

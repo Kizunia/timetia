@@ -55,6 +55,100 @@ resource "keycloak_realm" "timetia" {
 }
 
 # The Next.js server: confidential client, Authorization Code with PKCE. No web origins, so no CORS (ADR 0008).
+# Who a person is, as far as Timetia is concerned, is their email address: the application copies it from the token into the
+# profile at every request, and an import gives roles to the profile that holds an address. So a person must not be able to
+# change their own address or username, or they could take the address of someone about to be imported (or the bootstrap
+# address) and receive that person's roles. Only an administrator, which here means the application's service account and
+# the realm's operators, edits them. Names stay editable by the person, because the invitation asks for them.
+# Everything else is Keycloak's default user profile, written out because this resource replaces the whole definition.
+resource "keycloak_realm_user_profile" "timetia" {
+  realm_id = keycloak_realm.timetia.id
+
+  attribute {
+    name         = "username"
+    display_name = "$${username}"
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+
+    validator {
+      name   = "length"
+      config = { min = "3", max = "255" }
+    }
+    validator {
+      name = "username-prohibited-characters"
+    }
+    validator {
+      name = "up-username-not-idn-homograph"
+    }
+  }
+
+  attribute {
+    name               = "email"
+    display_name       = "$${email}"
+    required_for_roles = ["user"]
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+
+    validator {
+      name = "email"
+    }
+    validator {
+      name   = "length"
+      config = { max = "255" }
+    }
+  }
+
+  attribute {
+    name               = "firstName"
+    display_name       = "$${firstName}"
+    required_for_roles = ["user"]
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin", "user"]
+    }
+
+    validator {
+      name   = "length"
+      config = { max = "255" }
+    }
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+  }
+
+  attribute {
+    name               = "lastName"
+    display_name       = "$${lastName}"
+    required_for_roles = ["user"]
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin", "user"]
+    }
+
+    validator {
+      name   = "length"
+      config = { max = "255" }
+    }
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+  }
+
+  group {
+    name                = "user-metadata"
+    display_header      = "User metadata"
+    display_description = "Attributes, which refer to user metadata"
+  }
+}
+
 resource "keycloak_openid_client" "web" {
   realm_id  = keycloak_realm.timetia.id
   client_id = "timetia-web"
