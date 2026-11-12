@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -52,6 +54,8 @@ import com.kibootia.backend.platform.ratelimit.RateLimiter;
  */
 @Service
 public class ScopedAssignmentService implements ScopedAssignments {
+
+	private static final Logger log = LoggerFactory.getLogger(ScopedAssignmentService.class);
 
 	public static final String SCOPE_UNVALIDATED = "access.scope_unvalidated";
 
@@ -275,18 +279,28 @@ public class ScopedAssignmentService implements ScopedAssignments {
 			return Place.refused(Failure.SCOPE_UNVALIDATED,
 					"Scopes cannot be checked yet, because nothing provides them. Only global roles can be given.");
 		}
-		UUID id = scopeId;
-		if (named) {
-			id = scopes.idOf(role.scopeType(), scopeCode).orElse(null);
-			if (id == null) {
-				return Place.refused(Failure.UNKNOWN_SCOPE,
-						"There is no " + role.scopeType().toLowerCase(Locale.ROOT) + " with that code");
+		try {
+			UUID id = scopeId;
+			if (named) {
+				id = scopes.idOf(role.scopeType(), scopeCode).orElse(null);
+				if (id == null) {
+					return Place.refused(Failure.UNKNOWN_SCOPE,
+							"There is no " + role.scopeType().toLowerCase(Locale.ROOT) + " with that code");
+				}
 			}
+			if (!scopes.exists(role.scopeType(), id)) {
+				return Place.refused(Failure.UNKNOWN_SCOPE,
+						"There is no " + role.scopeType().toLowerCase(Locale.ROOT) + " " + id);
+			}
+			return new Place(id, null, null);
 		}
-		if (!scopes.exists(role.scopeType(), id)) {
-			return Place.refused(Failure.UNKNOWN_SCOPE, "There is no " + role.scopeType().toLowerCase(Locale.ROOT) + " " + id);
+		catch (RuntimeException ex) {
+			// Fail closed: a directory that cannot answer is the same as one that is missing. Never accept, never a 500.
+			// Only the exception type is logged: a message could carry the code that was asked about.
+			log.warn("The scope directory could not answer ({}), so the place was not accepted", ex.getClass().getName());
+			return Place.refused(Failure.SCOPE_UNVALIDATED,
+					"Scopes cannot be checked right now. Try again later; only global roles can be given until then.");
 		}
-		return new Place(id, null, null);
 	}
 
 	/** 409 when places cannot be checked at all; otherwise 400 with the rule that was broken. */
@@ -341,7 +355,14 @@ public class ScopedAssignmentService implements ScopedAssignments {
 					.add(assignment.scopeId());
 			}
 		}
-		idsByKind.forEach((kind, ids) -> codes.put(kind, scopes.codesOf(kind, ids)));
+		try {
+			idsByKind.forEach((kind, ids) -> codes.put(kind, scopes.codesOf(kind, ids)));
+		}
+		catch (RuntimeException ex) {
+			// Codes are only for showing an assignment; the screen falls back to the id. It never fails a read.
+			log.warn("The scope directory could not give codes ({}), so ids are shown", ex.getClass().getName());
+			codes.clear();
+		}
 		return codes;
 	}
 

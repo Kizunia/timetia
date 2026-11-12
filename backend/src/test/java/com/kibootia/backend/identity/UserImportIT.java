@@ -226,6 +226,31 @@ class UserImportIT extends AdminApiTest {
 	}
 
 	@Test
+	@DisplayName("a scope directory that is down refuses the rows that name a place, invites nobody for them, and still imports roles that need no place; a deleted place is an unknown place")
+	void directoryUnavailableAndDeletedPlace() throws Exception {
+		this.directory.setUnavailable(true);
+		for (boolean dryRun : new boolean[] { true, false }) {
+			upload(admin(), FILE + "anita@college.test,HOD,CSE\nravi@college.test,Faculty,\n", dryRun).andExpect(status().isOk())
+				.andExpect(jsonPath("$.lines[0].outcome").value("ERROR"))
+				.andExpect(jsonPath("$.lines[0].code").value("scope_unvalidated"))
+				.andExpect(jsonPath("$.lines[1].outcome").value("ADDED"));
+			if (dryRun) {
+				assertThat(profiles()).as("a dry run writes nothing").isEqualTo(1);
+			}
+		}
+		assertThat(count("select count(*) from user_profile where email = 'anita@college.test'")).as("no one invited for the refused row")
+			.isZero();
+		assertThat(count("select count(*) from user_profile where email = 'ravi@college.test'")).as("the global role was imported")
+			.isEqualTo(1);
+		assertThat(assignments()).as("only ravi's Faculty; nothing in a place").isEqualTo(1);
+
+		this.directory.setUnavailable(false);
+		this.directory.remove(AcademicScopes.DEPARTMENT, Facts.DEPARTMENT_A);
+		importFile(FILE + "anita@college.test,HOD,CSE\n").andExpect(jsonPath("$.lines[0].code").value("unknown_scope"));
+		assertThat(count("select count(*) from user_profile where email = 'anita@college.test'")).isZero();
+	}
+
+	@Test
 	@DisplayName("a person's rows go together or not at all: one error keeps the rest of that person out, and other people are unaffected")
 	void personIsTheUnit() throws Exception {
 		importFile(FILE + "anita@college.test,HOD,CSE\nanita@college.test,Nonexistent,\nravi@college.test,CR,CSE-A\n")

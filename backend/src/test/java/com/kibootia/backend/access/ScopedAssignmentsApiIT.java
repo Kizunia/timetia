@@ -252,6 +252,59 @@ class ScopedAssignmentsApiIT extends AdminApiTest {
 		get(admin(), scopedRoles(ALICE)).andExpect(jsonPath("$.length()").value(0));
 	}
 
+	// --- a directory that cannot answer, and a place that is gone ------------------------------------------------------------
+
+	@Test
+	@DisplayName("a scope directory that is down refuses every place with access.scope_unvalidated, never a 500 and never an accept; global roles and reading still work")
+	void directoryUnavailable() throws Exception {
+		this.directory.add(AcademicScopes.DEPARTMENT, Facts.DEPARTMENT_B, "ME");
+		String hod = roleId("HOD");
+		String faculty = roleId("Faculty");
+		put(admin(), scopedRoles(BOB), body(assignment(hod, Facts.DEPARTMENT_B))).andExpect(status().isOk());
+
+		this.directory.setUnavailable(true);
+
+		put(admin(), scopedRoles(ALICE), body(assignment(hod, Facts.DEPARTMENT_A))).andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("access.scope_unvalidated"));
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + hod + "\",\"scopeId\":\"" + Facts.DEPARTMENT_A + "\"}")
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("access.scope_unvalidated"));
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"ME\"}").andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("access.scope_unvalidated"));
+		get(admin(), scopedRoles(ALICE)).andExpect(jsonPath("$.length()").value(0));
+
+		// Reading an assignment made earlier still works; the code cannot be looked up, so the id is shown.
+		get(admin(), scopedRoles(BOB)).andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].scopeId").value(Facts.DEPARTMENT_B.toString()))
+			.andExpect(jsonPath("$[0].scopeCode").doesNotExist());
+		// A role that applies everywhere needs no place, so it does not depend on the directory.
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + faculty + "\"}").andExpect(status().isOk());
+
+		this.directory.setUnavailable(false);
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"ME\"}").andExpect(status().isOk());
+	}
+
+	@Test
+	@DisplayName("a place deleted after it was given: it can no longer be assigned by id or code, the old assignment stays and is shown by its id, and it can be removed")
+	void deletedPlace() throws Exception {
+		this.directory.add(AcademicScopes.DEPARTMENT, Facts.DEPARTMENT_B, "ME");
+		String hod = roleId("HOD");
+		post(admin(), scopedRoles(ALICE), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"ME\"}").andExpect(status().isOk());
+
+		this.directory.remove(AcademicScopes.DEPARTMENT, Facts.DEPARTMENT_B);
+
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + hod + "\",\"scopeCode\":\"ME\"}").andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("unknown_scope"));
+		post(admin(), scopedRoles(BOB), "{\"roleId\":\"" + hod + "\",\"scopeId\":\"" + Facts.DEPARTMENT_B + "\"}")
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("unknown_scope"));
+		get(admin(), scopedRoles(ALICE)).andExpect(jsonPath("$.length()").value(1))
+			.andExpect(jsonPath("$[0].scopeId").value(Facts.DEPARTMENT_B.toString()))
+			.andExpect(jsonPath("$[0].scopeCode").doesNotExist());
+		delete(admin(), scopedRoles(ALICE) + "/" + hod + "?scopeId=" + Facts.DEPARTMENT_B).andExpect(status().isOk())
+			.andExpect(jsonPath("$.length()").value(0));
+	}
+
 	// --- the rules for roles ------------------------------------------------------------------------------------------
 
 	@Test
