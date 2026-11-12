@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * does not affect another's.
  */
 @SpringBootTest(properties = { "kibootia.identity.bootstrap-admin-email=" + AdminApiTest.ADMIN_EMAIL,
+		"kibootia.identity.bootstrap-invite.enabled=false",
 		"kibootia.rate-limit.limits.invitations.capacity=2", "kibootia.rate-limit.limits.invitations.period=PT1H",
 		"kibootia.rate-limit.limits.verification-resend.capacity=1",
 		"kibootia.rate-limit.limits.verification-resend.period=PT1H", "kibootia.rate-limit.limits.admin-actions.capacity=3",

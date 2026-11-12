@@ -93,10 +93,15 @@ class ProfileGate implements RequestGate {
 			throw new ApiException(HttpStatus.FORBIDDEN, ACCOUNT_DISABLED, "This account is disabled.");
 		}
 		boolean justVerified = !profile.emailVerified() && facts.emailVerified();
+		// An invited user's first sign-in: following the link in the invitation email proves they own the address (Timetia
+		// ADR 0006). The refresh below turns INVITED into ACTIVE, so this must be read before it.
+		boolean firstSignInAfterInvitation = profile.status() == UserProfile.Status.INVITED;
 		refresh(profile, facts, issuedAt);
-		if (justVerified && isBootstrapAdministrator(facts)) {
+		if ((justVerified || firstSignInAfterInvitation) && isBootstrapAdministrator(facts)) {
 			// Someone who registered with the bootstrap address before verifying it is made administrator the moment
-			// they verify it: until then the token proved nothing about who owns the address.
+			// they verify it: until then the token proved nothing about who owns the address. The bootstrap invitation
+			// is the same: the person is made administrator when they first sign in with the verified address, and only
+			// while nobody is an administrator yet (grantFirstAdministrator decides that under a lock).
 			this.transactions.executeWithoutResult((status) -> grantBootstrapAdministrator(userId));
 		}
 	}

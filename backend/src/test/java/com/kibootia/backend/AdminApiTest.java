@@ -35,9 +35,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * with the built-in user role only.
  */
 @SpringBootTest(properties = { "kibootia.identity.bootstrap-admin-email=" + AdminApiTest.ADMIN_EMAIL,
+		"kibootia.identity.bootstrap-invite.enabled=false",
 		"kibootia.jobs.soft-delete-retention-days=30",
 		// The limiter has its own test; here a long run of actions by one administrator must not trip it.
 		"kibootia.rate-limit.limits.admin-actions.capacity=100000", "kibootia.rate-limit.limits.invitations.capacity=100000",
+		"kibootia.rate-limit.limits.imports.capacity=100000",
 		"kibootia.events.initial-backoff=PT0S", "kibootia.events.max-backoff=PT0S", "kibootia.events.max-attempts=4",
 		"kibootia.events.stale-after=PT1H" })
 @AutoConfigureMockMvc

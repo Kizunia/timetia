@@ -48,6 +48,12 @@ public interface RoleAssignments {
 	boolean grantFirstAdministrator(UUID userId);
 
 	/**
+	 * Whether anyone holds the administrator role, signed in or not. It tells startup whether the bootstrap administrator
+	 * is still needed (Timetia ADR 0006).
+	 */
+	boolean hasAdministrator();
+
+	/**
 	 * Refuses with 409 {@code access.last_administrator} when the user is an administrator and the only one who can
 	 * still sign in. It locks the administrator role, so two administrators cannot remove each other at once. The
 	 * calling transaction must use {@code READ_COMMITTED}, so the count sees what a concurrent commit changed.

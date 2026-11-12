@@ -227,6 +227,15 @@ public class RoleAssignmentService implements RoleAssignments {
 	}
 
 	@Override
+	// Not read-only: on a fresh database the built-in roles may not exist yet, and asking for the administrator role
+	// creates it (BuiltInRoles heals itself), which is a write.
+	@Transactional
+	@NoAuthorization("startup: decides whether the bootstrap administrator is still needed; reveals only a yes or no")
+	public boolean hasAdministrator() {
+		return !this.roles.holdersOf(this.builtIns.admin().id()).isEmpty();
+	}
+
+	@Override
 	@Transactional(propagation = Propagation.MANDATORY)
 	@NoAuthorization("a safeguard the calling use case has already authorized")
 	public void ensureNotLastAdministrator(UUID userId) {

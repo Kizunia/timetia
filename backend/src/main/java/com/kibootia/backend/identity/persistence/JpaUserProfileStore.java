@@ -4,8 +4,12 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -206,6 +210,40 @@ class JpaUserProfileStore implements UserProfileStore {
 			.param("cutoff", utc(deletedBefore))
 			.query(UserProfileMapper::fromRow)
 			.list();
+	}
+
+	@Override
+	public List<UserProfile> findByEmail(String email) {
+		return this.jdbc.sql("select " + UserProfileMapper.COLUMNS + """
+				 from user_profile
+				where tenant_id = :tenant and lower(email) = :email
+				""")
+			.param("tenant", tenant())
+			.param("email", email.strip().toLowerCase(Locale.ROOT))
+			.query(UserProfileMapper::fromRow)
+			.list();
+	}
+
+	@Override
+	public Map<String, List<UserProfile>> findByEmails(Collection<String> emails) {
+		Map<String, List<UserProfile>> result = new HashMap<>();
+		List<String> all = List.copyOf(emails);
+		// In batches, so a large file never builds an enormous IN list.
+		for (int from = 0; from < all.size(); from += 500) {
+			List<String> batch = all.subList(from, Math.min(all.size(), from + 500));
+			this.jdbc.sql("select " + UserProfileMapper.COLUMNS + """
+					 from user_profile
+					where tenant_id = :tenant and lower(email) in (:emails)
+					""")
+				.param("tenant", tenant())
+				.param("emails", batch)
+				.query(UserProfileMapper::fromRow)
+				.list()
+				.forEach((profile) -> result
+					.computeIfAbsent(profile.email().strip().toLowerCase(Locale.ROOT), (key) -> new ArrayList<>())
+					.add(profile));
+		}
+		return result;
 	}
 
 	@Override

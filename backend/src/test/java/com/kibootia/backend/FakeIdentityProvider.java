@@ -49,6 +49,11 @@ public final class FakeIdentityProvider implements IdentityProviderAdmin {
 		this.accounts.put(id, new Account(enabled, emailVerified));
 	}
 
+	/** Keycloak already has an account for this address (lower case), so creating one answers "email in use". */
+	public void knowsEmail(String email) {
+		this.emails.put(email, UUID.randomUUID());
+	}
+
 	/** Keycloak no longer knows this user, as after an erasure. */
 	public void goneFromKeycloak(UUID id) {
 		this.accounts.remove(id);

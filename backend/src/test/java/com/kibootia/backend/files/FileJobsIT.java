@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * sure no upload is still being written, and erasing a user removes everything they stored at once.
  */
 @SpringBootTest(properties = { "kibootia.identity.bootstrap-admin-email=" + AdminApiTest.ADMIN_EMAIL,
+		"kibootia.identity.bootstrap-invite.enabled=false",
 		"kibootia.jobs.soft-delete-retention-days=30", "kibootia.files.purge-batch-size=2",
 		"kibootia.files.reconcile-grace=PT24H", "kibootia.rate-limit.limits.admin-actions.capacity=100000",
 		"kibootia.rate-limit.limits.invitations.capacity=100000", "kibootia.events.initial-backoff=PT0S",

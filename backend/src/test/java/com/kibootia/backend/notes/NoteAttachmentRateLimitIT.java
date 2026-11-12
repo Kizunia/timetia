@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // The period differs from AvatarRateLimitIT's on purpose: tests with identical properties share one Spring context, and with
 // it one limiter, so the users of the other class would already have spent their allowance.
 @SpringBootTest(properties = { "kibootia.identity.bootstrap-admin-email=" + AdminApiTest.ADMIN_EMAIL,
+		"kibootia.identity.bootstrap-invite.enabled=false",
 		"kibootia.rate-limit.limits.uploads.capacity=2", "kibootia.rate-limit.limits.uploads.period=PT2H",
 		"kibootia.rate-limit.limits.admin-actions.capacity=100000", "kibootia.events.initial-backoff=PT0S",
 		"kibootia.events.max-backoff=PT0S" })

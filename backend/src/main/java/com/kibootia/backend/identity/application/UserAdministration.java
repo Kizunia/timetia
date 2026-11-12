@@ -3,11 +3,11 @@ package com.kibootia.backend.identity.application;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,9 +68,6 @@ public class UserAdministration {
 	public static final String ERASURE_BEGUN = "identity.erasure_begun";
 
 	private static final Logger log = LoggerFactory.getLogger(UserAdministration.class);
-
-	/** Deliberately simple: Keycloak has the final say, and the address is only used to look the account up. */
-	private static final Pattern EMAIL = Pattern.compile("[^@\\s]{1,64}@[^@\\s]{1,255}");
 
 	private final UserProfileStore profiles;
 
@@ -140,25 +137,40 @@ public class UserAdministration {
 			// Refuse before an account exists rather than undo it.
 			this.authorization.require(AccessPermissions.ASSIGN_ROLES);
 		}
-		if (this.profiles.emailInUse(email)) {
-			throw ApiException.conflict(EMAIL_IN_USE, "Someone with this email address already has an account.");
-		}
-		UUID id = createAccount(email);
-		try {
-			return this.transactions.execute((status) -> {
-				UserProfile created = this.profiles.insert(new NewProfile(id, UserProfile.Status.INVITED,
-						new TokenFacts(email, email, null, null, true), this.clock.instant()));
-				this.roleAssignments.assignDefaultRole(id);
-				this.roleAssignments.assignInitialRoles(id, roleIds);
-				this.auditLog.record(AuditEntry.of("identity.user.invited", "user", id));
-				this.events.publishEvent(new UserInvited(id, this.eventContexts.capture()));
-				return details(created);
-			});
-		}
-		catch (RuntimeException ex) {
-			removeAccountAfterFailure(id);
-			throw ex;
-		}
+		return createInvitedUser(email, (id) -> this.roleAssignments.assignInitialRoles(id, roleIds),
+				(id) -> AuditEntry.of("identity.user.invited", "user", id));
+	}
+
+	/**
+	 * An invitation made by the provisioning import (Timetia ADR 0006): exactly like {@link #invite}, so the account, the
+	 * profile, the default role, the audit entry and the mail are the same, but with {@code inSameTransaction} run with
+	 * the new user's ID before the transaction commits. If it throws, the account is removed again. Not limited by the
+	 * invitation rate limit: the import has its own. Package-private on purpose: only {@link UserImportService}, which
+	 * has checked that the caller is an administrator, may call it, and no other module can.
+	 *
+	 * @param email an address already normalised by {@link EmailAddresses}
+	 */
+	UUID inviteForImport(String email, Consumer<UUID> inSameTransaction) {
+		return createInvitedUser(email, inSameTransaction,
+				(id) -> AuditEntry.of("identity.user.invited", "user", id).withChange("source", "import")).profile().id();
+	}
+
+	/**
+	 * Invites the bootstrap administrator when the application starts, with no user to authorize it (Timetia ADR 0006).
+	 * Only {@link BootstrapAdministratorInvitation}, which has checked the setting and that nobody is an administrator,
+	 * calls it.
+	 */
+	UUID inviteBootstrapAdministrator(String email) {
+		return createInvitedUser(email, (id) -> { },
+				(id) -> AuditEntry.of("identity.bootstrap-admin.invited", "user", id)).profile().id();
+	}
+
+	/** Sends a bootstrap administrator's invitation again, at startup, when they have still not accepted it. */
+	void resendBootstrapInvitation(UUID id) {
+		this.transactions.executeWithoutResult((status) -> {
+			this.auditLog.record(AuditEntry.of("identity.bootstrap-admin.invitation-resent", "user", id));
+			this.events.publishEvent(new UserInvited(id, this.eventContexts.capture()));
+		});
 	}
 
 	/** Sends the invitation again to a user who has not accepted it. */
@@ -252,6 +264,33 @@ public class UserAdministration {
 
 	// ---------------------------------------------------------------------------------------------------------------
 
+	/**
+	 * The one way an invited account is made, shared by an invitation and by the import: the identity provider's account,
+	 * then in one transaction the profile, the default role, whatever {@code more} adds, the audit entry and the event
+	 * that sends the mail. {@code audit} builds the entry, so each way in is told apart in the log.
+	 */
+	private UserDetails createInvitedUser(String email, Consumer<UUID> more, Function<UUID, AuditEntry> audit) {
+		if (this.profiles.emailInUse(email)) {
+			throw ApiException.conflict(EMAIL_IN_USE, "Someone with this email address already has an account.");
+		}
+		UUID id = createAccount(email);
+		try {
+			return this.transactions.execute((status) -> {
+				UserProfile created = this.profiles.insert(new NewProfile(id, UserProfile.Status.INVITED,
+						new TokenFacts(email, email, null, null, true), this.clock.instant()));
+				this.roleAssignments.assignDefaultRole(id);
+				more.accept(id);
+				this.auditLog.record(audit.apply(id));
+				this.events.publishEvent(new UserInvited(id, this.eventContexts.capture()));
+				return details(created);
+			});
+		}
+		catch (RuntimeException ex) {
+			removeAccountAfterFailure(id);
+			throw ex;
+		}
+	}
+
 	private void changed(UUID id) {
 		this.events.publishEvent(new UserAccountChanged(id, this.eventContexts.capture()));
 	}
@@ -310,13 +349,11 @@ public class UserAdministration {
 	}
 
 	private static String validEmail(String email) {
-		String normal = (email == null) ? "" : email.strip().toLowerCase(Locale.ROOT);
-		if (!EMAIL.matcher(normal).matches()) {
+		return EmailAddresses.normalize(email).orElseThrow(() -> {
 			List<ApiFieldError> errors = new ArrayList<>();
 			errors.add(new ApiFieldError("email", "invalid_format", "must be a valid email address"));
-			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
-		}
-		return normal;
+			return ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
+		});
 	}
 
 	private static ApiException notFound() {

@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 429 with {@code Retry-After}, nothing is stored for it, and another user is not affected. Viewing is not limited.
  */
 @SpringBootTest(properties = { "kibootia.identity.bootstrap-admin-email=" + AdminApiTest.ADMIN_EMAIL,
+		"kibootia.identity.bootstrap-invite.enabled=false",
 		"kibootia.rate-limit.limits.uploads.capacity=2", "kibootia.rate-limit.limits.uploads.period=PT1H",
 		"kibootia.rate-limit.limits.admin-actions.capacity=100000", "kibootia.events.initial-backoff=PT0S",
 		"kibootia.events.max-backoff=PT0S" })

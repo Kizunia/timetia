@@ -61,6 +61,18 @@ public interface UserProfileStore {
 	/** Deleted profiles whose retention period has passed and whose erasure has not begun. */
 	List<UserProfile> findExpiredDeleted(Instant deletedBefore);
 
+	/**
+	 * Every profile, deleted ones too, that has this email address, ignoring case. Normally at most one; the column is not
+	 * unique, so a caller that needs one person must treat more than one as ambiguous.
+	 */
+	List<UserProfile> findByEmail(String email);
+
+	/**
+	 * The same for many addresses at once, for the import: the profiles by lower-cased address. An address nobody has is
+	 * absent from the map. The addresses must already be lower-cased.
+	 */
+	java.util.Map<String, List<UserProfile>> findByEmails(java.util.Collection<String> emails);
+
 	/** Whether a profile, deleted or not, already has this email address. */
 	boolean emailInUse(String email);
 
