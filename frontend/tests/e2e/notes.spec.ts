@@ -255,13 +255,16 @@ test("an administrator sees everyone's notes, deletes the user's note and restor
   await admin.goto("/notes");
   await admin.getByLabel("Show").click();
   await admin.getByRole("option", { name: "Everyone's notes" }).click();
-  await admin.getByLabel("Search").fill(STAMP);
+  // Search for each note by its title: the stamp alone also matches the 21 notes of the paging story, and the list pages at 20.
+  await admin.getByLabel("Search").fill(title("Admin only"));
   await admin.getByRole("button", { name: "Search" }).click();
   await expect(admin.getByRole("columnheader", { name: "Written by" })).toBeVisible();
+  await expect(rows(admin).filter({ hasText: title("Admin only") }).getByText("You", { exact: true })).toBeVisible();
+  await admin.getByLabel("Search").fill(title("Weekend plan"));
+  await admin.getByRole("button", { name: "Search" }).click();
   const row = rows(admin).filter({ hasText: title("Weekend plan") });
   await expect(row).toHaveCount(1);
   await expect(row.getByText(/^User /)).toBeVisible();
-  await expect(rows(admin).filter({ hasText: title("Admin only") }).getByText("You", { exact: true })).toBeVisible();
   await expectNoAccessibilityViolations(admin);
 
   await row.getByRole("link", { name: title("Weekend plan") }).click();

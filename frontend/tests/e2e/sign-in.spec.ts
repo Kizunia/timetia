@@ -10,7 +10,7 @@ async function signIn(page: Page, returnPath = "/") {
   await page.goto(returnPath === "/" ? "/" : returnPath);
   if (returnPath === "/") await page.getByRole("link", { name: "Sign in" }).click();
   // Keycloak's own login page, on its public address.
-  await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+  await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
   await page.locator("#username").fill(DEMO_USERNAME);
   await page.locator("#password").fill(demoPassword!);
   await page.locator("#kc-login").click();
@@ -50,12 +50,12 @@ test.describe("signing in through the Next.js server", () => {
 
     // The Keycloak session ended too: visiting a protected page asks for credentials again.
     await page.goto("/me");
-    await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+    await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
   });
 
   test("sends a signed-out visitor to sign in and back to the page they asked for", async ({ page }) => {
     await page.goto("/me");
-    await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+    await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
     await page.locator("#username").fill(DEMO_USERNAME);
     await page.locator("#password").fill(demoPassword!);
     await page.locator("#kc-login").click();

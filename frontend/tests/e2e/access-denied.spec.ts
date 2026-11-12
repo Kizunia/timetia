@@ -29,7 +29,7 @@ test("an ordinary user sees no administration, is told so, and the API refuses t
       users: await call("GET", "/api/v1/users"),
       roles: await call("GET", "/api/v1/roles"),
       audit: await call("GET", "/api/v1/audit-entries"),
-      invite: await call("POST", "/api/v1/users", JSON.stringify({ email: "nobody@kibootia.test" })),
+      invite: await call("POST", "/api/v1/users", JSON.stringify({ email: "nobody@timetia.test" })),
     };
   });
   for (const answer of Object.values(answers)) {

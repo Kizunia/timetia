@@ -11,7 +11,7 @@ import { expect, test } from "@playwright/test";
 test("the sign-in page offers no registration and the registration address is refused", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+  await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
   await expect(page.locator("#kc-login")).toBeVisible();
   await expect(page.getByRole("link", { name: "Register" })).toHaveCount(0);
 

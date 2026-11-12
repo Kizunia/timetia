@@ -17,12 +17,12 @@ let counter = 0;
 /** An address nobody has used, so tests can run again against the same stack. */
 export function freshEmail(prefix: string): string {
   counter += 1;
-  return `${prefix}.${Date.now().toString(36)}${counter}@kibootia.test`;
+  return `${prefix}.${Date.now().toString(36)}${counter}@timetia.test`;
 }
 
 /** Fills Keycloak's own login page, which both the application and the tests reach on its public address. */
 export async function signInOnKeycloak(page: Page, username: string, password: string) {
-  await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+  await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(password);
   await page.locator("#kc-login").click();
@@ -112,4 +112,42 @@ export function keycloakLink(mail: Mail): string {
   const link = /https?:\/\/localhost:8180\/[^\s<>"]+/.exec(mail.text)?.[0];
   if (!link) throw new Error(`There is no Keycloak link in the mail "${mail.subject}":\n${mail.text}`);
   return link;
+}
+
+/**
+ * Follows the invitation link Keycloak mailed, sets the password and the name. The order of Keycloak's steps and the
+ * confirmation page are Keycloak's, so this takes whichever page is shown, up to five times.
+ */
+export async function acceptInvitation(
+  page: Page,
+  request: APIRequestContext,
+  email: string,
+  firstName: string,
+  lastName: string,
+) {
+  await page.goto(keycloakLink(await mailTo(request, email)));
+  for (let step = 0; step < 5; step++) {
+    const proceed = page.getByRole("link", { name: /Click here to proceed/ });
+    if (await proceed.isVisible()) {
+      await proceed.click();
+    } else if (await page.locator("#password-new").isVisible()) {
+      await page.locator("#password-new").fill(NEW_PASSWORD);
+      await page.locator("#password-confirm").fill(NEW_PASSWORD);
+      await page.locator("input[type=submit], button[type=submit]").first().click();
+    } else if (await page.locator("#firstName").isVisible()) {
+      await page.locator("#firstName").fill(firstName);
+      await page.locator("#lastName").fill(lastName);
+      await page.locator("input[type=submit], button[type=submit]").first().click();
+    } else {
+      break;
+    }
+    await page.waitForLoadState("networkidle");
+  }
+}
+
+/** The number of mails Mailpit holds for an address. */
+export async function mailCountTo(request: APIRequestContext, address: string): Promise<number> {
+  const search = await request.get(`${MAILPIT}/api/v1/search`, { params: { query: `to:${address}` } });
+  expect(search.ok()).toBe(true);
+  return ((await search.json()) as { messages: unknown[] }).messages.length;
 }
