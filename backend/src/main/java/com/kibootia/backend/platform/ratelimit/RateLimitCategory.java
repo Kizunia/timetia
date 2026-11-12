@@ -19,7 +19,10 @@ public enum RateLimitCategory {
 	VERIFICATION_RESEND(3, Duration.ofHours(1)),
 
 	/** Uploading files; the avatar upload of milestone 4 applies it. */
-	UPLOADS(30, Duration.ofMinutes(10));
+	UPLOADS(30, Duration.ofMinutes(10)),
+
+	/** Running a provisioning import (Timetia): each run can create many accounts and send as many emails. */
+	IMPORTS(10, Duration.ofHours(1));
 
 	private final int defaultCapacity;
 
