@@ -1,6 +1,25 @@
 {
   "components" : {
     "schemas" : {
+      "AddScopedRoleRequest" : {
+        "properties" : {
+          "roleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "scopeCode" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "scopeId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "roleId" ],
+        "type" : "object"
+      },
       "AuditEntryResponse" : {
         "properties" : {
           "action" : {
@@ -46,6 +65,43 @@
           }
         },
         "required" : [ "action", "actor", "changes", "id", "occurredAt", "outcome", "targetType" ],
+        "type" : "object"
+      },
+      "Counts" : {
+        "properties" : {
+          "accountsCreated" : {
+            "description" : "People who got an account from this import (or would).",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "added" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "alreadyPresent" : {
+            "description" : "Assignments the person already held.",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "errors" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "notProcessed" : {
+            "description" : "Rows not reached; run the same file again.",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rows" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "skipped" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "accountsCreated", "added", "alreadyPresent", "errors", "notProcessed", "rows", "skipped" ],
         "type" : "object"
       },
       "CreateNoteRequest" : {
@@ -146,8 +202,51 @@
         "required" : [ "email" ],
         "type" : "object"
       },
+      "Line" : {
+        "properties" : {
+          "accountCreated" : {
+            "description" : "True when this row's person got their account from this import.",
+            "type" : "boolean"
+          },
+          "code" : {
+            "description" : "Why the row has the outcome, for ERROR, SKIPPED and NOT_PROCESSED.",
+            "type" : [ "string", "null" ]
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "line" : {
+            "description" : "The line in the file where the row starts; the header is line 1.",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "message" : {
+            "type" : [ "string", "null" ]
+          },
+          "outcome" : {
+            "enum" : [ "ADDED", "ALREADY_PRESENT", "ERROR", "SKIPPED", "NOT_PROCESSED" ],
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "scope" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "accountCreated", "email", "line", "outcome", "role", "scope" ],
+        "type" : "object"
+      },
       "MeResponse" : {
         "properties" : {
+          "administrator" : {
+            "description" : "True when the user is an administrator (Super Admin) with a verified address. A hint for showing controls; the backend decides every request.",
+            "type" : "boolean"
+          },
           "avatarVersion" : {
             "description" : "Changes whenever the avatar does; null when there is none. Use it to refresh a cached image.",
             "format" : "uuid",
@@ -199,7 +298,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "avatarsEnabled", "emailVerified", "filesEnabled", "id", "name", "permissions", "roles", "status", "theme" ],
+        "required" : [ "administrator", "avatarsEnabled", "emailVerified", "filesEnabled", "id", "name", "permissions", "roles", "status", "theme" ],
         "type" : "object"
       },
       "NoteResponse" : {
@@ -543,6 +642,9 @@
           "roleName" : {
             "type" : "string"
           },
+          "scopeCode" : {
+            "type" : [ "string", "null" ]
+          },
           "scopeId" : {
             "format" : "uuid",
             "type" : [ "string", "null" ]
@@ -613,6 +715,30 @@
           }
         },
         "required" : [ "description", "name", "permissions", "version" ],
+        "type" : "object"
+      },
+      "UserImportResponse" : {
+        "properties" : {
+          "counts" : {
+            "$ref" : "#/components/schemas/Counts"
+          },
+          "dryRun" : {
+            "description" : "True when nothing was written.",
+            "type" : "boolean"
+          },
+          "importId" : {
+            "description" : "Names the run in the audit log; null for a dry run.",
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
+          "lines" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Line"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "counts", "dryRun", "lines" ],
         "type" : "object"
       },
       "UserResponse" : {
@@ -2535,6 +2661,99 @@
         "tags" : [ "roles" ]
       }
     },
+    "/api/v1/user-imports" : {
+      "post" : {
+        "operationId" : "userImportsRun",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "dryRun",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserImportResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "user-imports" ]
+      }
+    },
     "/api/v1/users" : {
       "get" : {
         "operationId" : "usersList",
@@ -3636,6 +3855,104 @@
         },
         "tags" : [ "scoped-user-roles" ]
       },
+      "post" : {
+        "operationId" : "scopedUserRolesAdd",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddScopedRoleRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScopedRoleResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "scoped-user-roles" ]
+      },
       "put" : {
         "operationId" : "scopedUserRolesReplace",
         "parameters" : [ {
@@ -3720,6 +4037,102 @@
               }
             },
             "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "scoped-user-roles" ]
+      }
+    },
+    "/api/v1/users/{userId}/scoped-roles/{roleId}" : {
+      "delete" : {
+        "operationId" : "scopedUserRolesRemove",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "roleId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "scopeId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScopedRoleResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
           },
           "500" : {
             "content" : {

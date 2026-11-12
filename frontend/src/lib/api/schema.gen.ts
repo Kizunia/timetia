@@ -228,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/user-imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["userImportsRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users": {
         parameters: {
             query?: never;
@@ -381,8 +397,24 @@ export interface paths {
         };
         get: operations["scopedUserRolesGet"];
         put: operations["scopedUserRolesReplace"];
-        post?: never;
+        post: operations["scopedUserRolesAdd"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/scoped-roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["scopedUserRolesRemove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -392,6 +424,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddScopedRoleRequest: {
+            /** Format: uuid */
+            roleId: string;
+            scopeCode?: string;
+            /** Format: uuid */
+            scopeId?: string;
+        };
         AuditEntryResponse: {
             /** @description A stable code such as `access.role.assigned`. */
             action: string;
@@ -412,6 +451,31 @@ export interface components {
             targetId?: string | null;
             targetType: string;
             traceId?: string | null;
+        };
+        Counts: {
+            /**
+             * Format: int32
+             * @description People who got an account from this import (or would).
+             */
+            accountsCreated: number;
+            /** Format: int32 */
+            added: number;
+            /**
+             * Format: int32
+             * @description Assignments the person already held.
+             */
+            alreadyPresent: number;
+            /** Format: int32 */
+            errors: number;
+            /**
+             * Format: int32
+             * @description Rows not reached; run the same file again.
+             */
+            notProcessed: number;
+            /** Format: int32 */
+            rows: number;
+            /** Format: int32 */
+            skipped: number;
         };
         CreateNoteRequest: {
             body: string;
@@ -440,7 +504,28 @@ export interface components {
             email: string;
             roleIds?: string[];
         };
+        Line: {
+            /** @description True when this row's person got their account from this import. */
+            accountCreated: boolean;
+            /** @description Why the row has the outcome, for ERROR, SKIPPED and NOT_PROCESSED. */
+            code?: string | null;
+            email: string;
+            /**
+             * Format: int32
+             * @description The line in the file where the row starts; the header is line 1.
+             */
+            line: number;
+            message?: string | null;
+            /** @enum {string} */
+            outcome: "ADDED" | "ALREADY_PRESENT" | "ERROR" | "SKIPPED" | "NOT_PROCESSED";
+            role: string;
+            scope: string;
+            /** Format: uuid */
+            userId?: string | null;
+        };
         MeResponse: {
+            /** @description True when the user is an administrator (Super Admin) with a verified address. A hint for showing controls; the backend decides every request. */
+            administrator: boolean;
             /**
              * Format: uuid
              * @description Changes whenever the avatar does; null when there is none. Use it to refresh a cached image.
@@ -593,6 +678,7 @@ export interface components {
             /** Format: uuid */
             roleId: string;
             roleName: string;
+            scopeCode?: string | null;
             /** Format: uuid */
             scopeId?: string | null;
             scopeType: string;
@@ -613,6 +699,17 @@ export interface components {
             permissions: string[];
             /** Format: int64 */
             version: number;
+        };
+        UserImportResponse: {
+            counts: components["schemas"]["Counts"];
+            /** @description True when nothing was written. */
+            dryRun: boolean;
+            /**
+             * Format: uuid
+             * @description Names the run in the audit log; null for a dry run.
+             */
+            importId?: string | null;
+            lines: components["schemas"]["Line"][];
         };
         UserResponse: {
             /**
@@ -2169,6 +2266,80 @@ export interface operations {
             };
         };
     };
+    userImportsRun: {
+        parameters: {
+            query?: {
+                dryRun?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserImportResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     usersList: {
         parameters: {
             query?: {
@@ -3156,6 +3327,156 @@ export interface operations {
             };
             /** @description The record changed meanwhile, or the request clashes with its state. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    scopedUserRolesAdd: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddScopedRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopedRoleResponse"][];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    scopedUserRolesRemove: {
+        parameters: {
+            query?: {
+                scopeId?: string;
+            };
+            header?: never;
+            path: {
+                userId: string;
+                roleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopedRoleResponse"][];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
