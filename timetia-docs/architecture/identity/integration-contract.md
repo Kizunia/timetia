@@ -83,12 +83,42 @@ The module that owns departments, divisions and batches provides one bean implem
 
 The rule you must keep: **within a tenant and a kind, a code names at most one live place.** A division called `A` that exists in several departments breaks it; a code such as `CSE-A` does not. The import and the screen name places by code, so people will write these codes in files. Agree the format with the security owner before the data is loaded. A deleted place must not be found by `idOf`, and an assignment to a place that is later deleted stays until an administrator removes it; it then matches no record, and the screen shows its id because `codesOf` has no code for it.
 
-To test your implementation, the tests use `ScopeFixtures.FakeScopeDirectory` (`add(kind, id, code)`); `UserImportIT` and `ScopedAssignmentsApiIT` show what the callers do with it.
+**What the callers do with your answers, so you know what you are held to:**
+
+- A place is accepted only if `idOf` (for a code) and `exists` (for the id, always) both say yes. Anything else is refused as `unknown_scope`.
+- **If your methods throw, the place is refused as `access.scope_unvalidated` (409).** Nothing is accepted, nothing is a 500, and a global role still works. The caller logs only the exception's class name, so do not put a code or an address in an exception message and expect it to be hidden elsewhere. Showing an assignment falls back to the id when `codesOf` throws.
+- The caller never caches. Every assignment and every import row asks you.
+
+**The contract as a test.** `ScopeDirectoryContract` (in `backend/src/test/java/com/kibootia/backend/platform/fixtures`) is an abstract JUnit class holding the rules above: live places exist and are found by code; unknown ones are not; kinds are separate; a deleted place is not found by id or code and has no code; a code freed by a deleted place can name a new place and then names only that one; a mixed list is answered correctly; odd questions (unknown kind, blank or null code, empty list) get an empty answer and not an exception; answers are stable; **a place of another tenant is invisible**. To prove your provider meets it, extend the class in your module's test, build your provider against a test database, and implement three hooks (`newDirectory`, `addPlace`, `deletePlace`) and `addPlaceInAnotherTenant`. `ScopeDirectoryContractTest` does this for the test double, so the double cannot pass tests that a real provider would fail. A provider that does not pass this class is not ready to be wired in.
+
+The tests use `ScopeFixtures.FakeScopeDirectory` (`add(kind, id, code)`, `remove`, `setUnavailable`). `UserImportIT` and `ScopedAssignmentsApiIT` show what the callers do with it, including a directory that is down and a place that was deleted.
+
+### A worked example
+
+`AuthorizationWorkedExampleIT` (`backend/src/test/java/com/kibootia/backend/academic`) is a ticket service written the way your module would write its own, and it runs against the real decision point, the real roles and a real database. Copy its shape. `ExampleTickets` in that file is the model; the order matters:
+
+1. **One record.** Load it. If it does not exist or `can(view…)` is false for the caller, throw not-found (404), so a forbidden record is not revealed. Then check the action: if the caller may see it and may not do this, throw `AccessDeniedException` (403). Then apply **your own** state rules (already reverted, final, the lecture has started). The policy decides who; it never knows the state.
+2. **A list.** Never load everything and filter in memory, and never page before filtering. Call `authorization.reach(action)` and turn it into a condition on your columns: `everywhere` means no filter; department ids filter your department column; division ids filter your division column **and** `session_type = THEORY`; batch ids go through the table that lists a lecture's batches **and** `session_type in (LAB, TUTORIAL)`; an empty reach means return nothing without querying. Add rights that come from a relation (`author_user_id = :me`) **only if** the caller holds that permission somewhere (`!reach(…).isEmpty()`).
+3. **Prove the list.** The example's test `listAgreesWithRecords` checks, for 11 people and 5 tickets, that the list contains exactly what the single-record decision allows. Write that test for every list you make; it is the only thing that catches a query that drifts from the policy. The theory-only rule in the query was removed on purpose and two tests failed.
+
+What it does not show: an HTTP controller (map the two exceptions as the other modules do) and your real facts class (implement `TicketAccessFacts` on your own entity or a small adapter; the example uses the test record `Facts`).
 
 ### Tests
 
 - Every endpoint is included automatically in the "401 without a token" sweep in `ResourceServerIT`.
-- Helpers for administrators, users and role setup are in `AdminApiTest` and `GrantedPermissions`. A test that needs the Timetia roles calls `RoleTemplateSeeder.seed()`, and one that gives roles within scopes imports `ScopeFixtures` for a stand-in scope directory.
+- **To test a role in a place, extend `AcademicApiTest`** (same folder as the example). It seeds the six roles and a small campus (department A `CSE` holds division 1 `CSE-A` and batch 1 `CSE-A1`; department B `ME` holds division 2 and batch 2), and gives you one-line people and questions:
+
+  ```java
+  UUID hod = hodOf(Facts.DEPARTMENT_A);
+  UUID cr = crOf(Facts.DIVISION_1);
+  assertThat(can(hod, AcademicPermissions.TICKETS_REVERT_IN_SCOPE, ticketInDepartmentA)).isTrue();
+  assertThat(can(hod, AcademicPermissions.TICKETS_REVERT_IN_SCOPE, ticketInDepartmentB)).isFalse();
+  assertThat(reachOf(cr, AcademicPermissions.TICKETS_VIEW_IN_SCOPE).idsOf("DIVISION")).containsExactly(Facts.DIVISION_1);
+  unassign(hod, HOD, Facts.DEPARTMENT_A);   // the role is gone on the next question
+  ```
+
+  People are given roles through the real API, as the screen does, so everything enforced there is enforced in your test. The scope directory is a stand-in, because the application has none yet.
+- Other helpers for administrators, users and role setup are in `AdminApiTest` and `GrantedPermissions`. A test that needs the Timetia roles without the base class calls `RoleTemplateSeeder.seed()`, and one that gives roles within scopes imports `ScopeFixtures` for a stand-in scope directory.
 - For each protected use case write an allowed test and a denied test. For each list write a scope test. [Testing and verification](testing-and-verification.md).
 
 ## Not built yet
@@ -98,6 +128,8 @@ To test your implementation, the tests use `ScopeFixtures.FakeScopeDirectory` (`
 | A **scope directory**: something that says a department, division or batch exists, and what its code is | Nobody provides it in the application. The port (`ScopeDirectory`) exists. **Until a module provides it, a role that needs a place cannot be assigned**, by the screen or by an import: the assignment is refused with `access.scope_unvalidated`. Global roles work. The owner of department, division and batch data implements the port. See "The scope directory" below ([OQ-A15](open-questions.md)). |
 | Facts for tickets, lectures and issues | The interfaces exist. The module that owns the records implements them when it exists. |
 | A person directory | Deferred. The facts carry user ids. |
+| A way for a person to see their own roles in a place | Not built. `GET /me` lists platform roles and flat permissions only; a role in a place is shown to an administrator on the person's page and to nobody else. Checked in the browser on 2026-11-12: a person holding Faculty sees only `User` on their profile. A screen that needs it ("what can I do here") needs an endpoint first. |
+| An owner for the scope directory | The owner is a teammate who has not been named in this repository. When named, record them in [OQ-A15](open-questions.md). |
 | Expiry of a role at the end of a term | Not designed. See [OQ-A2](open-questions.md). |
 
 ## What to do now

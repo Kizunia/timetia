@@ -20,6 +20,8 @@ Decisions about authentication and authorization that the documents and the code
 | OQ-A1 Who owns department, division and batch data? | Not security. A scope directory port, failing closed until implemented | [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md) |
 | OQ-A8 Self-registration | Off in the Timetia realm | [ADR 0005](../../decisions/0005-identity-hardening-decisions.md) |
 | OQ-A13 How far does the rename go? | Identity-facing names only | [ADR 0005](../../decisions/0005-identity-hardening-decisions.md) |
+| OQ-A15 Who builds departments, divisions and batches? (answer only; the work is still open above) | A teammate, not security. Security supplies the port and the contract test | 2026-11-12, owner |
+| Are the Phase 3 defaults (points 5 to 14 of ADR 0006, and OQ-A2 to OQ-A5) approved? | **No: they stay recorded as the author's defaults** until the owner reviews them one by one | 2026-11-12, owner |
 | OQ-A10 How do students get accounts? | Like everyone else: an account and an invitation email each, from the email in the data. The owner confirmed thousands of emails are acceptable and that every student's address will be in the data | [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md) |
 | What does a repeated import do to roles a person already has? | Nothing: an import only adds. Removals are made one at a time in the screen | [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md) |
 | How does a file name a department, division or batch? | By its code. The scope directory port looks codes up and still fails closed | [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md) |
@@ -57,6 +59,15 @@ Recorded in [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md), poin
 - **What it must provide:** `exists(kind, id)`, `idOf(kind, code)` and `codesOf(kind, ids)` for the kinds `DEPARTMENT`, `DIVISION` and `BATCH`, with one rule: within a tenant and a kind a code names at most one live place, compared the same way every time. A division called `A` in several departments does not satisfy it; `CSE-A` does.
 - **Options:** the owner of the timetable and academic reference data implements the port when their module exists (the contract is in the [integration contract](integration-contract.md)); or security owns minimal reference tables (rejected in [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md)); or a directory read from configuration for local use (rejected: it invents data).
 - **Recommendation:** ask the owner of the academic data to implement the port, and agree the code format with them first, because the codes are what people will write in files.
+- **Answer so far (2026-11-12, from the owner):** a teammate owns the data and implements the port; security does not build reference tables. **The teammate is not named anywhere in the repository, and no code for it exists** (checked: no module, migration or branch holds departments, divisions or batches). Phase 3 therefore stays open.
+- **What to give the teammate:** the [scope directory section of the integration contract](integration-contract.md); `ScopeDirectoryContract` (extend it in their module's test, it must pass, including the other-tenant case); the code rule (one live place per code within a tenant and a kind, so a division code like `CSE-A`, not `A`); and the agreed code format, which still has to be decided with them. When they have it, wire nothing else: the bean is found by type, and the end-to-end specs for HOD, CR, BR and Student can then be written against it.
+- **Status of the owner:** **to be named.** Record the name here.
+
+### OQ-A16. Should users be unable to change their own email address?
+
+- **Why it matters:** with Keycloak's default, a person can change their own address in the account console, and the address is how an import finds a person and how the first Super Admin is recognised. See [ADR 0007](../../decisions/0007-users-cannot-edit-their-own-email.md).
+- **Done as a proposal:** the realm now lets only an administrator change `email` and `username`. This was taken by the author as a security fix; it changes what users can do (a mistyped address needs an administrator to correct it).
+- **Needs from the owner:** confirm it, or say to revert it (delete the two `edit = ["admin"]` lines in `infra/keycloak/base/main.tf`) and accept the risk.
 
 ## Open: not needed for Phases 0 to 3
 
@@ -78,14 +89,14 @@ Who raises a permanent change, whether an HOD's own permanent change needs a sec
 
 ## Document repairs
 
-Documents that disagree with each other or with a decision. Planned as W4.5, not edited now.
+Documents that disagree with each other or with a decision. Planned as W4.5. On 2026-11-12 the three that only needed a pointer were done; the four that need a decision are still open, and the list is therefore not empty.
 
 | Document | Problem | Fix |
 | --- | --- | --- |
-| [data model fixes](../../research/data-model-fixes.md), F-A2 | Proposes a local password and an auth provider, which [ADR 0001](../../decisions/0001-authentication-follows-kibootia.md) does not adopt | Add a pointer to the decision |
-| [data model fixes](../../research/data-model-fixes.md), F-G2 | Removes Faculty and Student from roles. Timetia keeps them as role templates ([ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md)) | Note the outcome |
-| [Super Admin](../../shared/roles/super-admin.md) and [roles and powers](../../modules/lecture-rescheduling/rules/permissions.md) | Do not mention user and role administration, which [ADR 0003](../../decisions/0003-role-administration-by-import-and-super-admin.md) assigns. Dated 2026-10-27 yet contain later changes | Update after the work exists |
-| [rules index](../../modules/lecture-rescheduling/rules/README.md) and the module changelog | Describe shared courses as skipped. The shared-courses rule and a later changelog entry enable them | Align |
-| [ticket lifecycle](../../modules/lecture-rescheduling/rules/ticket-lifecycle.md) | Says student ticket visibility is open. The module's open questions say results only | Align |
-| [archived spec](../../modules/lecture-rescheduling/_archive/original-spec.md) versus [conflict rules](../../modules/lecture-rescheduling/rules/conflict-rules.md) | The spec lets Super Admin override a ticket. The rules say nobody overrides a conflict | The rules win, and the archive says so |
-| [STRUCTURE.md](../../STRUCTURE.md) | Describes folders and files that do not exist (`product/`, `engineering/`, a permissions matrix, a README) | Update or create them as the migration proceeds |
+| [data model fixes](../../research/data-model-fixes.md), F-A2 | Proposes a local password and an auth provider, which [ADR 0001](../../decisions/0001-authentication-follows-kibootia.md) does not adopt | **Done 2026-11-12:** an outcome note points to the decision |
+| [data model fixes](../../research/data-model-fixes.md), F-G2 | Removes Faculty and Student from roles. Timetia keeps them as role templates ([ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md)) | **Done 2026-11-12:** the outcome is noted |
+| [Super Admin](../../shared/roles/super-admin.md) and [roles and powers](../../modules/lecture-rescheduling/rules/permissions.md) | Do not mention user and role administration, which [ADR 0003](../../decisions/0003-role-administration-by-import-and-super-admin.md) assigns. Dated 2026-10-27 yet contain later changes | **Open.** The work now exists, so these can be updated; left because the wording of a role's powers is the owner's |
+| [rules index](../../modules/lecture-rescheduling/rules/README.md) and the module changelog | Describe shared courses as skipped. The shared-courses rule and a later changelog entry enable them | **Open.** Which document is right is a product decision, not made here |
+| [ticket lifecycle](../../modules/lecture-rescheduling/rules/ticket-lifecycle.md) | Says student ticket visibility is open. The module's open questions say results only | **Open.** Same: a product decision (see OQ-A11) |
+| [archived spec](../../modules/lecture-rescheduling/_archive/original-spec.md) versus [conflict rules](../../modules/lecture-rescheduling/rules/conflict-rules.md) | The spec lets Super Admin override a ticket. The rules say nobody overrides a conflict | **Done 2026-11-12:** the archive's banner says the rules win |
+| [STRUCTURE.md](../../STRUCTURE.md) | Describes folders and files that do not exist (`product/`, `engineering/`, a permissions matrix, a README) | **Open.** Not identity; left |

@@ -29,7 +29,7 @@ Each work package ends with a check that can be shown to someone else.
 
 ## Status on 2026-11-12
 
-Phases 0, 1 and 2 are implemented. Phase 3 is implemented **except for what needs a scope directory** (see the gates below). Phase 4 is not started. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). Nothing is called verified without a named CI run, and no CI run has been made of these changes.
+Phases 0, 1 and 2 are implemented. Phase 3 is implemented and, since the local end-to-end run described in [testing and verification](testing-and-verification.md), **shown working against a real Keycloak, MySQL and mail catcher for everything that does not need a scope directory**; what needs one is blocked on its owner (see the gates below). Phase 4 is **partly done**: the worked example, the test fixtures and the per-role end-to-end tests for the roles that can be given are in; the teammate review and the roles that need places are not. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). **Nothing is called verified without a named CI run** (see the CI line there).
 
 | Work package | Status |
 | --- | --- |
@@ -47,16 +47,31 @@ Phases 0, 1 and 2 are implemented. Phase 3 is implemented **except for what need
 | W2.4 | Done: policy-decided permissions, `ScopedResourcePolicy`, `Authorization.reach`. |
 | W2.5 | **Dropped from this phase.** The facts carry user ids, so no person directory is needed ([ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md), point 7). |
 | W2.6 | Security's half is done: the facts interfaces and the rules. Nothing implements the facts yet, because the ticket and timetable modules do not exist. |
-| W2.7 | Security's half is done: the `ScopeDirectory` port and the fail-closed behavior. **Nothing provides department, division and batch data, so a role that needs a place cannot be assigned in the running application** until its owner implements the port. Tests use a fake. |
+| W2.7 | Security's half is done: the `ScopeDirectory` port, the fail-closed behavior (**including a directory that throws, which is now refused as `scope_unvalidated` and not a 500**), and `ScopeDirectoryContract`, a test the owner extends to prove their provider. **Nothing provides department, division and batch data, so a role that needs a place cannot be assigned in the running application** until its owner implements the port. The owner is a teammate who is not named in the repository. Tests use a fake that is held to the same contract. |
 | W2.8 | Done: each assignment and removal writes one audit entry with the role, the scope type and the place. |
 | W3.1 | Implemented, with tests: a CSV import (`POST /api/v1/user-imports`, dry run first), add only, Super Admin only, places named by code, bounded, audited. **Rows that name a place are refused until a scope directory exists**; Super HOD and Faculty import today. Decisions: [ADR 0006](../../decisions/0006-provisioning-and-bootstrap.md). |
-| W3.2 | Implemented, with unit tests: "Roles in a place" on the user page (add and remove one assignment at a time, Super Admin only) and an Import screen. **The browser end-to-end test and its accessibility check were not run.** Adding or removing a role that needs a place fails closed for the same reason as W3.1. |
-| W3.3 | Implemented, with tests: the application invites the configured address at startup while no administrator exists, and that person becomes Super Admin at first sign-in. Not run against a real Keycloak. |
-| W3.4 | Written: [provisioning runbook](../../operations/provisioning.md). **Not yet followed by someone else**, which is the condition for done. |
+| W3.2 | Implemented, with unit tests and, since 2026-11-12, **end-to-end tests run in a browser against the local stack**: check then import a file, a repeat, the refusal when adding HOD in a department on a person's page, and a non-administrator who is refused. Their accessibility checks found real failures (contrast, a table the keyboard could not scroll, a page with no heading), which were fixed. Adding or removing a role that needs a place fails closed for the same reason as W3.1. |
+| W3.3 | Implemented, with tests, **and run on 2026-11-12 on a fresh environment against a real Keycloak**: the application invited the configured address at startup, a restart before acceptance sent the link again, the person accepted and became Super Admin at first sign-in (audited once), a restart afterwards sent nothing, and the seeded demo administrator stayed an ordinary user. |
+| W3.4 | Written: [provisioning runbook](../../operations/provisioning.md), then **followed by its author** against the local stack (first Super Admin, check, import, repeat, the `account_without_profile` recovery) and corrected. **Not yet followed by someone else**, which is the condition for done. Production steps have not been run: there is no production environment. |
+| W4.1 | Done as a test: `AuthorizationWorkedExampleIT`, a ticket service written as another module would write it (record check with 404 and 403, a list filtered from `reach`, the module's own state rule), with a test that its list agrees with the single-record decision for every person and ticket. Quoted in the [integration contract](integration-contract.md). It is not an HTTP endpoint and not a production module. |
+| W4.2 | Done: `AcademicApiTest`, so "HOD of department A" is one line. |
+| W4.3 | **Partly done.** End-to-end tests with accessibility checks exist for Super Admin, Super HOD and Faculty (`provisioning.spec`, `bootstrap.spec`, `identity.spec`). HOD, CR, BR and Student are blocked on the scope directory. Not yet run in CI: the branch has not been pushed. |
+| W4.4 | **Not done.** It needs a teammate. A task brief for it is in the [handover checklist](handover-checklist.md). |
+| W4.5 | **Partly done: 3 of 7.** The three that needed only a pointer are done. The four that need a product decision (shared courses, student ticket visibility, the wording of Super Admin's powers, STRUCTURE.md) are open; see [open questions](open-questions.md). The done-when ("the list is empty") is not met. |
 
 **Gates.** The gates of Phases 1 and 2 below ask for a named CI run and an end-to-end run. **Neither exists**, so the gates are **not met**; the work is implemented and passes the local runs in [testing and verification](testing-and-verification.md). Two further things stand between Phase 2 and a working Timetia: a module that provides departments, divisions and batches (so scoped roles can be given), and teammates implementing the facts for their records.
 
-**The Phase 3 gate is not met, and one part of it is blocked.** It asks for "a seeded user of each role signs in and sees the right things in a local environment, shown in an end-to-end test". Three things are missing: no end-to-end test was run; the runbook has not been followed by someone else; and **HOD, CR, BR and Student cannot be given at all in the running application** because nothing implements `ScopeDirectory` ([OQ-A15](open-questions.md)). What is shown instead is in [testing and verification](testing-and-verification.md): an imported person signs in and holds the permissions of their role, in integration tests with a stand-in directory.
+**The Phase 3 gate is not met, and one part of it is blocked.** It asks for "a seeded user of each role signs in and sees the right things in a local environment, shown in an end-to-end test". What is now shown, and what is not:
+
+| Part of the gate | State |
+| --- | --- |
+| An end-to-end test runs against the local stack | **Met locally** (39 passed on a fresh stack, 2026-11-12). Not in CI. |
+| Super Admin, Super HOD and Faculty each sign in | **Met locally.** They are imported, invited, accept, sign in, see no administration and are refused by the API. |
+| They "see the right things" | **Not demonstrable through the application.** No endpoint or screen yet uses the permissions of these roles, and a person cannot see their own roles in a place. The permissions are proven in integration tests with the real decision point (`AcademicAuthorizationIT`, the worked example), not through HTTP. |
+| HOD, CR, BR and Student sign in with the right scope | **Blocked.** Nothing implements `ScopeDirectory` ([OQ-A15](open-questions.md)); the application refuses these roles, which is the correct behavior and is itself tested end to end. |
+| The runbook was followed by someone else | **Not met.** Followed by its author only. |
+
+So the gate stays open until the scope directory exists and the HOD, CR, BR and Student paths are run, and a teammate has followed the runbook. Nothing was faked to make it pass.
 
 
 ## Phase 0: Decide and document

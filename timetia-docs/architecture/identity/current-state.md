@@ -38,8 +38,12 @@ The classification below describes the inherited code as audited on 2026-11-11. 
 | `administrator` on `GET /me` (Phase 3) | A hint for showing administrator-only controls | `identity/application/ProfileService`, `identity/web/MeResponse` |
 | Screens (Phase 3) | "Roles in a place" on the user page; an Import section | `frontend/src/features/access/ScopedRolesEditor.tsx`, `features/identity/ImportScreen.tsx` |
 | Rate limit (Phase 3) | A new `imports` category, ten an hour | `platform/ratelimit/RateLimitCategory` |
+| A scope directory that fails is a refusal (Phase 3 completion) | A `ScopeDirectory` that throws makes the place `access.scope_unvalidated` (409), never a 500 and never an accept; showing codes falls back to ids | `access/application/ScopedAssignmentService.place`, `codesOf` |
+| Users cannot edit their email or username (Phase 3 completion) | Only an administrator may, in the realm's user profile. **Proposed, not confirmed by the owner** ([ADR 0007](../../decisions/0007-users-cannot-edit-their-own-email.md)) | `infra/keycloak/base/main.tf` |
+| Accessibility fixes | Two light-theme colour tokens darkened; a keyboard-reachable scrolling table (`scrollLabel`); a heading on the note error page | `frontend/src/app/globals.css`, `components/ui/table.tsx`, `features/notes/NoteEditor.tsx` |
+| Test support for other modules (Phase 4) | `AcademicApiTest` (roles in places in one line), `ScopeDirectoryContract` (what a scope directory must do), `AuthorizationWorkedExampleIT` (the model for a module) | `backend/src/test/.../academic`, `platform/fixtures` |
 
-Still true of the application: no module provides departments, divisions and batches, so a role that needs a place cannot be assigned (it is refused) by the screen or by an import, and no module yet implements the facts interfaces. See the [integration contract](integration-contract.md) and [OQ-A15](open-questions.md).
+Still true of the application: no module provides departments, divisions and batches, so a role that needs a place cannot be assigned (it is refused) by the screen or by an import, and no module yet implements the facts interfaces. A person cannot see their own roles in a place (`GET /me` lists platform roles only), and nothing in the running application uses the permissions of the Timetia roles yet, so they are proven in integration tests and not through HTTP. See the [integration contract](integration-contract.md) and [OQ-A15](open-questions.md).
 
 ## Classification
 

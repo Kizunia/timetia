@@ -8,7 +8,7 @@
 
 How to get the first Super Admin, load people with their roles from a file, and fix mistakes. It follows [ADR 0006](../decisions/0006-provisioning-and-bootstrap.md) and is written for the person who runs the system, a Super Admin.
 
-**Status of this runbook.** It describes what the code does and was written from the code and its tests. **Nobody other than its author has followed it yet**, which the [implementation plan](../architecture/identity/implementation-plan.md) (W3.4) asks for. **Roles that need a department, division or batch cannot be given yet**: nothing in the application provides those places ([what that means](#what-does-not-work-yet)).
+**Status of this runbook.** On 2026-11-12 its author followed the first-Super-Admin, import, repeat-import and recovery steps against a running local stack (real Keycloak, MySQL and Mailpit; see [testing and verification](../architecture/identity/testing-and-verification.md)), and corrected it where it was wrong. **Nobody other than its author has followed it yet**, which the [implementation plan](../architecture/identity/implementation-plan.md) (W3.4) asks for, so it is not marked done. The steps for a production environment (a real mail server, a production Keycloak) have not been run at all, because neither exists yet. **Roles that need a department, division or batch cannot be given yet**: nothing in the application provides those places ([what that means](#what-does-not-work-yet)).
 
 ## The two ideas to hold on to
 
@@ -20,18 +20,19 @@ How to get the first Super Admin, load people with their roles from a file, and 
 A fresh environment has no administrator, and self-registration is off, so nobody can invite anybody. The application deals with this itself.
 
 1. Set the address of the person who will be Super Admin, in the backend's environment:
-   `KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL=name@college.example` (the setting is `kibootia.identity.bootstrap-admin-email`).
-2. Start the application. If nobody holds the administrator role, it creates an account for that address in the identity provider and sends the invitation, as it would for any invited person. The log says so (a warning: "the bootstrap administrator was invited").
+   `KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL=name@college.example` (the setting is `kibootia.identity.bootstrap-admin-email`). Locally this is a line in the root `.env`, which compose passes to the backend. **Changing `.env` needs the backend container recreated** (`docker compose up -d backend`); `docker restart` keeps the old value.
+2. Start the application. If nobody holds the administrator role, it creates an account for that address in the identity provider and sends the invitation, as it would for any invited person. The log says so (a warning: "No administrator exists, so the bootstrap administrator was invited") and the audit log gets `identity.bootstrap-admin.invited`. Locally the mail is in Mailpit at http://localhost:8025.
 3. That person follows the link in the email, sets a password and signs in. At that first sign-in with the verified address they become Super Admin, and the audit log gets `identity.bootstrap-admin.granted`.
 4. After that the setting does nothing, whatever it says. You may clear it.
 
 What to know:
 
 - **Only that address, only while there is no administrator.** Anyone else who signs in is an ordinary user, and so is the same person if they sign in with a different or unverified address.
-- **The link expires** after 7 days (`kibootia.identity.link-lifespan`). If that person has not signed in and there is still no administrator, **restart the backend**: it sends the link again and the audit log gets `identity.bootstrap-admin.invitation-resent`.
+- **The link expires** after 7 days (`kibootia.identity.link-lifespan`). If that person has not signed in and there is still no administrator, **restart the backend**: it sends the link again and the audit log gets `identity.bootstrap-admin.invitation-resent`. Each restart sends one more mail, and the newest link is the one to follow. Once an administrator exists a restart sends nothing, whatever the setting says. (All three were observed: one mail at the first start, a second after one restart, none after the person became administrator.)
 - **If the identity provider is down at startup**, the application starts anyway and logs that it was not invited. Start it again when the identity provider is up.
 - **If the identity provider already has an account for that address** (the local demo administrator, or an account made by hand), nothing is created. That person becomes Super Admin when they sign in, by the same rule. An account made by hand must have its email marked verified.
-- Locally, `demo-admin@timetia.localhost` is already seeded, so nothing is sent.
+- Locally, `demo-admin@timetia.localhost` is already seeded, so nothing is sent. Only the configured address becomes Super Admin: if the setting names another address, `demo-admin` signs in as an ordinary user (observed).
+- **To start a local environment again with no administrator**, remove its volumes (`docker compose down -v` removes the database, Keycloak's data and the mail), set the address, and start it. Do not do this to an environment with real data.
 
 To check it worked: sign in as that person. The Administration menu is there, with an Import section, and the audit log has `identity.bootstrap-admin.granted`.
 
@@ -119,7 +120,7 @@ A refused file (nothing is read) gives one message instead of a table: not UTF-8
 
 - **A wrong cell, found before importing.** Correct the file and check again.
 - **A wrong cell, found after importing.** An import cannot be undone, only corrected. Correct the file and send it again to add what was missing. Then take away what was wrong on the user's page, **Roles in a place**, with **Remove**, one assignment at a time. A role given by mistake has been in force since the import; roles apply from the next request.
-- **A person invited with a wrong address.** Disable them on the Users page. The invitation goes to the wrong mailbox, so also correct the file and import the right address, which creates a second person.
+- **A person invited with a wrong address.** Disable them on the Users page. The invitation goes to the wrong mailbox, so also correct the file and import the right address, which creates a second person. A person cannot change their own address in Keycloak's account console: only an administrator can, in Keycloak's admin console ([ADR 0007](../decisions/0007-users-cannot-edit-their-own-email.md), proposed). Their address in Timetia follows the token at their next sign-in.
 - **A person who should lose a role.** Remove it on their page. A file never removes.
 
 ## Onboarding a term
@@ -133,8 +134,8 @@ A refused file (nothing is read) gives one message instead of a table: not UTF-8
 
 **`account_without_profile` for an address.** The identity provider has an account that this application has no profile for. This happens when an earlier row failed and the account could not be removed again, or when someone made the account by hand. The person cannot be invited again until it is resolved.
 
-1. In the identity provider's admin console, find the user by email.
-2. If it was made by a failed import (no password set, no one has signed in with it), delete it, then send the file again.
+1. In the identity provider's admin console (locally http://localhost:8180, realm `timetia`, **Users**), find the user by email.
+2. If it was made by a failed import (no password set, no one has signed in with it), delete it, then send the file again. (Reproduced on 2026-11-12 by creating such an account by hand: the import reported `account_without_profile`; after the account was deleted the same file added the role and sent one invitation, and sending it a third time reported "Already there".)
 3. If it is a real account someone made by hand, ask that person to sign in once. The application then creates their profile, and the next import adds their roles.
 
 **`Another import is running`.** Wait for the other to finish and try again. If none is running, the lock frees itself within about four minutes.
@@ -163,3 +164,4 @@ All are optional; these are the defaults.
 - **A check does not ask the identity provider.** It cannot know an address the identity provider has without a profile here; that shows up in the real import as `account_without_profile`.
 - **No end date on a role.** Roles are removed by hand.
 - **Students and email.** Every new student gets an invitation, so their addresses must be in the file. There is no on-demand creation at first contact.
+- **A person cannot see their own roles in a place.** Their profile page lists platform roles only (`User`, `Administrator`). To know what someone holds, open their page on **Administration → Users**, section **Roles in a place**. Nothing in the running application yet shows a person what they may do, because no module that uses these roles exists.

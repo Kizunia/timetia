@@ -64,6 +64,8 @@ If you go back to ERP-coupled: drop `password_hash`, mark Module A tables read o
 
 ### F-A2 Authentication
 
+
+> **Outcome (2026-11-12):** not adopted. Timetia signs people in through Keycloak and keeps no password ([ADR 0001](../decisions/0001-authentication-follows-kibootia.md)), so `auth_provider` and `password_hash` are not needed.
 `UserAccount`: add `auth_provider` ENUM(LOCAL, ERP_SSO) DEFAULT LOCAL; `password_hash` becomes NULL allowed with CHECK (`auth_provider`='ERP_SSO' OR `password_hash` IS NOT NULL). Prototype uses LOCAL, ERP later flips to ERP_SSO with no table change.
 
 ### F-B1 Ticket status
@@ -268,6 +270,8 @@ UNIQUE (`department_id`, `slot_no`); the default grid uses a fixed department va
 
 ### F-G2 Single source of truth, one HOD
 
+
+> **Outcome (2026-11-12):** partly not adopted. Faculty and Student stay as role templates that carry permissions, with the relations taken from the facts the owning module supplies ([ADR 0004](../decisions/0004-scoped-assignments-and-policy-decided-permissions.md)). One active HOD per department is a rule of whoever owns the department data.
 Remove STUDENT and FACULTY from `Role`; they are the `Student` and `Faculty` profiles. UNIQUE on active HOD per department using a generated column (`department_id` where `valid_until` IS NULL and role is HOD). Roles tied to a term-specific division expire with the term: set `valid_until` to the term end when the term completes.
 
 ### F-H1 Issue scope, closer, faculty mentions

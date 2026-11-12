@@ -1,6 +1,6 @@
 # Lecture Rescheduling Module (original spec, archived)
 
-> **Archived 2026-11-06.** This single-file spec has been split into the module folder (see [module README](../README.md)). It is kept for history only. The module files win wherever they differ. In particular, version 1 is **standalone** ([decision 0001](../decisions/0001-standalone-version-1.md)), so the ERP-ownership statements below no longer apply to version 1.
+> **Archived 2026-11-06.** This single-file spec has been split into the module folder (see [module README](../README.md)). It is kept for history only. The module files win wherever they differ. In particular, version 1 is **standalone** ([decision 0001](../decisions/0001-standalone-version-1.md)), so the ERP-ownership statements below no longer apply to version 1. Likewise, this spec lets Super Admin override a ticket, while the [conflict rules](../rules/conflict-rules.md) say nobody overrides a conflict: the rules win.
 
 > Status: **Draft spec** (ideation stage, no implementation yet)
 > Last updated: 2026-10-27
