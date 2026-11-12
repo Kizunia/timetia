@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-12
 
-The roles, scopes and permission catalogue that Phase 2 implements, with the rule for each permission. It follows [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md). Everything is derived from [roles and powers](../../modules/lecture-rescheduling/rules/permissions.md), the [approval model](../../modules/lecture-rescheduling/rules/approval-model.md), [reverts](../../modules/lecture-rescheduling/rules/reverts.md), [ticket lifecycle](../../modules/lecture-rescheduling/rules/ticket-lifecycle.md), [issues](../../modules/lecture-rescheduling/rules/issues-from-cr-and-br.md) and the [role files](../../shared/roles/README.md).
+The roles, scopes and permission catalogue that Phase 2 implements, with the rule for each permission. **Implemented** in the `academic` module: `AcademicPermissions` (the catalogue), `AcademicRoles` (the role templates, seeded at startup) and `AcademicAccessPolicy` (the rules). The unit test `AcademicAccessPolicyTest` has one test per row below, allowed and denied. It follows [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md). Everything is derived from [roles and powers](../../modules/lecture-rescheduling/rules/permissions.md), the [approval model](../../modules/lecture-rescheduling/rules/approval-model.md), [reverts](../../modules/lecture-rescheduling/rules/reverts.md), [ticket lifecycle](../../modules/lecture-rescheduling/rules/ticket-lifecycle.md), [issues](../../modules/lecture-rescheduling/rules/issues-from-cr-and-br.md) and the [role files](../../shared/roles/README.md).
 
 Where those documents are silent, the right is **denied** and listed under "Not granted, because the documents do not say". This file does not invent a rule. The rules that the owner has not confirmed are marked **default** and come from ADR 0004, point 8.
 
@@ -77,8 +77,8 @@ Names are `<module>.<resource>.<action>`. The module names `rescheduling` and `t
 | `rescheduling.tickets.edit-own` | R | The caller is the author | Faculty, Super HOD, HOD |
 | `rescheduling.tickets.view` | R | The caller is the author, an affected faculty or a requested reviewer | Faculty |
 | `rescheduling.tickets.view-in-scope` | S | A grant covers the lecture; session rule | Super HOD, HOD, CR, BR |
-| `rescheduling.tickets.audit.view` | R | The same people as `view` | Faculty |
-| `rescheduling.tickets.audit.view-in-scope` | S | A grant covers the lecture; session rule | Super HOD, HOD, CR, BR |
+| `rescheduling.ticket-audit.view` | R | The same people as `view` | Faculty |
+| `rescheduling.ticket-audit.view-in-scope` | S | A grant covers the lecture; session rule | Super HOD, HOD, CR, BR |
 | `rescheduling.audit.view-all` | flat | Any ticket's audit log | Super Admin |
 | `rescheduling.issues.open` | S | A grant covers the lecture; session rule | CR, BR |
 | `rescheduling.issues.close` | R | The caller opened the issue or is a mentioned faculty | Faculty, CR, BR |

@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-12
 
 Authentication (who is this person) and authorization (what may they do) for Timetia: what exists, what will be built, the plan to build it and the contract other modules use.
 
-**Nothing in this folder is implemented yet.** Timetia has no authentication or authorization code of its own. It carries Kibootia's, unchanged. The [current state](current-state.md) describes that inherited code from reading it. No tests were run to write these documents.
+Timetia started as Kibootia's code with no authentication or authorization of its own. Phases 0 to 2 of the [implementation plan](implementation-plan.md) are now implemented: hardening of the inherited foundation, and Timetia's scoped authorization. The [current state](current-state.md) describes the inherited code and what changed. Nothing here is called verified without a named CI run; see [testing and verification](testing-and-verification.md) for what was run locally.
 
 Read in this order:
 

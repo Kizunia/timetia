@@ -29,7 +29,7 @@ Each work package ends with a check that can be shown to someone else.
 
 ## Status on 2026-11-12
 
-Phases 0 and 1 are implemented and Phase 2 is in progress. Nothing of Phase 3 or Phase 4 is started. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). Nothing is called verified without a named CI run, and no CI run has been made of these changes.
+Phases 0, 1 and 2 are implemented. Nothing of Phase 3 or Phase 4 is started. "Implemented" means the change and its tests are in the repository; how far each was run is in [testing and verification](testing-and-verification.md). Nothing is called verified without a named CI run, and no CI run has been made of these changes.
 
 | Work package | Status |
 | --- | --- |
@@ -41,7 +41,17 @@ Phases 0 and 1 are implemented and Phase 2 is in progress. Nothing of Phase 3 or
 | W1.6 | Configuration changed. The rewritten end-to-end test has not been run. |
 | W1.7 | Implemented, with tests: token type, not-before, clock skew, unsigned and shared-secret tokens, a 403 for `enable`. The test for health on a merged port is replaced by the production guard. |
 | W1.8 | Done for identity-facing names. The test realm used by `KeycloakAdminAdapterIT` keeps its own names. |
-| W2.1 to W2.8 | In progress; see [implementation notes](#phase-2-notes) below as they land. |
+| W2.1 | Done: [ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md) and the [integration contract](integration-contract.md). Teammates have not yet been told. |
+| W2.2 | Done: the catalogue, six role templates and the policy are in the `academic` module. The seeded roles are checked for scope type and a sample of permissions by `AcademicAuthorizationIT`, and every rule has tests in `AcademicAccessPolicyTest`. |
+| W2.3 | Done: migration `V202611121000__access_scoped_assignments.sql`, `ScopedAssignmentService`, `GET` and `PUT /api/v1/users/{id}/scoped-roles`, validation, audit. |
+| W2.4 | Done: policy-decided permissions, `ScopedResourcePolicy`, `Authorization.reach`. |
+| W2.5 | **Dropped from this phase.** The facts carry user ids, so no person directory is needed ([ADR 0004](../../decisions/0004-scoped-assignments-and-policy-decided-permissions.md), point 7). |
+| W2.6 | Security's half is done: the facts interfaces and the rules. Nothing implements the facts yet, because the ticket and timetable modules do not exist. |
+| W2.7 | Security's half is done: the `ScopeDirectory` port and the fail-closed behavior. **Nothing provides department, division and batch data, so a role that needs a place cannot be assigned in the running application** until its owner implements the port. Tests use a fake. |
+| W2.8 | Done: each assignment and removal writes one audit entry with the role, the scope type and the place. |
+
+**Gates.** The gates of Phases 1 and 2 below ask for a named CI run and an end-to-end run. **Neither exists**, so the gates are **not met**; the work is implemented and passes the local runs in [testing and verification](testing-and-verification.md). Two further things stand between Phase 2 and a working Timetia: a module that provides departments, divisions and batches (so scoped roles can be given), and teammates implementing the facts for their records.
+
 
 ## Phase 0: Decide and document
 
@@ -85,7 +95,7 @@ Goal: Timetia's rules can be enforced. Depends on Phase 0.
 | W2.2 | Role templates and the permission catalogue: seed the seven roles with their scope types and the permissions from the [role and scope model](role-and-scope-model.md) | Security, with each module owner for their permissions | Seed matches the documented matrix; a test reads the matrix and checks the seed |
 | W2.3 | Scoped assignment: schema migration, service, API, validation (scope required for scoped roles, scope must exist), audit entries | Security | Assign, change and remove work; the old role endpoint cannot make a scoped role global |
 | W2.4 | Scope-aware policy and list filter, added without changing existing signatures | Security | Allowed, denied and list tests per role and scope pass |
-| W2.5 | Person directory port and a fake; implementation by the owner of faculty and student records | Both | A user resolves to a faculty or student record in a test |
+| W2.5 | ~~Person directory port~~ Dropped: the facts carry user ids | Both | Not needed |
 | W2.6 | Ticket access facts port and the Timetia policy for revert, review, reject, view and audit view | Both | Every relation row of the matrix has an allowed and a denied test |
 | W2.7 | Scope directory port and a fake; implementation by the owner of department, division and batch data | Both | A department's descendants resolve in a test |
 | W2.8 | Audit events for scoped assignment changes | Security | Each change writes one entry with ids only |

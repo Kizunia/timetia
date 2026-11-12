@@ -4,13 +4,34 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-12
 
 What authentication and authorization Timetia has today. Everything here is **inherited from Kibootia, unchanged**: outside `timetia-docs`, the branch `ishan/authn-authz` has no difference from Kibootia's `main` at commit `4cea34f`. A diff of `backend`, `frontend`, `infra`, `compose.yaml`, `.github` and `scripts` between the two is empty.
 
 How to read the labels. These facts come from reading the code and Kibootia's documents on 2026-11-11. **No test was run.** "Covered by" names a test that exists, and Kibootia's own documents record it as verified in their CI. That is Kibootia's claim, not a result of this audit.
 
 Paths below are under `backend/src/main/java/com/kibootia/backend/` unless they start with another folder.
+
+## What Timetia has changed since inheriting it (2026-11-12)
+
+The classification below describes the inherited code as audited on 2026-11-11. Phases 0 to 2 of the [implementation plan](implementation-plan.md) have since changed it. The changes are in the repository with tests; none has a CI run yet.
+
+| Area | Change | Where |
+| --- | --- | --- |
+| Role assignment | A role is given only by someone who holds every permission in it; an administrator may give any role (R1) | `access/application/RoleAssignmentService.requireGrantable` |
+| Administrators | Only an administrator may disable, enable, delete, restore or erase an administrator (R2) | `identity/application/UserAdministration.requireMayActOn` |
+| Tokens | Only access tokens: `typ` must be `Bearer` | `platform/security/UserTokenValidator` |
+| Security events | A 403, a refused account and a rate-limit refusal are audited, throttled per user | `platform/security/SecurityEvents`, `audit/application/SecurityEventRecorder` |
+| Production guard | `kibootia.environment=production` refuses development defaults | `platform/config/RequiredSettingsEnvironmentPostProcessor` |
+| Identity configuration | Registration off; Timetia names for the realm, clients, audience, cookies and header | `infra/keycloak`, `compose.yaml`, `frontend/src/lib`, `application.properties` |
+| Scope | A role has an optional scope type and an assignment a scope id | migration `V202611121000__access_scoped_assignments.sql`, `access/persistence/JpaRoleStore` |
+| Policy-decided permissions | A permission that flat checks never satisfy and a record policy decides | `platform/authorization/Permission`, `ScopedResourcePolicy`, `ScopedGrants`, `Reach`; `access/domain/DefaultDecisionPoint`, `access/persistence/StoredScopedGrants` |
+| Scoped assignment | `GET` and `PUT /api/v1/users/{id}/scoped-roles`, administrators only, audited | `access/application/ScopedAssignmentService`, `access/web/ScopedUserRolesController` |
+| Role rules | A role with a policy-decided permission needs a scope type; a role with one holds only those; only an administrator puts one in a role | `access/application/RoleService` |
+| Timetia roles and rules | The permission catalogue, the six role templates (seeded at startup) and the per-record policy | module `academic`: `AcademicPermissions`, `AcademicRoles`, `AcademicAccessPolicy`, `RoleTemplateSeeder` |
+| Contract for other modules | Facts interfaces, `Authorization.reach`, `ScopeDirectory` | `academic/*AccessFacts`, `platform/authorization` |
+
+Still true of the application: no module provides departments, divisions and batches, so a role that needs a place cannot be assigned (it is refused), and no module yet implements the facts interfaces. See the [integration contract](integration-contract.md).
 
 ## Classification
 
