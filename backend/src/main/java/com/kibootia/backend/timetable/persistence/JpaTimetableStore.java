@@ -63,6 +63,11 @@ class JpaTimetableStore implements TimetableStore {
 	}
 
 	@Override
+	public Optional<TimetableVersion> publishedInForce(UUID divisionId, LocalDate date) {
+		return this.versions.inForce(divisionId, VersionStatus.PUBLISHED, date).map(TimetableMapper::toModel);
+	}
+
+	@Override
 	public Optional<LocalDate> nextPublishedAfter(UUID divisionId, LocalDate date) {
 		return this.versions.earliestEffectiveAfter(divisionId, VersionStatus.PUBLISHED, date);
 	}

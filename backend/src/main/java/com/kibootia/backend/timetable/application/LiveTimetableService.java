@@ -33,7 +33,8 @@ import com.kibootia.backend.timetable.application.OccurrenceQuery.Visibility;
  * <li>a Super HOD, HOD, CR, BR or student sees the lectures of the places they hold the role in
  * ({@link AcademicPermissions#LIVE_VIEW}): a department's, a division's, or those of a batch, which include the theory
  * lectures of the batch's division;</li>
- * <li>a faculty member sees the lectures they teach ({@link AcademicPermissions#LIVE_VIEW_OWN}).</li>
+ * <li>a faculty member sees the lectures they teach ({@link AcademicPermissions#LIVE_VIEW_OWN}) and every lecture of a
+ * division they teach in ({@link AcademicPermissions#LIVE_VIEW_DIVISION}).</li>
  * </ul>
  *
  * <p>A list and a single lecture must agree: the list holds exactly the lectures the single-record decision would allow.
@@ -75,10 +76,15 @@ public class LiveTimetableService {
 		boolean everyLecture = this.authorization.can(AcademicPermissions.LIVE_VIEW_ALL);
 		Reach inPlace = this.authorization.reach(AcademicPermissions.LIVE_VIEW);
 		boolean ownLectures = !this.authorization.reach(AcademicPermissions.LIVE_VIEW_OWN).isEmpty();
+		// A faculty member also sees every lecture of a division they teach in.
+		Set<UUID> divisions = new HashSet<>(inPlace.idsOf(AcademicScopes.DIVISION));
+		if (!this.authorization.reach(AcademicPermissions.LIVE_VIEW_DIVISION).isEmpty()) {
+			divisions.addAll(this.directory.divisionIdsTaughtBy(this.authorization.currentUserId()));
+		}
 
 		Set<UUID> batches = inPlace.idsOf(AcademicScopes.BATCH);
 		Visibility visibility = new Visibility(everyLecture || inPlace.everywhere(),
-				inPlace.idsOf(AcademicScopes.DEPARTMENT), inPlace.idsOf(AcademicScopes.DIVISION), batches,
+				inPlace.idsOf(AcademicScopes.DEPARTMENT), divisions, batches,
 				divisionsOf(batches), ownLectures ? this.directory.facultyIdsOf(this.authorization.currentUserId()) : Set.of());
 		if (visibility.isEmpty()) {
 			// Holding the permission nowhere means seeing nothing; there is no need to ask the database.
@@ -98,6 +104,7 @@ public class LiveTimetableService {
 		LectureView lecture = this.views.viewsOf(List.of(occurrence)).get(0);
 		boolean mayView = this.authorization.can(AcademicPermissions.LIVE_VIEW_ALL)
 				|| this.authorization.can(AcademicPermissions.LIVE_VIEW, lecture)
+				|| this.authorization.can(AcademicPermissions.LIVE_VIEW_DIVISION, lecture)
 				|| this.authorization.can(AcademicPermissions.LIVE_VIEW_OWN, lecture);
 		if (!mayView) {
 			throw notFound();

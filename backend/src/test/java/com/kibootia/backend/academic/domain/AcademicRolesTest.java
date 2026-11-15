@@ -25,21 +25,22 @@ class AcademicRolesTest {
 			"rescheduling.tickets.cancel-on-behalf", "rescheduling.tickets.review", "rescheduling.tickets.reject",
 			"rescheduling.tickets.approve-permanent", "rescheduling.tickets.revert-in-scope",
 			"rescheduling.tickets.edit-own", "rescheduling.tickets.view-in-scope",
-			"rescheduling.ticket-audit.view-in-scope");
+			"rescheduling.ticket-audit.view-in-scope", "rescheduling.issues.view-in-scope");
 
 	private static final Set<String> REPRESENTATIVE = Set.of("timetable.live.view", "rescheduling.tickets.review",
 			"rescheduling.tickets.reject", "rescheduling.tickets.view-in-scope", "rescheduling.ticket-audit.view-in-scope",
-			"rescheduling.issues.open", "rescheduling.issues.close");
+			"rescheduling.issues.open", "rescheduling.issues.close", "rescheduling.issues.view",
+			"rescheduling.issues.view-in-scope");
 
 	private static final Map<String, String> SCOPE_TYPES = Map.of("Super HOD", "GLOBAL", "HOD", "DEPARTMENT", "Faculty",
 			"GLOBAL", "CR", "DIVISION", "BR", "BATCH", "Student", "BATCH");
 
 	private static final Map<String, Set<String>> PERMISSIONS = Map.of("Super HOD", HEAD_OF_DEPARTMENT, "HOD",
 			HEAD_OF_DEPARTMENT, "Faculty",
-			Set.of("timetable.live.view-own", "rescheduling.tickets.create", "rescheduling.tickets.cancel",
+			Set.of("timetable.live.view-own", "timetable.live.view-division", "rescheduling.tickets.create", "rescheduling.tickets.cancel",
 					"rescheduling.tickets.self-approve", "rescheduling.tickets.review", "rescheduling.tickets.reject",
 					"rescheduling.tickets.revert", "rescheduling.tickets.edit-own", "rescheduling.tickets.view",
-					"rescheduling.ticket-audit.view", "rescheduling.issues.close"),
+					"rescheduling.ticket-audit.view", "rescheduling.issues.close", "rescheduling.issues.view"),
 			"CR", REPRESENTATIVE, "BR", REPRESENTATIVE, "Student", Set.of("timetable.live.view"));
 
 	private final List<AcademicRoles.Template> templates = AcademicRoles.TEMPLATES;

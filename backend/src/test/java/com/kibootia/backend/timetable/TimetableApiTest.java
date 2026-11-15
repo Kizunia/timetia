@@ -142,6 +142,11 @@ public abstract class TimetableApiTest extends AdminApiTest {
 	}
 
 	private void clean() {
+		this.jdbc.update("delete from notification");
+		this.jdbc.update("delete from issue_ticket_link");
+		this.jdbc.update("delete from issue_mention");
+		this.jdbc.update("delete from issue");
+		this.jdbc.update("delete from ticket_review");
 		this.jdbc.update("delete from conflict_finding");
 		this.jdbc.update("delete from conflict_check_run");
 		this.jdbc.update("delete from ticket_change_item");

@@ -28,4 +28,12 @@ public interface LectureAccessFacts extends TenantBound {
 	/** The faculty who teach the lecture, as user ids. */
 	Set<UUID> teachingFacultyUserIds();
 
+	/**
+	 * The faculty who teach anything in the lecture's division, as user ids: they see its timetable, not only their own
+	 * lectures. Empty when the record does not say, and nothing is then granted.
+	 */
+	default Set<UUID> divisionFacultyUserIds() {
+		return Set.of();
+	}
+
 }

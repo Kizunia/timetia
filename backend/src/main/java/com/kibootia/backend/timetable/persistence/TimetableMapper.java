@@ -24,7 +24,8 @@ final class TimetableMapper {
 	static Occurrence toModel(OccurrenceEntity entity) {
 		return new Occurrence(entity.getId(), entity.getTenantId(), entity.getTimetableEntryId(),
 				entity.getTimetableVersionId(), entity.getAssignmentId(), entity.getDepartmentId(), entity.getDivisionId(),
-				entity.getBatchId(), entity.getSessionType(), entity.getFacultyId(), entity.baseSlot(), entity.slot(),
+				entity.getBatchId(), entity.getSessionType(), entity.getFacultyId(),
+				entity.getEffectiveFacultyId(), entity.baseSlot(), entity.slot(),
 				entity.isCancelled(), entity.getChangedByTicketId(), entity.getVersion());
 	}
 

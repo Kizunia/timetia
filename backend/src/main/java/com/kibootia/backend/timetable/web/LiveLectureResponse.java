@@ -19,7 +19,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
  *
  * <p>A cancelled lecture is shown, marked {@code cancelled}, so nobody goes to it. A lecture that was moved is shown where it
  * is now, marked {@code changed}, with the time the base timetable had it in the {@code original…} fields. The ticket that
- * made the change is not shown: people see the result of a change, not the ticket.
+ * made the change is not shown: people see the result of a change, not the ticket. When a substitute teaches
+ * the lecture, {@code facultyId} and {@code facultyName} are the substitute and {@code originalFacultyId} is who it was.
  */
 public record LiveLectureResponse(
 		@Schema(requiredMode = REQUIRED) UUID id,
@@ -43,6 +44,8 @@ public record LiveLectureResponse(
 		@Schema(requiredMode = REQUIRED) boolean changed,
 		@Schema(nullable = true, description = "The date in the base timetable; present only when the lecture was moved.") LocalDate originalDate,
 		@Schema(nullable = true, description = "The start in the base timetable; present only when the lecture was moved.") LocalTime originalStartTime,
-		@Schema(nullable = true, description = "The end in the base timetable; present only when the lecture was moved.") LocalTime originalEndTime) {
+		@Schema(nullable = true, description = "The end in the base timetable; present only when the lecture was moved.") LocalTime originalEndTime,
+		@Schema(requiredMode = REQUIRED, description = "True when a ticket added the lecture to the weekly timetable.") boolean extra,
+		@Schema(nullable = true, description = "The faculty member of the teaching assignment; present only when a substitute teaches the lecture, whose ID and name are then facultyId and facultyName.") UUID originalFacultyId) {
 
 }

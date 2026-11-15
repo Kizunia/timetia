@@ -16,11 +16,13 @@ import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.errors.ApiFieldError;
 import com.kibootia.backend.platform.errors.ProblemCodes;
 import com.kibootia.backend.rescheduling.application.Progress.Outcome;
+import com.kibootia.backend.rescheduling.TicketChanged;
 import com.kibootia.backend.rescheduling.domain.ApprovalPath;
 import com.kibootia.backend.rescheduling.domain.ReviewStatus;
 import com.kibootia.backend.rescheduling.domain.ReviewerCapacity;
 import com.kibootia.backend.rescheduling.domain.Reviews;
 import com.kibootia.backend.rescheduling.domain.Reviews.Verdict;
+import com.kibootia.backend.rescheduling.domain.TicketType;
 import com.kibootia.backend.rescheduling.domain.TicketStatus;
 import com.kibootia.backend.timetable.LectureCalendar;
 import com.kibootia.backend.timetable.LectureView;
@@ -76,8 +78,11 @@ public class TicketReviewService {
 
 	private final TicketApplier applier;
 
+	private final TicketNotices notices;
+
 	TicketReviewService(TicketStore tickets, LectureCalendar calendar, Authorization authorization, AuditLog auditLog,
-			Clock clock, TicketSupport support, TicketApplier applier) {
+			Clock clock, TicketSupport support, TicketApplier applier, TicketNotices notices) {
+		this.notices = notices;
 		this.tickets = tickets;
 		this.calendar = calendar;
 		this.authorization = authorization;
@@ -100,13 +105,20 @@ public class TicketReviewService {
 		if (ticket.status() != TicketStatus.DRAFT) {
 			throw ApiException.conflict(TicketService.NOT_A_DRAFT, "Only a draft can be sent for review.");
 		}
-		List<NewReview> asked = this.support.validatedReviewers(ticket.authorUserId(), reviewers);
+		boolean permanent = ticket.type() == TicketType.PERMANENT_CHANGE;
+		// An HOD who raises a permanent change for their department approves it themselves; anyone else asks an HOD.
+		boolean authorIsHod = permanent && this.authorization.can(AcademicPermissions.TICKETS_APPROVE_PERMANENT, facts);
+		List<NewReview> asked = this.support.validatedReviewers(ticket.authorUserId(), reviewers, authorIsHod);
+		if (permanent && asked.stream().noneMatch((review) -> review.capacity() == ReviewerCapacity.HOD)) {
+			throw invalid("reviewers", "hod_required", "A permanent change needs an HOD among the people asked.");
+		}
 		if (this.applier.due(ticket)) {
 			return this.applier.expire(ticket);
 		}
 		requireLectureChangeable(ticket);
 		this.tickets.insertReviews(id, ticket.revisionNo(), asked);
 		Ticket submitted = this.tickets.update(ticket.submitted());
+		this.notices.publish(TicketChanged.Kind.REVIEW_REQUESTED, submitted);
 		this.auditLog.record(AuditEntry.of("rescheduling.ticket.submitted", "ticket", id)
 			.withChange("from", ticket.status().name())
 			.withChange("to", submitted.status().name())
@@ -142,6 +154,13 @@ public class TicketReviewService {
 		if (mine.status() != ReviewStatus.PENDING) {
 			throw ApiException.conflict(ALREADY_DECIDED, "You have already answered this review.");
 		}
+		if (ticket.type() == TicketType.PERMANENT_CHANGE && mine.capacity() == ReviewerCapacity.HOD && !rejecting) {
+			// Only an HOD of the place can approve a permanent change, and an HOD approves it or rejects it.
+			if (decision == Decision.ACKNOWLEDGE) {
+				throw invalid("decision", "approval_required", "An HOD approves or rejects a permanent change.");
+			}
+			this.authorization.require(AcademicPermissions.TICKETS_APPROVE_PERMANENT, facts);
+		}
 		if (this.applier.due(ticket)) {
 			return this.applier.expire(ticket);
 		}
@@ -153,14 +172,16 @@ public class TicketReviewService {
 			.withChange("capacity", mine.capacity().name()));
 		if (rejecting) {
 			Ticket rejected = this.tickets.update(ticket.rejected());
+			this.notices.publish(TicketChanged.Kind.REVIEW_REJECTED, rejected);
 			this.auditLog.record(AuditEntry.of("rescheduling.ticket.rejected", "ticket", id)
 				.withChange("from", ticket.status().name())
 				.withChange("to", rejected.status().name()));
 			return new Progress(Outcome.DONE, this.support.detail(rejected));
 		}
-		Verdict verdict = Reviews
-			.verdictOf(this.support.currentReviews(ticket).stream().map(TicketReview::status).toList());
-		return (verdict == Verdict.APPROVED) ? this.applier.applyNow(ticket, ApprovalPath.REVIEWED)
+		if (decision == Decision.APPROVE) {
+			this.notices.publish(TicketChanged.Kind.REVIEW_APPROVED, ticket);
+		}
+		return this.support.approvedToApply(ticket) ? this.applier.applyNow(ticket, ApprovalPath.REVIEWED)
 				: new Progress(Outcome.DONE, this.support.detail(ticket));
 	}
 
@@ -191,6 +212,7 @@ public class TicketReviewService {
 		Ticket escalated = this.tickets.update(ticket.escalated());
 		this.tickets.insertReviews(id, escalated.revisionNo(),
 				List.of(new NewReview(hod.get(0).reviewerUserId(), ReviewerCapacity.HOD, true, rejection.id())));
+		this.notices.publish(TicketChanged.Kind.REVIEW_REQUESTED, escalated);
 		this.auditLog.record(AuditEntry.of("rescheduling.ticket.escalated", "ticket", id)
 			.withChange("from", ticket.status().name())
 			.withChange("to", escalated.status().name()));
@@ -199,11 +221,15 @@ public class TicketReviewService {
 
 	/** A ticket cannot go back under review for a lecture that is gone, cancelled or has started. */
 	private void requireLectureChangeable(Ticket ticket) {
-		TicketChange change = this.tickets.changeOf(ticket.id());
-		LectureView lecture = this.calendar.lecture(change.sourceOccurrenceId())
-			.orElseThrow(() -> ApiException.conflict(TicketService.LECTURE_NOT_FOUND,
-					"The lecture this ticket concerns no longer exists."));
-		this.support.requireChangeable(lecture);
+		for (TicketChange change : this.tickets.changesOf(ticket.id())) {
+			if (change.sourceOccurrenceId() == null) {
+				continue; // An extra lecture does not exist yet, so there is no lecture that could have gone or started.
+			}
+			LectureView lecture = this.calendar.lecture(change.sourceOccurrenceId())
+				.orElseThrow(() -> ApiException.conflict(TicketService.LECTURE_NOT_FOUND,
+						"A lecture this ticket concerns no longer exists."));
+			this.support.requireChangeable(lecture);
+		}
 	}
 
 	private static ApiException invalid(String field, String code, String message) {

@@ -44,6 +44,7 @@ public final class AcademicAccessPolicy implements ScopedResourcePolicy {
 		UUID me = caller.userId();
 		return switch (action) {
 			case AcademicPermissions.LIVE_VIEW -> covers(grants, lecture, false);
+			case AcademicPermissions.LIVE_VIEW_DIVISION -> contains(lecture.divisionFacultyUserIds(), me);
 			case AcademicPermissions.LIVE_VIEW_OWN, AcademicPermissions.TICKETS_CREATE,
 					AcademicPermissions.TICKETS_CANCEL -> teaches(me, lecture);
 			case AcademicPermissions.TICKETS_CREATE_ON_BEHALF, AcademicPermissions.TICKETS_CANCEL_ON_BEHALF -> covers(
@@ -64,6 +65,9 @@ public final class AcademicAccessPolicy implements ScopedResourcePolicy {
 			case AcademicPermissions.TICKETS_VIEW_IN_SCOPE, AcademicPermissions.TICKET_AUDIT_VIEW_IN_SCOPE ->
 				resource instanceof TicketAccessFacts && covers(grants, lecture, true);
 			case AcademicPermissions.ISSUES_OPEN -> covers(grants, lecture, true);
+			case AcademicPermissions.ISSUES_VIEW -> resource instanceof IssueAccessFacts issue
+					&& (me.equals(issue.openerUserId()) || contains(issue.mentionedFacultyUserIds(), me));
+			case AcademicPermissions.ISSUES_VIEW_IN_SCOPE -> resource instanceof IssueAccessFacts && covers(grants, lecture, true);
 			case AcademicPermissions.ISSUES_CLOSE -> resource instanceof IssueAccessFacts issue
 					&& (me.equals(issue.openerUserId()) || contains(issue.mentionedFacultyUserIds(), me));
 			default -> false;

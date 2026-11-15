@@ -7,6 +7,15 @@ public enum ChangeOperation {
 	MOVE,
 
 	/** Cancel the lecture. */
-	CANCEL
+	CANCEL,
+
+	/** Another faculty member takes the lecture, in the same slot. */
+	REASSIGN_FACULTY,
+
+	/** Add a lecture of a teaching assignment. */
+	CREATE_EXTRA,
+
+	/** Put the lecture back at a slot, with a teacher, not cancelled: one change of a revert. */
+	RESTORE
 
 }

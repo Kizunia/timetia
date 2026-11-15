@@ -25,7 +25,7 @@ import com.kibootia.backend.timetable.application.NewOccurrence;
 @Table(name = "lecture_occurrence")
 class OccurrenceEntity extends BaseEntity {
 
-	@Column(name = "timetable_entry_id", nullable = false, updatable = false, columnDefinition = "binary(16)")
+	@Column(name = "timetable_entry_id", updatable = false, columnDefinition = "binary(16)")
 	private UUID timetableEntryId;
 
 	@Column(name = "timetable_version_id", nullable = false, updatable = false, columnDefinition = "binary(16)")
@@ -94,6 +94,9 @@ class OccurrenceEntity extends BaseEntity {
 	@Column(name = "effective_meeting_link", length = 500)
 	private String effectiveMeetingLink;
 
+	@Column(name = "effective_faculty_id", nullable = false, columnDefinition = "binary(16)")
+	private UUID effectiveFacultyId;
+
 	@Column(name = "is_cancelled", nullable = false)
 	private boolean cancelled;
 
@@ -123,6 +126,7 @@ class OccurrenceEntity extends BaseEntity {
 		this.batchId = occurrence.batchId();
 		this.sessionType = occurrence.sessionType();
 		this.facultyId = occurrence.facultyId();
+		this.effectiveFacultyId = occurrence.facultyId();
 		layOver(slot);
 		this.cancelled = false;
 		this.recordStatus = OccurrenceStatus.ACTIVE;
@@ -131,6 +135,26 @@ class OccurrenceEntity extends BaseEntity {
 	/** Lays a slot over the base. */
 	void moveTo(LectureSlot slot, UUID ticketId) {
 		layOver(slot);
+		this.changedByTicketId = ticketId;
+	}
+
+	/** Puts the lecture back where and with whom it was; if that is how the base timetable has it, no change is laid over it. */
+	void restore(LectureSlot slot, UUID facultyId, UUID ticketId) {
+		layOver(slot);
+		this.effectiveFacultyId = facultyId;
+		this.cancelled = false;
+		boolean asTheBaseHasIt = slot.equals(baseSlot()) && facultyId.equals(this.facultyId);
+		this.changedByTicketId = asTheBaseHasIt ? null : ticketId;
+	}
+
+	/** Puts another faculty member in front of the lecture. */
+	void reassign(UUID facultyId, UUID ticketId) {
+		this.effectiveFacultyId = facultyId;
+		this.changedByTicketId = ticketId;
+	}
+
+	/** Records that a ticket created the lecture. */
+	void createdBy(UUID ticketId) {
 		this.changedByTicketId = ticketId;
 	}
 
@@ -187,6 +211,10 @@ class OccurrenceEntity extends BaseEntity {
 
 	UUID getFacultyId() {
 		return this.facultyId;
+	}
+
+	UUID getEffectiveFacultyId() {
+		return this.effectiveFacultyId;
 	}
 
 	boolean isCancelled() {

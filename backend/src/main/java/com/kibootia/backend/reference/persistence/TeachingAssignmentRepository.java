@@ -1,5 +1,7 @@
 package com.kibootia.backend.reference.persistence;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -22,6 +24,10 @@ interface TeachingAssignmentRepository extends JpaRepository<TeachingAssignmentE
 			  and (a.batchId = :batch or (a.batchId is null and :batch is null))
 			""")
 	boolean duplicateExists(UUID division, UUID subject, SessionType sessionType, UUID batch);
+
+	List<TeachingAssignmentEntity> findByFacultyIdIn(Collection<UUID> facultyIds);
+
+	List<TeachingAssignmentEntity> findByDivisionIdIn(Collection<UUID> divisionIds);
 
 	@Query("""
 			select a from TeachingAssignmentEntity a

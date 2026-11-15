@@ -22,16 +22,16 @@ class ModularityTest {
 	@Test
 	void coreModulesExist() {
 		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
-		assertThat(names).contains("academic", "access", "audit", "identity", "platform", "reference", "rescheduling",
-				"timetable");
+		assertThat(names).contains("academic", "access", "audit", "identity", "issues", "platform", "reference",
+				"rescheduling", "timetable");
 	}
 
 	/** Every module is one of the known ones, so a stray package cannot become a module unnoticed. */
 	@Test
 	void everyModuleIsKnown() {
 		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
-		assertThat(names).isSubsetOf("academic", "access", "audit", "files", "identity", "notes", "platform", "reference",
-				"rescheduling", "timetable");
+		assertThat(names).isSubsetOf("academic", "access", "audit", "files", "identity", "issues", "notes", "notifications",
+				"platform", "reference", "rescheduling", "timetable");
 	}
 
 	@Test
@@ -57,6 +57,10 @@ class ModularityTest {
 			.contains("reference", "academic", "platform");
 		assertThat(dependenciesOf("rescheduling")).as("rescheduling reaches lectures and reference data only through their ports")
 			.contains("timetable", "reference", "academic", "platform");
+		assertThat(dependenciesOf("issues")).as("issues reach reference data and tickets only through their ports")
+			.contains("reference", "rescheduling", "academic", "platform");
+		assertThat(dependenciesOf("notifications")).as("notifications react to the events of other modules and ask access who holds a place")
+			.contains("access", "issues", "rescheduling", "platform");
 		assertThat(dependenciesOf("platform")).as("platform depends on no other module (rule 8)").isEmpty();
 	}
 

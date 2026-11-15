@@ -16,18 +16,20 @@ import com.kibootia.backend.rescheduling.domain.TicketType;
  * @param revisionNo starts at 1 and rises each time a rejected ticket is edited and sent again
  * @param expiresAt when the earliest lecture it involves starts; a ticket not yet applied lapses then
  * @param conflicted whether the latest check found something in the way
+ * @param revertsTicketId the applied ticket this one undoes; set only on a revert
+ * @param revertedByTicketId the revert that undid this ticket; set once it has
  * @param closedAt when its own life ended (applied, withdrawn, expired or reverted); null before
  */
 public record Ticket(UUID id, UUID tenantId, TicketType type, TicketStatus status, ApprovalPath approvalPath,
 		UUID authorUserId, UUID actingFacultyId, String description, int revisionNo, LectureRef lecture,
 		Instant expiresAt, boolean conflicted, Instant conflictedSince, Instant closedAt, long version, Instant createdAt,
-		Instant updatedAt) {
+		Instant updatedAt, UUID revertsTicketId, UUID revertedByTicketId) {
 
 	public Ticket applied(ApprovalPath path, Instant at) {
 		requireCanBecome(TicketStatus.APPLIED);
 		return new Ticket(this.id, this.tenantId, this.type, TicketStatus.APPLIED, path, this.authorUserId,
 				this.actingFacultyId, this.description, this.revisionNo, this.lecture, this.expiresAt, false, null, at,
-				this.version, this.createdAt, this.updatedAt);
+				this.version, this.createdAt, this.updatedAt, this.revertsTicketId, this.revertedByTicketId);
 	}
 
 	/** Sent for review. */
@@ -50,6 +52,14 @@ public record Ticket(UUID id, UUID tenantId, TicketType type, TicketStatus statu
 		return moved(TicketStatus.IN_REVIEW, this.revisionNo + 1);
 	}
 
+	/** The ticket was undone by an applied revert. */
+	public Ticket reverted(UUID byTicketId) {
+		requireCanBecome(TicketStatus.REVERTED);
+		return new Ticket(this.id, this.tenantId, this.type, TicketStatus.REVERTED, this.approvalPath, this.authorUserId,
+				this.actingFacultyId, this.description, this.revisionNo, this.lecture, this.expiresAt, false, null,
+				this.closedAt, this.version, this.createdAt, this.updatedAt, this.revertsTicketId, byTicketId);
+	}
+
 	public Ticket withdrawn(Instant at) {
 		return closed(TicketStatus.WITHDRAWN, at);
 	}
@@ -63,28 +73,28 @@ public record Ticket(UUID id, UUID tenantId, TicketType type, TicketStatus statu
 		Instant since = blocked ? ((this.conflictedSince != null) ? this.conflictedSince : at) : null;
 		return new Ticket(this.id, this.tenantId, this.type, this.status, this.approvalPath, this.authorUserId,
 				this.actingFacultyId, this.description, this.revisionNo, this.lecture, this.expiresAt, blocked, since,
-				this.closedAt, this.version, this.createdAt, this.updatedAt);
+				this.closedAt, this.version, this.createdAt, this.updatedAt, this.revertsTicketId, this.revertedByTicketId);
 	}
 
 	/** The ticket after its author edited it: a new description and, since the plan changed, a new expiry. */
 	public Ticket edited(String newDescription, Instant newExpiresAt) {
 		return new Ticket(this.id, this.tenantId, this.type, this.status, this.approvalPath, this.authorUserId,
 				this.actingFacultyId, newDescription, this.revisionNo, this.lecture, newExpiresAt, this.conflicted,
-				this.conflictedSince, this.closedAt, this.version, this.createdAt, this.updatedAt);
+				this.conflictedSince, this.closedAt, this.version, this.createdAt, this.updatedAt, this.revertsTicketId, this.revertedByTicketId);
 	}
 
 	private Ticket moved(TicketStatus next, int revision) {
 		requireCanBecome(next);
 		return new Ticket(this.id, this.tenantId, this.type, next, this.approvalPath, this.authorUserId,
 				this.actingFacultyId, this.description, revision, this.lecture, this.expiresAt, this.conflicted,
-				this.conflictedSince, this.closedAt, this.version, this.createdAt, this.updatedAt);
+				this.conflictedSince, this.closedAt, this.version, this.createdAt, this.updatedAt, this.revertsTicketId, this.revertedByTicketId);
 	}
 
 	private Ticket closed(TicketStatus next, Instant at) {
 		requireCanBecome(next);
 		return new Ticket(this.id, this.tenantId, this.type, next, this.approvalPath, this.authorUserId,
 				this.actingFacultyId, this.description, this.revisionNo, this.lecture, this.expiresAt, this.conflicted,
-				this.conflictedSince, at, this.version, this.createdAt, this.updatedAt);
+				this.conflictedSince, at, this.version, this.createdAt, this.updatedAt, this.revertsTicketId, this.revertedByTicketId);
 	}
 
 	private void requireCanBecome(TicketStatus next) {

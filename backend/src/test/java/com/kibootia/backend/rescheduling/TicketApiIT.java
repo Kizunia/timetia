@@ -116,8 +116,10 @@ class TicketApiIT extends ReschedulingApiTest {
 		String body = move(oop, "2026-07-09", 9, 10, this.room101);
 		String path = "/api/v1/tickets";
 
-		// Roy cannot even see Rao's lecture, so it does not exist for him; neither does it for the HOD of another department.
-		post(user(ROY_USER), path, body).andExpect(status().isNotFound())
+		// Roy teaches in the same division, so he sees Rao's lecture but may not change it; the HOD of another department
+		// cannot even see it, so it does not exist for them.
+		post(user(ROY_USER), path, body).andExpect(status().isForbidden());
+		post(user(MEHTA_USER), path, body).andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.code").value("rescheduling.lecture_not_found"));
 		post(user(personWith("HOD", this.deptMe)), path, body).andExpect(status().isNotFound());
 		post(user(somebody()), path, body).andExpect(status().isNotFound());

@@ -30,6 +30,9 @@ public class AcademicPermissions implements PermissionProvider {
 	/** See every lecture. Super Admin. */
 	public static final String LIVE_VIEW_ALL = "timetable.live.view-all";
 
+	/** A faculty member sees the lectures of a division they teach in, not only their own. */
+	public static final String LIVE_VIEW_DIVISION = "timetable.live.view-division";
+
 	/** Rooms, slot grid, calendar, holidays, exam weeks and notification settings. Super Admin. */
 	public static final String CONFIG_MANAGE = "timetable.config.manage";
 
@@ -74,11 +77,18 @@ public class AcademicPermissions implements PermissionProvider {
 
 	public static final String ISSUES_CLOSE = "rescheduling.issues.close";
 
+	/** See an issue you opened or are mentioned on. */
+	public static final String ISSUES_VIEW = "rescheduling.issues.view";
+
+	/** See the issues of the place a role covers. */
+	public static final String ISSUES_VIEW_IN_SCOPE = "rescheduling.issues.view-in-scope";
+
 	@Override
 	public List<Permission> permissions() {
 		return List.of(
 				Permission.policyDecided(LIVE_VIEW, "See a lecture within the scope of the role"),
 				Permission.policyDecided(LIVE_VIEW_OWN, "See the lectures you teach"),
+				Permission.policyDecided(LIVE_VIEW_DIVISION, "See the lectures of a division you teach in"),
 				Permission.restricted(LIVE_VIEW_ALL, "See every lecture"),
 				Permission.restricted(CONFIG_MANAGE,
 						"Configure rooms, the slot grid, the calendar, holidays, exam weeks and notification settings"),
@@ -99,7 +109,9 @@ public class AcademicPermissions implements PermissionProvider {
 				Permission.policyDecided(TICKET_AUDIT_VIEW_IN_SCOPE, "Read the audit log of a ticket within your scope"),
 				Permission.restricted(AUDIT_VIEW_ALL, "Read the audit log of any ticket"),
 				Permission.policyDecided(ISSUES_OPEN, "Open an issue about a lecture within your scope"),
-				Permission.policyDecided(ISSUES_CLOSE, "Close an issue you opened or are mentioned on"));
+				Permission.policyDecided(ISSUES_CLOSE, "Close an issue you opened or are mentioned on"),
+				Permission.policyDecided(ISSUES_VIEW, "See an issue you opened or are mentioned on"),
+				Permission.policyDecided(ISSUES_VIEW_IN_SCOPE, "See the issues of your place"));
 	}
 
 }

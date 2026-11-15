@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /** The changes tickets make, in MySQL. Entity queries are filtered by tenant on their own (ADR 0028). */
 interface TicketChangeRepository extends JpaRepository<TicketChangeEntity, UUID> {
 
-	Optional<TicketChangeEntity> findFirstByTicketIdOrderByIdAsc(UUID ticketId);
+	List<TicketChangeEntity> findByTicketIdOrderByItemNoAsc(UUID ticketId);
 
 	List<TicketChangeEntity> findByTicketIdIn(Collection<UUID> ticketIds);
 

@@ -20,6 +20,15 @@ interface TimetableVersionRepository extends JpaRepository<TimetableVersionEntit
 			""")
 	Page<TimetableVersionEntity> search(UUID division, VersionStatus status, Pageable pageable);
 
+	/** The published version of the division with the latest start on or before {@code date}, or none. */
+	@Query("""
+			select v from TimetableVersionEntity v
+			where v.divisionId = :division and v.status = :status and v.effectiveFrom = (
+			  select max(w.effectiveFrom) from TimetableVersionEntity w
+			  where w.divisionId = :division and w.status = :status and w.effectiveFrom <= :date)
+			""")
+	Optional<TimetableVersionEntity> inForce(UUID division, VersionStatus status, LocalDate date);
+
 	boolean existsByDivisionIdAndEffectiveFromAndStatus(UUID divisionId, LocalDate effectiveFrom, VersionStatus status);
 
 	/** The earliest date after {@code date} on which a version with this status takes effect, or none. */

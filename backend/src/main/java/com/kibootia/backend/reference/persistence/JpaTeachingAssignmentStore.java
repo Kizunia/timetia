@@ -36,6 +36,18 @@ class JpaTeachingAssignmentStore implements TeachingAssignmentStore {
 	}
 
 	@Override
+	public List<TeachingAssignment> findByFaculty(Collection<UUID> facultyIds) {
+		return facultyIds.isEmpty() ? List.of()
+				: this.assignments.findByFacultyIdIn(facultyIds).stream().map(JpaTeachingAssignmentStore::toModel).toList();
+	}
+
+	@Override
+	public List<TeachingAssignment> findByDivisions(Collection<UUID> divisionIds) {
+		return divisionIds.isEmpty() ? List.of()
+				: this.assignments.findByDivisionIdIn(divisionIds).stream().map(JpaTeachingAssignmentStore::toModel).toList();
+	}
+
+	@Override
 	public List<TeachingAssignment> findAll(Collection<UUID> ids) {
 		return ids.isEmpty() ? List.of()
 				: this.assignments.findAllById(ids).stream().map(JpaTeachingAssignmentStore::toModel).toList();

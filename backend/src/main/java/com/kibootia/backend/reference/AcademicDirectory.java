@@ -24,12 +24,24 @@ public interface AcademicDirectory {
 
 	Map<UUID, RoomDetails> rooms(Collection<UUID> roomIds);
 
+	/** The faculty members among these ids; one that was deleted is absent. */
+	Map<UUID, FacultyDetails> faculties(Collection<UUID> facultyIds);
+
 	Optional<TermDetails> term(UUID termId);
 
 	Optional<DivisionDetails> division(UUID divisionId);
 
 	/** For each of these batches that exists, the division it belongs to. */
 	Map<UUID, UUID> divisionsOfBatches(Collection<UUID> batchIds);
+
+	/** The divisions in which this user, as a faculty member, has a teaching assignment; empty when they teach in none. */
+	Set<UUID> divisionIdsTaughtBy(UUID userId);
+
+	/**
+	 * For each of these divisions, the accounts of the faculty who have a teaching assignment in it. A faculty member with no
+	 * account is left out. A division nobody teaches in is absent.
+	 */
+	Map<UUID, Set<UUID>> facultyUserIdsOfDivisions(Collection<UUID> divisionIds);
 
 	/** The faculty records that belong to this user account; empty when the user is not faculty. */
 	Set<UUID> facultyIdsOf(UUID userId);

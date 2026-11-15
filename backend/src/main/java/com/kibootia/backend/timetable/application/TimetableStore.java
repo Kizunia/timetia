@@ -30,6 +30,9 @@ public interface TimetableStore {
 	/** Whether a published version of the division already takes effect on that date. */
 	boolean publishedStartingOn(UUID divisionId, LocalDate effectiveFrom);
 
+	/** The published version of the division that is in force on that date, if there is one. */
+	Optional<TimetableVersion> publishedInForce(UUID divisionId, LocalDate date);
+
 	/** The first date after {@code date} on which a published version of the division takes effect, if any. */
 	Optional<LocalDate> nextPublishedAfter(UUID divisionId, LocalDate date);
 

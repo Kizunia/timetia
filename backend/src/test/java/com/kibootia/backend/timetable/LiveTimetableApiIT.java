@@ -55,9 +55,9 @@ class LiveTimetableApiIT extends TimetableApiTest {
 			.hasSize(16);
 		assertThat(listed(user(personWith("Student", this.batchA2)))).as("a student: the same, for their batch").hasSize(16);
 		assertThat(listed(user(personWith("Student", this.batchMeA1)))).as("a student of another division").hasSize(4);
-		assertThat(listed(user(RAO_USER))).as("a teacher: the lectures they teach").hasSize(8);
-		assertThat(listed(user(ROY_USER))).hasSize(12);
-		assertThat(listed(user(MEHTA_USER))).hasSize(4);
+		assertThat(listed(user(RAO_USER))).as("a teacher: every lecture of the division they teach in").hasSize(20);
+		assertThat(listed(user(ROY_USER))).as("a colleague in the same division sees the same").hasSize(20);
+		assertThat(listed(user(MEHTA_USER))).as("a teacher of another division sees only that one").hasSize(4);
 		assertThat(listed(user(somebody()))).as("a person with no role sees nothing").isEmpty();
 	}
 

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import com.kibootia.backend.reference.AcademicDirectory;
 import com.kibootia.backend.reference.AssignmentDetails;
+import com.kibootia.backend.reference.FacultyDetails;
 import com.kibootia.backend.reference.RoomDetails;
 import com.kibootia.backend.timetable.LectureSlot;
 import com.kibootia.backend.timetable.LectureView;
@@ -41,26 +42,37 @@ class LectureViewFactory {
 			.map((occurrence) -> occurrence.slot().roomId())
 			.filter(Objects::nonNull)
 			.collect(Collectors.toSet()));
+		Map<UUID, Set<UUID>> divisionFaculty = this.directory
+			.facultyUserIdsOfDivisions(occurrences.stream().map(Occurrence::divisionId).collect(Collectors.toSet()));
+		Map<UUID, FacultyDetails> teachers = this.directory
+			.faculties(occurrences.stream().map(Occurrence::currentFacultyId).collect(Collectors.toSet()));
 		// The maps are immutable, which refuse a null key, and an online lecture has no room.
 		return occurrences.stream()
 			.map((occurrence) -> viewOf(occurrence, assignments.get(occurrence.assignmentId()),
-					(occurrence.slot().roomId() == null) ? null : rooms.get(occurrence.slot().roomId())))
+					(occurrence.slot().roomId() == null) ? null : rooms.get(occurrence.slot().roomId()),
+					teachers.get(occurrence.currentFacultyId()), divisionFaculty.getOrDefault(occurrence.divisionId(), Set.of())))
 			.toList();
 	}
 
-	/** @param assignment the lecture's teaching assignment, or null when it no longer exists; likewise {@code room} */
-	LectureView viewOf(Occurrence occurrence, AssignmentDetails assignment, RoomDetails room) {
+	/**
+	 * @param assignment the lecture's teaching assignment, or null when it no longer exists; likewise {@code room} and
+	 *        {@code teacher}, who is the faculty member teaching it now; {@code divisionFaculty} are the accounts of the faculty
+	 *        who teach anything in its division
+	 */
+	LectureView viewOf(Occurrence occurrence, AssignmentDetails assignment, RoomDetails room, FacultyDetails teacher,
+			Set<UUID> divisionFaculty) {
 		LectureSlot slot = occurrence.slot();
 		Instant startsAt = slot.date().atTime(slot.startTime()).atZone(this.properties.zone()).toInstant();
 		boolean known = assignment != null;
-		Set<UUID> teachers = (known && assignment.facultyUserId() != null) ? Set.of(assignment.facultyUserId()) : Set.of();
+		Set<UUID> teachers = (teacher != null && teacher.userId() != null) ? Set.of(teacher.userId()) : Set.of();
 		return new LectureView(occurrence.id(), occurrence.tenantId(), occurrence.assignmentId(), slot,
 				occurrence.baseSlot(), occurrence.cancelled(), occurrence.changedByTicketId(), occurrence.revision(),
 				occurrence.departmentId(), occurrence.divisionId(), known ? assignment.divisionCode() : null,
 				occurrence.batchId(), known ? assignment.batchCode() : null, known ? assignment.batchIds() : Set.of(),
 				occurrence.sessionType(), known ? assignment.subjectId() : null, known ? assignment.subjectCode() : null,
-				known ? assignment.subjectName() : null, occurrence.facultyId(), known ? assignment.facultyName() : null,
-				teachers, (room == null) ? null : room.code(), startsAt);
+				known ? assignment.subjectName() : null, occurrence.currentFacultyId(), occurrence.facultyId(),
+				(teacher == null) ? null : teacher.name(), teachers, (room == null) ? null : room.code(), startsAt, occurrence.entryId() == null,
+				divisionFaculty);
 	}
 
 }

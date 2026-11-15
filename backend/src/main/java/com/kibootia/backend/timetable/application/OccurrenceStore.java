@@ -32,17 +32,32 @@ public interface OccurrenceStore {
 
 	Optional<Occurrence> find(UUID id);
 
+	/** The active lectures that this timetable entry produced, from this base date on, in date order. */
+	List<Occurrence> findOfEntryFrom(UUID entryId, LocalDate baseDate);
+
 	/** The active lectures among these IDs. */
 	List<Occurrence> findAll(Collection<UUID> ids);
 
 	/** Like {@link #findAll}, but locks the lectures until the end of the transaction, in a fixed order, so changes queue. */
 	List<Occurrence> lockAll(Collection<UUID> ids);
 
+	/** Stores a lecture that a ticket creates, with no timetable entry behind it, and records the ticket. */
+	Occurrence insertExtra(NewOccurrence occurrence, UUID ticketId);
+
 	/** Moves the lecture to the slot and records the ticket. */
 	Occurrence move(UUID id, LectureSlot slot, UUID ticketId);
 
 	/** Cancels the lecture and records the ticket. */
 	Occurrence cancel(UUID id, UUID ticketId);
+
+	/**
+	 * Puts the lecture back at the slot with the faculty member teaching it, not cancelled. It then shows as changed by the
+	 * ticket only if that is not how the base timetable has it.
+	 */
+	Occurrence restore(UUID id, LectureSlot slot, UUID facultyId, UUID ticketId);
+
+	/** Puts another faculty member in front of the lecture, without moving it. */
+	Occurrence reassign(UUID id, UUID facultyId, UUID ticketId);
 
 	/** A page of the active lectures the query allows, in date and time order unless the page asks otherwise. */
 	Page<Occurrence> search(OccurrenceQuery query, Pageable pageable);

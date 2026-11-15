@@ -88,6 +88,10 @@ Not defined: what a faculty member who is not on a ticket may see, what Super HO
 
 Who raises a permanent change, whether an HOD's own permanent change needs a second approver, and whether HOD or Super HOD may self-approve are not defined. Today they are **denied**: no HOD or Super HOD holds the self-approve permission. **Recommendation:** the HOD raises and approves their department's permanent changes; a Super HOD approves an HOD's own. Confirm.
 
+### OQ-A17. Should Faculty see the live timetable of the divisions they teach in?
+
+**Decided 2026-11-15, following the recommendation, and built.** Faculty also hold `timetable.live.view-division`: they see every lecture of a division they have a teaching assignment in, besides the ones they teach. They need it for an [exchange](../../modules/lecture-rescheduling/flows/exchange.md), where the author picks another teacher's lecture from the division timetable; an exchange now names only a lecture of the same division that the author can see. Tickets are not affected: who sees a ticket is still OQ-A11. Reverse it by removing the permission from the Faculty template.
+
 ## Document repairs
 
 Documents that disagree with each other or with a decision. Planned as W4.5. On 2026-11-12 the three that only needed a pointer were done; the four that need a decision are still open, and the list is therefore not empty.

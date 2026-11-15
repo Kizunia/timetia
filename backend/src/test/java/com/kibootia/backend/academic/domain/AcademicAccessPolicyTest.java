@@ -146,6 +146,18 @@ class AcademicAccessPolicyTest {
 				.isFalse();
 		}
 
+		@Test
+		@DisplayName("a faculty member who teaches in a lecture's division sees all of its lectures, and others do not")
+		void facultyOfTheDivision() {
+			Facts inDivision = this.lecture.taughtBy(OTHER_FACULTY).withDivisionFaculty(FACULTY, OTHER_FACULTY);
+
+			assertThat(allows(AcademicPermissions.LIVE_VIEW_DIVISION, FACULTY, inDivision, GLOBAL)).isTrue();
+			assertThat(allows(AcademicPermissions.LIVE_VIEW_DIVISION, SOMEONE, inDivision, GLOBAL)).isFalse();
+			// A lecture that does not say who teaches in its division grants nothing.
+			assertThat(allows(AcademicPermissions.LIVE_VIEW_DIVISION, FACULTY, this.lecture.taughtBy(OTHER_FACULTY), GLOBAL))
+				.isFalse();
+		}
+
 	}
 
 	@Nested
@@ -399,6 +411,25 @@ class AcademicAccessPolicyTest {
 			assertThat(allows(AcademicPermissions.ISSUES_CLOSE, FACULTY, issue, GLOBAL)).isTrue();
 			assertThat(allows(AcademicPermissions.ISSUES_CLOSE, OTHER_FACULTY, issue, GLOBAL)).isFalse();
 			assertThat(allows(AcademicPermissions.ISSUES_CLOSE, SOMEONE, PLAIN, CR_OF_1)).isFalse();
+		}
+
+		@Test
+		@DisplayName("the opener and a mentioned faculty see an issue; a role sees those of its place, with the session rule")
+		void viewing() {
+			Facts theory = Facts.lecture(SessionType.THEORY).openedBy(SOMEONE, FACULTY);
+			Facts lab = Facts.lecture(SessionType.LAB).openedBy(SOMEONE, FACULTY);
+
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW, SOMEONE, theory, GLOBAL)).isTrue();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW, FACULTY, theory, GLOBAL)).isTrue();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW, OTHER_FACULTY, theory, GLOBAL)).isFalse();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW, FACULTY, PLAIN, GLOBAL)).isFalse();
+
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW_IN_SCOPE, OTHER_FACULTY, theory, CR_OF_1)).isTrue();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW_IN_SCOPE, OTHER_FACULTY, lab, CR_OF_1)).isFalse();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW_IN_SCOPE, OTHER_FACULTY, lab, BR_OF_1)).isTrue();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW_IN_SCOPE, OTHER_FACULTY, theory, BR_OF_1)).isFalse();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW_IN_SCOPE, OTHER_FACULTY, lab, HOD_OF_A)).isTrue();
+			assertThat(allows(AcademicPermissions.ISSUES_VIEW_IN_SCOPE, OTHER_FACULTY, theory, HOD_OF_B)).isFalse();
 		}
 
 	}

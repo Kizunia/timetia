@@ -62,6 +62,7 @@ Names are `<module>.<resource>.<action>`. The module names `rescheduling` and `t
 | --- | --- | --- | --- |
 | `timetable.live.view` | S | A grant covers the lecture | Super HOD, HOD, CR, BR, Student |
 | `timetable.live.view-own` | R | The caller teaches the lecture | Faculty |
+| `timetable.live.view-division` | R | The caller teaches anything in the lecture's division | Faculty |
 | `timetable.live.view-all` | flat | Everything | Super Admin |
 | `timetable.config.manage` | flat | Rooms, slot grid, calendar, holidays, exam weeks, notification settings | Super Admin |
 | `rescheduling.tickets.create` | R | The caller teaches the lecture | Faculty |

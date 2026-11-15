@@ -20,6 +20,14 @@ import org.springframework.data.jpa.repository.Query;
  */
 interface OccurrenceRepository extends JpaRepository<OccurrenceEntity, UUID>, JpaSpecificationExecutor<OccurrenceEntity> {
 
+	/** The active lectures a timetable entry produced, from a base date on, in date order. */
+	@Query("""
+			select o from OccurrenceEntity o
+			where o.timetableEntryId = :entry and o.recordStatus = :active and o.occurrenceDate >= :from
+			order by o.occurrenceDate
+			""")
+	List<OccurrenceEntity> ofEntryFrom(UUID entry, LocalDate from, OccurrenceStatus active);
+
 	/** The active lectures of a division whose base date is in the range: what a new version that starts there replaces. */
 	@Query("""
 			select o.id from OccurrenceEntity o

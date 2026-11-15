@@ -28,11 +28,11 @@ public interface TicketStore {
 
 	Optional<Ticket> find(UUID id);
 
-	/** The change a ticket makes. */
-	TicketChange changeOf(UUID ticketId);
+	/** The changes a ticket makes, in order. */
+	List<TicketChange> changesOf(UUID ticketId);
 
 	/** The changes of these tickets, by ticket, so a page of tickets costs one query and not one each. */
-	Map<UUID, TicketChange> changesOf(Collection<UUID> ticketIds);
+	Map<UUID, List<TicketChange>> changesOf(Collection<UUID> ticketIds);
 
 	/**
 	 * Saves the state of a ticket if it is still the version that was read; otherwise fails with an optimistic locking
@@ -40,11 +40,14 @@ public interface TicketStore {
 	 */
 	Ticket update(Ticket ticket);
 
-	/** Replaces the change of a draft, for an edit. */
-	TicketChange replaceChange(UUID ticketId, NewTicket.Change change);
+	/** Replaces the changes of a ticket that is not yet applied, for an edit; there are as many as before. */
+	void replaceChanges(UUID ticketId, List<NewTicket.Change> changes);
 
-	/** Records where the lecture was before its change was applied. */
-	void recordBefore(UUID ticketId, LectureSlot before);
+	/** Records where the lecture was before this change was applied. */
+	void recordBefore(UUID changeId, LectureSlot before, UUID beforeFacultyId);
+
+	/** Records the lecture an applied extra-lecture ticket made. */
+	void recordCreated(UUID changeId, UUID occurrenceId);
 
 	Page<Ticket> search(TicketQuery query, Pageable pageable);
 
@@ -80,10 +83,13 @@ public interface TicketStore {
 	// --- finding tickets --------------------------------------------------------------------------------------------
 
 	/**
-	 * The tickets under review that could be affected by a change to this lecture, or by something moving on or off these
+	 * The tickets under review that could be affected by a change to these lectures, or by something moving on or off these
 	 * dates: those about the same lecture, and those that want a slot on one of the dates.
 	 */
-	List<Ticket> inReviewAffectedBy(UUID lectureId, Set<LocalDate> dates);
+	List<Ticket> inReviewAffectedBy(Set<UUID> lectureIds, Set<LocalDate> dates);
+
+	/** Whether a revert of this ticket has been raised and is not over: a draft, or under review. */
+	boolean hasOpenRevert(UUID ticketId);
 
 	/** Tickets not yet applied whose lecture has started by this instant, oldest first, at most {@code limit}. */
 	List<Ticket> openExpiredBy(Instant instant, int limit);

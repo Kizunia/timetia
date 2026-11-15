@@ -16,13 +16,15 @@ import com.kibootia.backend.rescheduling.domain.TicketStatus;
 /** Tickets in MySQL. Entity queries are filtered by tenant on their own (ADR 0028). */
 interface TicketRepository extends JpaRepository<TicketEntity, UUID>, JpaSpecificationExecutor<TicketEntity> {
 
-	/** The tickets in this state that are about this lecture, or that want a slot on one of these dates. */
+	/** The tickets in this state that are about these lectures, or that want a slot on one of these dates. */
 	@Query("""
 			select t from TicketEntity t
 			where t.status = :status and t.id in (
-			  select c.ticketId from TicketChangeEntity c where c.sourceOccurrenceId = :lecture or c.targetDate in :dates)
+			  select c.ticketId from TicketChangeEntity c where c.sourceOccurrenceId in :lectures or c.targetDate in :dates)
 			""")
-	List<TicketEntity> inStateAffectedBy(TicketStatus status, UUID lecture, Collection<LocalDate> dates);
+	List<TicketEntity> inStateAffectedBy(TicketStatus status, Collection<UUID> lectures, Collection<LocalDate> dates);
+
+	boolean existsByRevertsTicketIdAndStatusIn(UUID revertsTicketId, Collection<TicketStatus> statuses);
 
 	List<TicketEntity> findByStatusInAndExpiresAtLessThanEqualOrderByExpiresAtAsc(Collection<TicketStatus> statuses,
 			Instant instant, Limit limit);

@@ -11,7 +11,17 @@ import java.util.UUID;
 public record Facts(UUID tenantId, UUID departmentId, UUID divisionId, Set<UUID> batchIds, SessionType sessionType,
 		Set<UUID> teachingFacultyUserIds, UUID authorUserId, Set<UUID> affectedFacultyUserIds,
 		Set<UUID> requestedReviewerUserIds, boolean permanentChange, UUID openerUserId,
-		Set<UUID> mentionedFacultyUserIds) implements TicketAccessFacts, IssueAccessFacts {
+		Set<UUID> mentionedFacultyUserIds, Set<UUID> divisionFacultyUserIds) implements TicketAccessFacts, IssueAccessFacts {
+
+	/** Facts that say nothing about who teaches in the division. */
+	public Facts(UUID tenantId, UUID departmentId, UUID divisionId, Set<UUID> batchIds, SessionType sessionType,
+			Set<UUID> teachingFacultyUserIds, UUID authorUserId, Set<UUID> affectedFacultyUserIds,
+			Set<UUID> requestedReviewerUserIds, boolean permanentChange, UUID openerUserId,
+			Set<UUID> mentionedFacultyUserIds) {
+		this(tenantId, departmentId, divisionId, batchIds, sessionType, teachingFacultyUserIds, authorUserId,
+				affectedFacultyUserIds, requestedReviewerUserIds, permanentChange, openerUserId, mentionedFacultyUserIds,
+				Set.of());
+	}
 
 	public static final UUID TENANT = UUID.fromString("00000000-0000-7000-8000-000000000001");
 
@@ -74,6 +84,13 @@ public record Facts(UUID tenantId, UUID departmentId, UUID divisionId, Set<UUID>
 		return new Facts(this.tenantId, this.departmentId, this.divisionId, this.batchIds, this.sessionType,
 				this.teachingFacultyUserIds, this.authorUserId, this.affectedFacultyUserIds, this.requestedReviewerUserIds,
 				this.permanentChange, opener, Set.of(mentioned));
+	}
+
+	/** Says who teaches anything in the lecture's division. */
+	public Facts withDivisionFaculty(UUID... users) {
+		return new Facts(this.tenantId, this.departmentId, this.divisionId, this.batchIds, this.sessionType,
+				this.teachingFacultyUserIds, this.authorUserId, this.affectedFacultyUserIds, this.requestedReviewerUserIds,
+				this.permanentChange, this.openerUserId, this.mentionedFacultyUserIds, Set.of(users));
 	}
 
 	/** A lecture that says nothing about where it is, to prove that missing facts never match a grant. */

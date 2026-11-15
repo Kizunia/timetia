@@ -38,7 +38,8 @@ final class TicketSpecifications {
 				Subquery<UUID> concerning = criteria.subquery(UUID.class);
 				Root<TicketChangeEntity> change = concerning.from(TicketChangeEntity.class);
 				concerning.select(change.get("ticketId"))
-					.where(builder.equal(change.get("sourceOccurrenceId"), query.lectureId()));
+					.where(builder.or(builder.equal(change.get("sourceOccurrenceId"), query.lectureId()),
+							builder.equal(change.get("createdOccurrenceId"), query.lectureId())));
 				all.add(root.get("id").in(concerning));
 			}
 			Visibility visibility = query.visibility();
@@ -60,6 +61,15 @@ final class TicketSpecifications {
 				}
 				if (!visibility.teachingFaculty().isEmpty()) {
 					any.add(root.get("facultyId").in(visibility.teachingFaculty()));
+					// So is a faculty member whose lecture is changed along with it (an exchange), and one who takes a lecture
+					// as a substitute.
+					Subquery<UUID> involved = criteria.subquery(UUID.class);
+					Root<TicketChangeEntity> item = involved.from(TicketChangeEntity.class);
+					involved.select(item.get("ticketId"))
+						.where(builder.equal(item.get("ticketId"), root.get("id")),
+								builder.or(item.get("facultyId").in(visibility.teachingFaculty()),
+										item.get("targetFacultyId").in(visibility.teachingFaculty())));
+					any.add(builder.exists(involved));
 				}
 				if (visibility.reviewing() != null) {
 					// Asked to review it, in the revision it is in now: an earlier revision's request no longer counts.

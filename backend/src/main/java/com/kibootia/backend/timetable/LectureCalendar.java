@@ -18,6 +18,12 @@ public interface LectureCalendar {
 	/** The lecture as it is now, or empty when there is no such live lecture. */
 	Optional<LectureView> lecture(UUID occurrenceId);
 
+	/**
+	 * The lecture and the later lectures that the same weekly timetable entry produced, in date order, as they are now. Empty
+	 * for a lecture no entry produced (an extra lecture), or one that does not exist.
+	 */
+	List<LectureView> series(UUID occurrenceId);
+
 	/** The time zone of the campus, in which hours are read and a lecture is said to have started. */
 	ZoneId zone();
 
@@ -31,8 +37,9 @@ public interface LectureCalendar {
 	 * Makes the changes, all or none, and records the ticket that made them. The lectures are locked and the changes checked
 	 * again first.
 	 *
+	 * @return the lecture each change is about, in the order of the changes: the one it changed, or the one it created
 	 * @throws ChangeConflictException when something stops them; nothing was written
 	 */
-	void apply(List<LectureChange> changes, UUID ticketId);
+	List<UUID> apply(List<LectureChange> changes, UUID ticketId);
 
 }

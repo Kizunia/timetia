@@ -19,6 +19,7 @@ import com.kibootia.backend.platform.authorization.NoAuthorization;
 import com.kibootia.backend.reference.AcademicDirectory;
 import com.kibootia.backend.reference.AssignmentDetails;
 import com.kibootia.backend.reference.DivisionDetails;
+import com.kibootia.backend.reference.FacultyDetails;
 import com.kibootia.backend.reference.RoomDetails;
 import com.kibootia.backend.reference.TermDetails;
 
@@ -95,6 +96,19 @@ class AcademicDirectoryService implements AcademicDirectory {
 	@Override
 	@Transactional(readOnly = true)
 	@NoAuthorization("a read-only lookup for modules that have already authorized the request")
+	public Map<UUID, FacultyDetails> faculties(Collection<UUID> facultyIds) {
+		if (facultyIds.isEmpty()) {
+			return Map.of();
+		}
+		return this.catalog.findFacultyByIds(Set.copyOf(facultyIds))
+			.stream()
+			.collect(Collectors.toUnmodifiableMap(Faculty::id,
+					(faculty) -> new FacultyDetails(faculty.id(), faculty.name(), faculty.userId(), faculty.departmentId())));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("a read-only lookup for modules that have already authorized the request")
 	public Optional<TermDetails> term(UUID termId) {
 		return this.catalog.findTerm(termId)
 			.map((term) -> new TermDetails(term.id(), term.code(), term.startDate(), term.endDate()));
@@ -115,6 +129,34 @@ class AcademicDirectoryService implements AcademicDirectory {
 		return this.campus.findBatches(batchIds)
 			.stream()
 			.collect(Collectors.toUnmodifiableMap(Batch::id, Batch::divisionId));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("a read-only lookup for modules that have already authorized the request")
+	public Set<UUID> divisionIdsTaughtBy(UUID userId) {
+		Set<UUID> faculty = facultyIdsOf(userId);
+		return faculty.isEmpty() ? Set.of()
+				: this.assignments.findByFaculty(faculty).stream().map(TeachingAssignment::divisionId).collect(Collectors.toUnmodifiableSet());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("a read-only lookup for modules that have already authorized the request")
+	public Map<UUID, Set<UUID>> facultyUserIdsOfDivisions(Collection<UUID> divisionIds) {
+		List<TeachingAssignment> found = this.assignments.findByDivisions(Set.copyOf(divisionIds));
+		if (found.isEmpty()) {
+			return Map.of();
+		}
+		Map<UUID, Faculty> faculty = byId(this.catalog.findFacultyByIds(ids(found, TeachingAssignment::facultyId)), Faculty::id);
+		Map<UUID, Set<UUID>> users = new HashMap<>();
+		for (TeachingAssignment assignment : found) {
+			Faculty teacher = faculty.get(assignment.facultyId());
+			if (teacher != null && teacher.userId() != null) {
+				users.computeIfAbsent(assignment.divisionId(), (division) -> new HashSet<>()).add(teacher.userId());
+			}
+		}
+		return Map.copyOf(users);
 	}
 
 	@Override

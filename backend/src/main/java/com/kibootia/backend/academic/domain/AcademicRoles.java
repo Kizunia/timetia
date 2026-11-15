@@ -24,13 +24,14 @@ public final class AcademicRoles {
 			AcademicPermissions.TICKETS_REVIEW, AcademicPermissions.TICKETS_REJECT,
 			AcademicPermissions.TICKETS_APPROVE_PERMANENT, AcademicPermissions.TICKETS_REVERT_IN_SCOPE,
 			AcademicPermissions.TICKETS_EDIT_OWN, AcademicPermissions.TICKETS_VIEW_IN_SCOPE,
-			AcademicPermissions.TICKET_AUDIT_VIEW_IN_SCOPE);
+			AcademicPermissions.TICKET_AUDIT_VIEW_IN_SCOPE, AcademicPermissions.ISSUES_VIEW_IN_SCOPE);
 
 	/** What a CR does for a division's theory lectures and a BR for a batch's lab and tutorial lectures. */
 	private static final Set<String> REPRESENTATIVE = Set.of(AcademicPermissions.LIVE_VIEW,
 			AcademicPermissions.TICKETS_REVIEW, AcademicPermissions.TICKETS_REJECT,
 			AcademicPermissions.TICKETS_VIEW_IN_SCOPE, AcademicPermissions.TICKET_AUDIT_VIEW_IN_SCOPE,
-			AcademicPermissions.ISSUES_OPEN, AcademicPermissions.ISSUES_CLOSE);
+			AcademicPermissions.ISSUES_OPEN, AcademicPermissions.ISSUES_CLOSE, AcademicPermissions.ISSUES_VIEW,
+			AcademicPermissions.ISSUES_VIEW_IN_SCOPE);
 
 	public static final List<Template> TEMPLATES = List.of(
 			new Template("Super HOD", "Everything an HOD can do, across every department.", GrantedScope.GLOBAL,
@@ -38,12 +39,13 @@ public final class AcademicRoles {
 			new Template("HOD", "Head of one department: approves, rejects and reverts within it.",
 					AcademicScopes.DEPARTMENT, HEAD_OF_DEPARTMENT),
 			new Template("Faculty", "Raises and reverts tickets for the lectures they teach.", GrantedScope.GLOBAL,
-					Set.of(AcademicPermissions.LIVE_VIEW_OWN, AcademicPermissions.TICKETS_CREATE,
+					Set.of(AcademicPermissions.LIVE_VIEW_OWN, AcademicPermissions.LIVE_VIEW_DIVISION,
+							AcademicPermissions.TICKETS_CREATE,
 							AcademicPermissions.TICKETS_CANCEL, AcademicPermissions.TICKETS_SELF_APPROVE,
 							AcademicPermissions.TICKETS_REVIEW, AcademicPermissions.TICKETS_REJECT,
 							AcademicPermissions.TICKETS_REVERT, AcademicPermissions.TICKETS_EDIT_OWN,
 							AcademicPermissions.TICKETS_VIEW, AcademicPermissions.TICKET_AUDIT_VIEW,
-							AcademicPermissions.ISSUES_CLOSE)),
+							AcademicPermissions.ISSUES_CLOSE, AcademicPermissions.ISSUES_VIEW)),
 			new Template("CR", "Class representative of one division, for its theory lectures.",
 					AcademicScopes.DIVISION, REPRESENTATIVE),
 			new Template("BR", "Batch representative of one batch, for its lab and tutorial lectures.",

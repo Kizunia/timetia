@@ -14,9 +14,12 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
  */
 public record ChangeResponse(
 		@Schema(requiredMode = REQUIRED) ChangeOperation operation,
-		@Schema(requiredMode = REQUIRED) UUID lectureId,
+		@Schema(nullable = true, description = "The lecture the ticket changes; for an extra lecture, the one it made, once applied.") UUID lectureId,
+		@Schema(nullable = true, description = "The teaching assignment an extra lecture is for.") UUID assignmentId,
 		@Schema(nullable = true) TargetResponse target,
 		@Schema(nullable = true) String reason,
-		@Schema(nullable = true) TargetResponse before) {
+		@Schema(nullable = true, description = "Who takes the lecture; present for a substitute.") UUID substituteFacultyId,
+		@Schema(nullable = true) TargetResponse before,
+		@Schema(nullable = true, description = "Who taught the lecture before the ticket was applied.") UUID beforeFacultyId) {
 
 }

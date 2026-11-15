@@ -3,6 +3,7 @@ package com.kibootia.backend.rescheduling.persistence;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,11 @@ class JpaTicketStore implements TicketStore {
 	@Override
 	public Ticket insert(NewTicket ticket) {
 		TicketEntity saved = this.tickets.saveAndFlush(new TicketEntity(ticket));
-		this.changes.saveAndFlush(new TicketChangeEntity(saved.getId(), ticket.change()));
+		List<NewTicket.Change> planned = ticket.changes();
+		for (int i = 0; i < planned.size(); i++) {
+			this.changes.save(new TicketChangeEntity(saved.getId(), i + 1, planned.get(i)));
+		}
+		this.changes.flush();
 		return TicketMapper.toModel(saved);
 	}
 
@@ -66,19 +71,20 @@ class JpaTicketStore implements TicketStore {
 	}
 
 	@Override
-	public TicketChange changeOf(UUID ticketId) {
-		return TicketMapper.toModel(this.changes.findFirstByTicketIdOrderByIdAsc(ticketId).orElseThrow());
+	public List<TicketChange> changesOf(UUID ticketId) {
+		return this.changes.findByTicketIdOrderByItemNoAsc(ticketId).stream().map(TicketMapper::toModel).toList();
 	}
 
 	@Override
-	public Map<UUID, TicketChange> changesOf(Collection<UUID> ticketIds) {
+	public Map<UUID, List<TicketChange>> changesOf(Collection<UUID> ticketIds) {
 		if (ticketIds.isEmpty()) {
 			return Map.of();
 		}
 		return this.changes.findByTicketIdIn(ticketIds)
 			.stream()
-			.map(TicketMapper::toModel)
-			.collect(Collectors.toMap(TicketChange::ticketId, (change) -> change, (first, second) -> first));
+			.sorted(Comparator.comparingInt(TicketChangeEntity::getItemNo))
+			.collect(Collectors.groupingBy(TicketChangeEntity::getTicketId,
+					Collectors.mapping(TicketMapper::toModel, Collectors.toList())));
 	}
 
 	@Override
@@ -92,16 +98,28 @@ class JpaTicketStore implements TicketStore {
 	}
 
 	@Override
-	public TicketChange replaceChange(UUID ticketId, NewTicket.Change change) {
-		TicketChangeEntity entity = this.changes.findFirstByTicketIdOrderByIdAsc(ticketId).orElseThrow();
-		entity.set(change);
-		return TicketMapper.toModel(this.changes.saveAndFlush(entity));
+	public void replaceChanges(UUID ticketId, List<NewTicket.Change> replacements) {
+		List<TicketChangeEntity> entities = this.changes.findByTicketIdOrderByItemNoAsc(ticketId);
+		if (entities.size() != replacements.size()) {
+			throw new IllegalStateException("A ticket keeps the number of changes it was raised with");
+		}
+		for (int i = 0; i < entities.size(); i++) {
+			entities.get(i).set(replacements.get(i));
+		}
+		this.changes.saveAllAndFlush(entities);
 	}
 
 	@Override
-	public void recordBefore(UUID ticketId, LectureSlot before) {
-		TicketChangeEntity entity = this.changes.findFirstByTicketIdOrderByIdAsc(ticketId).orElseThrow();
-		entity.recordBefore(before);
+	public void recordBefore(UUID changeId, LectureSlot before, UUID beforeFacultyId) {
+		TicketChangeEntity entity = this.changes.findById(changeId).orElseThrow();
+		entity.recordBefore(before, beforeFacultyId);
+		this.changes.saveAndFlush(entity);
+	}
+
+	@Override
+	public void recordCreated(UUID changeId, UUID occurrenceId) {
+		TicketChangeEntity entity = this.changes.findById(changeId).orElseThrow();
+		entity.recordCreated(occurrenceId);
 		this.changes.saveAndFlush(entity);
 	}
 
@@ -191,10 +209,16 @@ class JpaTicketStore implements TicketStore {
 	// --- finding tickets --------------------------------------------------------------------------------------------
 
 	@Override
-	public List<Ticket> inReviewAffectedBy(UUID lectureId, Set<LocalDate> dates) {
-		// An IN with no values is not valid SQL; a date no ticket can want matches none.
-		Collection<LocalDate> asked = dates.isEmpty() ? List.of(LocalDate.EPOCH) : dates;
-		return this.tickets.inStateAffectedBy(TicketStatus.IN_REVIEW, lectureId, asked)
+	public boolean hasOpenRevert(UUID ticketId) {
+		return this.tickets.existsByRevertsTicketIdAndStatusIn(ticketId, List.of(TicketStatus.DRAFT, TicketStatus.IN_REVIEW));
+	}
+
+	@Override
+	public List<Ticket> inReviewAffectedBy(Set<UUID> lectureIds, Set<LocalDate> dates) {
+		// An IN with no values is not valid SQL; a date or a lecture no ticket can want matches none.
+		Collection<LocalDate> askedDates = dates.isEmpty() ? List.of(LocalDate.EPOCH) : dates;
+		Collection<UUID> askedLectures = lectureIds.isEmpty() ? List.of(new UUID(0, 0)) : lectureIds;
+		return this.tickets.inStateAffectedBy(TicketStatus.IN_REVIEW, askedLectures, askedDates)
 			.stream()
 			.map(TicketMapper::toModel)
 			.toList();

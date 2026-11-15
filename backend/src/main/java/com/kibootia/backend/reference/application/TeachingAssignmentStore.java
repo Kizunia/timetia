@@ -20,6 +20,12 @@ public interface TeachingAssignmentStore {
 	/** The live assignments among these ids; an id with no live assignment is absent. */
 	List<TeachingAssignment> findAll(Collection<UUID> ids);
 
+	/** The live assignments of these faculty members. */
+	List<TeachingAssignment> findByFaculty(Collection<UUID> facultyIds);
+
+	/** The live assignments in these divisions. */
+	List<TeachingAssignment> findByDivisions(Collection<UUID> divisionIds);
+
 	Page<TeachingAssignment> search(UUID division, UUID faculty, UUID subject, Pageable pageable);
 
 	void delete(UUID id);

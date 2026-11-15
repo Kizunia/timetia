@@ -212,6 +212,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["issuesList"];
+        put?: never;
+        post: operations["issuesOpen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["issuesGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["issuesClose"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/{id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["issuesLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/{id}/mentions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["issuesMention"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -334,6 +414,70 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["notesRestore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["notificationsList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["notificationsReadAll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["notificationsUnreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["notificationsRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -542,6 +686,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ticketsEscalate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tickets/{id}/revert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ticketsRevert"];
         delete?: never;
         options?: never;
         head?: never;
@@ -947,12 +1107,30 @@ export interface components {
             version: number;
         };
         ChangeResponse: {
+            /**
+             * Format: uuid
+             * @description The teaching assignment an extra lecture is for.
+             */
+            assignmentId?: string | null;
             before?: components["schemas"]["TargetResponse"];
-            /** Format: uuid */
-            lectureId: string;
+            /**
+             * Format: uuid
+             * @description Who taught the lecture before the ticket was applied.
+             */
+            beforeFacultyId?: string | null;
+            /**
+             * Format: uuid
+             * @description The lecture the ticket changes; for an extra lecture, the one it made, once applied.
+             */
+            lectureId?: string | null;
             /** @enum {string} */
-            operation: "MOVE" | "CANCEL";
+            operation: "MOVE" | "CANCEL" | "REASSIGN_FACULTY" | "CREATE_EXTRA" | "RESTORE";
             reason?: string | null;
+            /**
+             * Format: uuid
+             * @description Who takes the lecture; present for a substitute.
+             */
+            substituteFacultyId?: string | null;
             target?: components["schemas"]["TargetResponse"];
         };
         ConflictResponse: {
@@ -1039,6 +1217,17 @@ export interface components {
             /** Format: uuid */
             userId?: string;
         };
+        CreateIssueRequest: {
+            /** Format: uuid */
+            batchId?: string;
+            description?: string;
+            /** Format: uuid */
+            divisionId?: string;
+            mentionedFacultyIds?: string[];
+            /** @enum {string} */
+            sessionType: "THEORY" | "LAB" | "TUTORIAL";
+            title: string;
+        };
         CreateNoteRequest: {
             body: string;
             title: string;
@@ -1082,13 +1271,19 @@ export interface components {
             startDate: string;
         };
         CreateTicketRequest: {
+            /** Format: uuid */
+            assignmentId?: string;
             description?: string;
             /** Format: uuid */
-            lectureId: string;
+            lectureId?: string;
+            /** Format: uuid */
+            otherLectureId?: string;
             reason?: string;
+            /** Format: uuid */
+            substituteFacultyId?: string;
             target?: components["schemas"]["TargetRequest"];
             /** @enum {string} */
-            type: "RESCHEDULE" | "CANCEL";
+            type: "RESCHEDULE" | "CANCEL" | "SUBSTITUTE" | "EXTRA" | "EXCHANGE" | "REVERT" | "PERMANENT_CHANGE";
         };
         CreateVersionRequest: {
             /** Format: uuid */
@@ -1161,6 +1356,36 @@ export interface components {
             email: string;
             roleIds?: string[];
         };
+        IssueResponse: {
+            /** Format: uuid */
+            batchId?: string | null;
+            /** Format: date-time */
+            closedAt?: string | null;
+            /** Format: uuid */
+            closedByUserId?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            departmentId: string;
+            description?: string | null;
+            /** Format: uuid */
+            divisionId: string;
+            /** Format: uuid */
+            id: string;
+            linkedTicketIds: string[];
+            mentionedFacultyIds: string[];
+            /** Format: uuid */
+            openerUserId: string;
+            /** @enum {string} */
+            sessionType: "THEORY" | "LAB" | "TUTORIAL";
+            /** @enum {string} */
+            status: "OPEN" | "CLOSED";
+            title: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
         Line: {
             /** @description True when this row's person got their account from this import. */
             accountCreated: boolean;
@@ -1180,6 +1405,10 @@ export interface components {
             /** Format: uuid */
             userId?: string | null;
         };
+        LinkRequest: {
+            /** Format: uuid */
+            ticketId: string;
+        };
         LiveLectureResponse: {
             batchCode?: string | null;
             /** Format: uuid */
@@ -1193,6 +1422,8 @@ export interface components {
             divisionId: string;
             /** Format: time-local */
             endTime: string;
+            /** @description True when a ticket added the lecture to the weekly timetable. */
+            extra: boolean;
             /** Format: uuid */
             facultyId: string;
             facultyName?: string | null;
@@ -1212,6 +1443,11 @@ export interface components {
              */
             originalEndTime?: string | null;
             /**
+             * Format: uuid
+             * @description The faculty member of the teaching assignment; present only when a substitute teaches the lecture, whose ID and name are then facultyId and facultyName.
+             */
+            originalFacultyId?: string | null;
+            /**
              * Format: time-local
              * @description The start in the base timetable; present only when the lecture was moved.
              */
@@ -1225,6 +1461,10 @@ export interface components {
             startTime: string;
             subjectCode?: string | null;
             subjectName?: string | null;
+        };
+        MarkedResponse: {
+            /** Format: int32 */
+            marked: number;
         };
         MeResponse: {
             /** @description True when the user is an administrator (Super Admin) with a verified address. A hint for showing controls; the backend decides every request. */
@@ -1252,6 +1492,10 @@ export interface components {
             theme: "SYSTEM" | "LIGHT" | "DARK";
             username?: string | null;
         };
+        MentionRequest: {
+            /** Format: uuid */
+            facultyId: string;
+        };
         NoteResponse: {
             /**
              * Format: uuid
@@ -1270,6 +1514,25 @@ export interface components {
             updatedAt: string;
             /** Format: int64 */
             version: number;
+        };
+        NotificationResponse: {
+            /**
+             * Format: uuid
+             * @description Who caused it.
+             */
+            actorUserId?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId?: string | null;
+            /** Format: date-time */
+            readAt?: string | null;
+            /** Format: uuid */
+            ticketId?: string | null;
+            /** @enum {string} */
+            type: "REVIEW_REQUESTED" | "REVIEW_APPROVED" | "REVIEW_REJECTED" | "TICKET_APPLIED" | "TICKET_CONFLICTED" | "TICKET_EDITED" | "TICKET_WITHDRAWN" | "TICKET_REVERTED" | "ISSUE_MENTION";
         };
         PageInfo: {
             /** Format: int32 */
@@ -1305,12 +1568,20 @@ export interface components {
             items: components["schemas"]["FailedEventResponse"][];
             page: components["schemas"]["PageInfo"];
         };
+        PageResponseIssueResponse: {
+            items: components["schemas"]["IssueResponse"][];
+            page: components["schemas"]["PageInfo"];
+        };
         PageResponseLiveLectureResponse: {
             items: components["schemas"]["LiveLectureResponse"][];
             page: components["schemas"]["PageInfo"];
         };
         PageResponseNoteResponse: {
             items: components["schemas"]["NoteResponse"][];
+            page: components["schemas"]["PageInfo"];
+        };
+        PageResponseNotificationResponse: {
+            items: components["schemas"]["NotificationResponse"][];
             page: components["schemas"]["PageInfo"];
         };
         PageResponseRoleResponse: {
@@ -1405,6 +1676,9 @@ export interface components {
         };
         ReplaceUserRolesRequest: {
             roleIds: string[];
+        };
+        RevertRequest: {
+            reason?: string;
         };
         ReviewRequest: {
             /** @enum {string} */
@@ -1573,7 +1847,10 @@ export interface components {
             authorUserId: string;
             /** Format: uuid */
             batchId?: string | null;
+            /** @description The first change: the only one of most tickets, and for an exchange the one about the author's own lecture. */
             change: components["schemas"]["ChangeResponse"];
+            /** @description Every change the ticket makes, in order: one, or two for an exchange. */
+            changes: components["schemas"]["ChangeResponse"][];
             /** Format: date-time */
             closedAt?: string | null;
             conflicted: boolean;
@@ -1592,6 +1869,16 @@ export interface components {
             facultyId: string;
             /** Format: uuid */
             id: string;
+            /**
+             * Format: uuid
+             * @description The revert that undid this ticket; present once it is reverted.
+             */
+            revertedByTicketId?: string | null;
+            /**
+             * Format: uuid
+             * @description The applied ticket this one undoes; present on a revert.
+             */
+            revertsTicketId?: string | null;
             /** @description Who was asked to review it, of every revision, oldest first; empty in a list. */
             reviews: components["schemas"]["ReviewResponse"][];
             /** Format: int32 */
@@ -1601,7 +1888,7 @@ export interface components {
             /** @enum {string} */
             status: "DRAFT" | "IN_REVIEW" | "APPLIED" | "REJECTED" | "WITHDRAWN" | "EXPIRED" | "REVERTED";
             /** @enum {string} */
-            type: "RESCHEDULE" | "CANCEL";
+            type: "RESCHEDULE" | "CANCEL" | "SUBSTITUTE" | "EXTRA" | "EXCHANGE" | "REVERT" | "PERMANENT_CHANGE";
             /** Format: date-time */
             updatedAt: string;
             /** Format: int64 */
@@ -1647,6 +1934,10 @@ export interface components {
             /** Format: int64 */
             version: number;
         };
+        UnreadCountResponse: {
+            /** Format: int64 */
+            count: number;
+        };
         UpdateNoteRequest: {
             body: string;
             title: string;
@@ -1668,6 +1959,8 @@ export interface components {
             description?: string;
             reason?: string;
             reviewers?: components["schemas"]["ReviewerBody"][];
+            /** Format: uuid */
+            substituteFacultyId?: string;
             target?: components["schemas"]["TargetRequest"];
             /** Format: int64 */
             version: number;
@@ -3636,6 +3929,440 @@ export interface operations {
             };
         };
     };
+    issuesList: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                sort?: string;
+                status?: "OPEN" | "CLOSED";
+                mine?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseIssueResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    issuesOpen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue was opened; `Location` is its URL. Each mentioned faculty member is told. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    issuesGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    issuesClose: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    issuesLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    issuesMention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MentionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     meMe: {
         parameters: {
             query?: never;
@@ -4505,6 +5232,246 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    notificationsList: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                sort?: string;
+                unread?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseNotificationResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    notificationsReadAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkedResponse"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    notificationsUnreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountResponse"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    notificationsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponse"];
                 };
             };
             /** @description The request is malformed or fails validation; see `errors`. */
@@ -6271,6 +7238,86 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    ticketsRevert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RevertRequest"];
+            };
+        };
+        responses: {
+            /** @description The revert was raised as a new ticket and checked; `Location` is its URL. */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

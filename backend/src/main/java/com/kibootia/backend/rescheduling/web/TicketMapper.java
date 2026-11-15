@@ -20,13 +20,14 @@ final class TicketMapper {
 	}
 
 	static Draft toDraft(CreateTicketRequest request) {
-		return new Draft(request.type(), request.lectureId(), request.description(), toSlot(request.target()),
-				request.reason());
+		return new Draft(request.type(), request.lectureId(), request.otherLectureId(), request.assignmentId(),
+				request.description(), toSlot(request.target()),
+				request.reason(), request.substituteFacultyId());
 	}
 
 	static Edit toEdit(UpdateTicketRequest request) {
-		return new Edit(request.description(), toSlot(request.target()), request.reason(), toReviewers(request.reviewers()),
-				request.version());
+		return new Edit(request.description(), toSlot(request.target()), request.reason(), request.substituteFacultyId(),
+				toReviewers(request.reviewers()), request.version());
 	}
 
 	/** Null stays null: an edit that leaves the reviewers out keeps them. */
@@ -45,15 +46,17 @@ final class TicketMapper {
 		return new TicketResponse(ticket.id(), ticket.type(), ticket.status(), ticket.approvalPath(), ticket.authorUserId(),
 				ticket.actingFacultyId(), ticket.description(), ticket.revisionNo(), ticket.lecture().divisionId(),
 				ticket.lecture().batchId(), ticket.lecture().sessionType(), ticket.lecture().facultyId(),
-				toResponse(detail.change()), detail.conflicts().stream().map(TicketMapper::toResponse).toList(),
+				toResponse(detail.change()),
+				detail.changes().stream().map(TicketMapper::toResponse).toList(), detail.conflicts().stream().map(TicketMapper::toResponse).toList(),
 				detail.reviews().stream().map(TicketMapper::toResponse).toList(),
-				ticket.conflicted(), ticket.expiresAt(), ticket.closedAt(), ticket.version(), ticket.createdAt(),
+				ticket.conflicted(), ticket.expiresAt(), ticket.closedAt(), ticket.revertsTicketId(), ticket.revertedByTicketId(),
+				ticket.version(), ticket.createdAt(),
 				ticket.updatedAt());
 	}
 
 	static ChangeResponse toResponse(TicketChange change) {
-		return new ChangeResponse(change.operation(), change.sourceOccurrenceId(), toResponse(change.target()),
-				change.reason(), toResponse(change.before()));
+		return new ChangeResponse(change.operation(), change.occurrenceId(), change.assignmentId(), toResponse(change.target()),
+				change.reason(), change.substituteFacultyId(), toResponse(change.before()), change.beforeFacultyId());
 	}
 
 	private static TargetResponse toResponse(LectureSlot slot) {

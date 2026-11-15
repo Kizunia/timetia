@@ -1,6 +1,7 @@
 package com.kibootia.backend.rescheduling.web;
 
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +15,7 @@ import jakarta.validation.constraints.Size;
  * since, the edit is refused with 409 instead of overwriting the other change.
  */
 public record UpdateTicketRequest(@Size(max = 1000) String description, @Valid TargetRequest target,
-		@Size(max = 500) String reason, @Size(max = 20) List<@Valid ReviewerBody> reviewers,
+		@Size(max = 500) String reason, UUID substituteFacultyId, @Size(max = 20) List<@Valid ReviewerBody> reviewers,
 		@NotNull @PositiveOrZero Long version) {
 
 }

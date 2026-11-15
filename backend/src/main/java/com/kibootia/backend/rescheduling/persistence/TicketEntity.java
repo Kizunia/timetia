@@ -44,6 +44,12 @@ class TicketEntity extends BaseEntity {
 	@Column(name = "author_user_id", nullable = false, updatable = false, columnDefinition = "binary(16)")
 	private UUID authorUserId;
 
+	@Column(name = "reverts_ticket_id", updatable = false, columnDefinition = "binary(16)")
+	private UUID revertsTicketId;
+
+	@Column(name = "reverted_by_ticket_id", columnDefinition = "binary(16)")
+	private UUID revertedByTicketId;
+
 	@Column(name = "acting_faculty_id", updatable = false, columnDefinition = "binary(16)")
 	private UUID actingFacultyId;
 
@@ -103,6 +109,7 @@ class TicketEntity extends BaseEntity {
 		this.sessionType = ticket.lecture().sessionType();
 		this.facultyId = ticket.lecture().facultyId();
 		this.expiresAt = ticket.expiresAt();
+		this.revertsTicketId = ticket.revertsTicketId();
 	}
 
 	/** Writes what can change from the ticket the use case built. */
@@ -115,6 +122,15 @@ class TicketEntity extends BaseEntity {
 		this.conflicted = ticket.conflicted();
 		this.conflictedSince = ticket.conflictedSince();
 		this.closedAt = ticket.closedAt();
+		this.revertedByTicketId = ticket.revertedByTicketId();
+	}
+
+	UUID getRevertsTicketId() {
+		return this.revertsTicketId;
+	}
+
+	UUID getRevertedByTicketId() {
+		return this.revertedByTicketId;
 	}
 
 	TicketType getType() {

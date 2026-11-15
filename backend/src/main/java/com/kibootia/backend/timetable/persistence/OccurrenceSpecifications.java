@@ -30,7 +30,7 @@ final class OccurrenceSpecifications {
 				all.add(builder.equal(root.get("divisionId"), query.division()));
 			}
 			if (query.faculty() != null) {
-				all.add(builder.equal(root.get("facultyId"), query.faculty()));
+				all.add(builder.equal(root.get("effectiveFacultyId"), query.faculty()));
 			}
 			if (query.batch() != null) {
 				// A lab or tutorial names its batch; a theory lecture is for every batch of its division.
@@ -57,7 +57,7 @@ final class OccurrenceSpecifications {
 							root.get("divisionId").in(visibility.divisionsOfBatches())));
 				}
 				if (!visibility.faculty().isEmpty()) {
-					any.add(root.get("facultyId").in(visibility.faculty()));
+					any.add(root.get("effectiveFacultyId").in(visibility.faculty()));
 				}
 				all.add(any.isEmpty() ? builder.disjunction() : builder.or(any.toArray(new Predicate[0])));
 			}

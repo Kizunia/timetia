@@ -25,6 +25,7 @@ import com.kibootia.backend.platform.authorization.NoAuthorization;
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.reference.AcademicDirectory;
 import com.kibootia.backend.reference.AssignmentDetails;
+import com.kibootia.backend.reference.FacultyDetails;
 import com.kibootia.backend.reference.RoomDetails;
 import com.kibootia.backend.reference.TermDetails;
 import com.kibootia.backend.timetable.ConflictType;
@@ -89,6 +90,17 @@ class LectureCalendarService implements LectureCalendar {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization(CALLED_BY_AN_AUTHORIZED_MODULE)
+	public List<LectureView> series(UUID occurrenceId) {
+		return this.occurrences.find(occurrenceId)
+			.filter((occurrence) -> occurrence.entryId() != null)
+			.map((occurrence) -> this.views
+				.viewsOf(this.occurrences.findOfEntryFrom(occurrence.entryId(), occurrence.baseSlot().date())))
+			.orElse(List.of());
+	}
+
+	@Override
 	@NoAuthorization(CALLED_BY_AN_AUTHORIZED_MODULE)
 	public ZoneId zone() {
 		return this.properties.zone();
@@ -108,28 +120,48 @@ class LectureCalendarService implements LectureCalendar {
 	@Override
 	@Transactional(noRollbackFor = ChangeConflictException.class)
 	@NoAuthorization(CALLED_BY_AN_AUTHORIZED_MODULE)
-	public void apply(List<LectureChange> changes, UUID ticketId) {
+	public List<UUID> apply(List<LectureChange> changes, UUID ticketId) {
 		Map<UUID, Occurrence> current = byId(this.occurrences.lockAll(occurrenceIds(changes)));
 		List<LectureConflict> conflicts = evaluate(changes, current);
 		if (!conflicts.isEmpty()) {
 			throw new ChangeConflictException(conflicts);
 		}
-		Map<UUID, AssignmentDetails> assignments = this.directory
-			.assignments(current.values().stream().map(Occurrence::assignmentId).collect(Collectors.toSet()));
+		Map<UUID, AssignmentDetails> assignments = this.directory.assignments(assignmentIds(changes, current));
 
 		// Everything the lectures held is released first, so that lectures changing places can take each other's slots.
 		this.claims.deleteOf(current.keySet());
 		List<ClaimStore.Claim> held = new ArrayList<>();
+		List<UUID> result = new ArrayList<>();
 		for (LectureChange change : changes) {
+			if (change.isCreate()) {
+				AssignmentDetails assignment = assignments.get(change.assignmentId());
+				TimetableVersion version = this.timetables
+					.publishedInForce(assignment.divisionId(), change.target().date())
+					.orElseThrow();
+				Occurrence created = this.occurrences.insertExtra(new NewOccurrence(null, version.id(), assignment.id(),
+						assignment.departmentId(), assignment.divisionId(), assignment.batchId(), assignment.sessionType(),
+						assignment.facultyId(), change.target()), ticketId);
+				result.add(created.id());
+				claimsOf(created, assignment, change).forEach((key) -> held.add(new ClaimStore.Claim(created.id(), key)));
+				continue;
+			}
 			Occurrence occurrence = current.get(change.occurrenceId());
+			result.add(occurrence.id());
 			if (change.isCancel()) {
 				this.occurrences.cancel(occurrence.id(), ticketId);
+				continue;
+			}
+			AssignmentDetails assignment = assignments.get(occurrence.assignmentId());
+			if (change.isReassign()) {
+				this.occurrences.reassign(occurrence.id(), change.facultyId(), ticketId);
+			}
+			else if (change.isRestore()) {
+				this.occurrences.restore(occurrence.id(), change.target(), change.facultyId(), ticketId);
 			}
 			else {
 				this.occurrences.move(occurrence.id(), change.target(), ticketId);
-				AssignmentDetails assignment = assignments.get(occurrence.assignmentId());
-				claimsOf(assignment, change.target()).forEach((key) -> held.add(new ClaimStore.Claim(occurrence.id(), key)));
 			}
+			claimsOf(occurrence, assignment, change).forEach((key) -> held.add(new ClaimStore.Claim(occurrence.id(), key)));
 		}
 		try {
 			this.claims.insertAll(held);
@@ -138,20 +170,49 @@ class LectureCalendarService implements LectureCalendar {
 			// Another change took a slot between the check and this write. Nothing is kept; asking again shows what is in the way.
 			throw ApiException.conflict(SLOT_TAKEN, "Another change took a slot this one needs. Check the plan again.");
 		}
+		return result;
 	}
 
 	// --- the rules --------------------------------------------------------------------------------------------------
 
-	private List<LectureConflict> evaluate(List<LectureChange> changes, Map<UUID, Occurrence> current) {
+	/**
+	 * @param existing the lectures the changes are about that exist now; a lecture to be created is planned here and held
+	 *        beside them while the changes are checked, so the rules are the same for it
+	 */
+	private List<LectureConflict> evaluate(List<LectureChange> changes, Map<UUID, Occurrence> existing) {
 		Set<UUID> moving = new HashSet<>(occurrenceIds(changes));
-		Map<UUID, AssignmentDetails> assignments = this.directory
-			.assignments(current.values().stream().map(Occurrence::assignmentId).collect(Collectors.toSet()));
-		List<LectureConflict> conflicts = new ArrayList<>();
+		Map<UUID, AssignmentDetails> assignments = this.directory.assignments(assignmentIds(changes, existing));
+		Map<UUID, Occurrence> current = new HashMap<>(existing);
+		Set<UUID> created = new HashSet<>();
+		Set<UUID> notPlanned = new HashSet<>();
+		List<LectureConflict> planning = new ArrayList<>();
+		for (LectureChange change : changes) {
+			if (change.isCreate()) {
+				created.add(change.occurrenceId());
+				Optional<Occurrence> planned = planned(change, assignments.get(change.assignmentId()), planning);
+				planned.ifPresentOrElse((occurrence) -> current.put(change.occurrenceId(), occurrence),
+						() -> notPlanned.add(change.occurrenceId()));
+			}
+		}
+		return evaluate(changes, current, assignments, moving, created, notPlanned, planning);
+	}
+
+	private List<LectureConflict> evaluate(List<LectureChange> changes, Map<UUID, Occurrence> current,
+			Map<UUID, AssignmentDetails> assignments, Set<UUID> moving, Set<UUID> created, Set<UUID> notPlanned,
+			List<LectureConflict> planning) {
+		Map<UUID, FacultyDetails> substitutes = this.directory.faculties(changes.stream()
+			.filter((change) -> change.isReassign() || change.isRestore())
+			.map(LectureChange::facultyId)
+			.collect(Collectors.toSet()));
+		List<LectureConflict> conflicts = new ArrayList<>(planning);
 		Map<LectureChange, Set<ClaimKey>> wanted = new LinkedHashMap<>();
 
 		for (LectureChange change : changes) {
+			if (notPlanned.contains(change.occurrenceId())) {
+				continue;
+			}
 			Occurrence occurrence = current.get(change.occurrenceId());
-			if (occurrence == null || occurrence.cancelled()) {
+			if (occurrence == null || (occurrence.cancelled() && !change.isRestore())) {
 				conflicts.add(changed(change, "The lecture no longer exists or has been cancelled."));
 				continue;
 			}
@@ -162,7 +223,11 @@ class LectureCalendarService implements LectureCalendar {
 			if (change.isCancel()) {
 				continue;
 			}
-			List<LectureConflict> outside = calendarProblems(occurrence, change);
+			if ((change.isReassign() || change.isRestore()) && !substitutes.containsKey(change.facultyId())) {
+				conflicts.add(changed(change, "The faculty member who was to take the lecture no longer exists."));
+				continue;
+			}
+			List<LectureConflict> outside = change.isReassign() ? List.of() : calendarProblems(occurrence, change);
 			if (!outside.isEmpty()) {
 				conflicts.addAll(outside);
 				continue;
@@ -172,15 +237,59 @@ class LectureCalendarService implements LectureCalendar {
 				conflicts.add(changed(change, "The lecture's teaching assignment no longer exists."));
 				continue;
 			}
-			wanted.put(change, claimsOf(assignment, change.target()));
+			wanted.put(change, claimsOf(occurrence, assignment, change));
 		}
 		conflicts.addAll(clashes(wanted, current, moving));
-		return conflicts;
+		return conflicts.stream().map((conflict) -> withoutPlaceholders(conflict, created)).toList();
 	}
 
-	/** What the lecture needs once it is at {@code slot}. */
-	private static Set<ClaimKey> claimsOf(AssignmentDetails assignment, LectureSlot slot) {
-		return Claims.keysFor(assignment.sessionType(), assignment.facultyId(), slot.roomId(), assignment.divisionId(),
+	/**
+	 * The lecture a change to create one would make, as it would be: the slot it asks for, the teacher and place of the
+	 * teaching assignment, and the timetable in force that day. It exists only while the change is checked. Says why not, in
+	 * {@code problems}, when the lecture cannot be planned.
+	 */
+	private Optional<Occurrence> planned(LectureChange change, AssignmentDetails assignment, List<LectureConflict> problems) {
+		if (assignment == null) {
+			problems.add(changed(change, "The teaching assignment of the lecture no longer exists."));
+			return Optional.empty();
+		}
+		Optional<TimetableVersion> version = this.timetables.publishedInForce(assignment.divisionId(), change.target().date());
+		if (version.isEmpty()) {
+			problems.add(new LectureConflict(ConflictType.OUTSIDE_CALENDAR, change.occurrenceId(),
+					"No published timetable of the division is in force on " + change.target().date() + ".", null, null));
+			return Optional.empty();
+		}
+		return Optional.of(new Occurrence(change.occurrenceId(), null, null, version.get().id(), assignment.id(),
+				assignment.departmentId(), assignment.divisionId(), assignment.batchId(), assignment.sessionType(),
+				assignment.facultyId(), assignment.facultyId(), change.target(), change.target(), false, null, 0));
+	}
+
+	/** A lecture that does not exist yet has no ID to report. */
+	private static LectureConflict withoutPlaceholders(LectureConflict conflict, Set<UUID> placeholders) {
+		boolean own = placeholders.contains(conflict.occurrenceId());
+		boolean other = placeholders.contains(conflict.conflictingOccurrenceId());
+		if (!own && !other) {
+			return conflict;
+		}
+		return new LectureConflict(conflict.type(), own ? null : conflict.occurrenceId(), conflict.message(),
+				other ? null : conflict.conflictingOccurrenceId(), conflict.conflictingTicketId());
+	}
+
+	/** The teaching assignments of the lectures that exist and of those to be created. */
+	private static Set<UUID> assignmentIds(List<LectureChange> changes, Map<UUID, Occurrence> existing) {
+		Set<UUID> ids = existing.values().stream().map(Occurrence::assignmentId).collect(Collectors.toCollection(HashSet::new));
+		changes.stream().filter(LectureChange::isCreate).forEach((change) -> ids.add(change.assignmentId()));
+		return ids;
+	}
+
+	/**
+	 * What the lecture needs once the change is made: the slot it is moved to, or the one it has when only its teacher
+	 * changes, and the teacher it has then.
+	 */
+	private static Set<ClaimKey> claimsOf(Occurrence occurrence, AssignmentDetails assignment, LectureChange change) {
+		LectureSlot slot = change.isReassign() ? occurrence.slot() : change.target();
+		UUID teacher = (change.isReassign() || change.isRestore()) ? change.facultyId() : occurrence.currentFacultyId();
+		return Claims.keysFor(assignment.sessionType(), teacher, slot.roomId(), assignment.divisionId(),
 				assignment.batchIds(), slot.date(), slot.startTime(), slot.endTime());
 	}
 

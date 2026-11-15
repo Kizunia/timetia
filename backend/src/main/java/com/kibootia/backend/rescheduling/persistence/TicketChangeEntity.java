@@ -27,11 +27,17 @@ class TicketChangeEntity extends BaseEntity {
 	@Column(name = "ticket_id", nullable = false, updatable = false, columnDefinition = "binary(16)")
 	private UUID ticketId;
 
+	@Column(name = "item_no", nullable = false, updatable = false)
+	private int itemNo;
+
+	@Column(name = "faculty_id", columnDefinition = "binary(16)")
+	private UUID facultyId;
+
 	@Enumerated(EnumType.STRING)
-	@Column(name = "operation_type", nullable = false, length = 10)
+	@Column(name = "operation_type", nullable = false, length = 20)
 	private ChangeOperation operation;
 
-	@Column(name = "source_occurrence_id", nullable = false, columnDefinition = "binary(16)")
+	@Column(name = "source_occurrence_id", columnDefinition = "binary(16)")
 	private UUID sourceOccurrenceId;
 
 	@Column(name = "source_revision", nullable = false)
@@ -59,6 +65,18 @@ class TicketChangeEntity extends BaseEntity {
 	@Column(name = "target_meeting_link", length = 500)
 	private String targetMeetingLink;
 
+	@Column(name = "teaching_assignment_id", columnDefinition = "binary(16)")
+	private UUID assignmentId;
+
+	@Column(name = "created_occurrence_id", columnDefinition = "binary(16)")
+	private UUID createdOccurrenceId;
+
+	@Column(name = "target_faculty_id", columnDefinition = "binary(16)")
+	private UUID targetFacultyId;
+
+	@Column(name = "before_faculty_id", columnDefinition = "binary(16)")
+	private UUID beforeFacultyId;
+
 	@Column(name = "before_date")
 	private LocalDate beforeDate;
 
@@ -81,8 +99,9 @@ class TicketChangeEntity extends BaseEntity {
 	protected TicketChangeEntity() {
 	}
 
-	TicketChangeEntity(UUID ticketId, NewTicket.Change change) {
+	TicketChangeEntity(UUID ticketId, int itemNo, NewTicket.Change change) {
 		this.ticketId = ticketId;
+		this.itemNo = itemNo;
 		set(change);
 	}
 
@@ -92,6 +111,9 @@ class TicketChangeEntity extends BaseEntity {
 		this.sourceOccurrenceId = change.sourceOccurrenceId();
 		this.sourceRevision = change.sourceRevision();
 		this.reason = change.reason();
+		this.targetFacultyId = change.substituteFacultyId();
+		this.assignmentId = change.assignmentId();
+		this.facultyId = change.facultyId();
 		LectureSlot target = change.target();
 		this.targetDate = (target == null) ? null : target.date();
 		this.targetStartTime = (target == null) ? null : target.startTime();
@@ -101,7 +123,8 @@ class TicketChangeEntity extends BaseEntity {
 		this.targetMeetingLink = (target == null) ? null : target.meetingLink();
 	}
 
-	void recordBefore(LectureSlot before) {
+	void recordBefore(LectureSlot before, UUID facultyId) {
+		this.beforeFacultyId = facultyId;
 		this.beforeDate = before.date();
 		this.beforeStartTime = before.startTime();
 		this.beforeEndTime = before.endTime();
@@ -130,7 +153,35 @@ class TicketChangeEntity extends BaseEntity {
 		return this.reason;
 	}
 
-	/** Where a move puts the lecture; null for a cancellation. */
+	void recordCreated(UUID occurrenceId) {
+		this.createdOccurrenceId = occurrenceId;
+	}
+
+	int getItemNo() {
+		return this.itemNo;
+	}
+
+	UUID getFacultyId() {
+		return this.facultyId;
+	}
+
+	UUID getAssignmentId() {
+		return this.assignmentId;
+	}
+
+	UUID getCreatedOccurrenceId() {
+		return this.createdOccurrenceId;
+	}
+
+	UUID getTargetFacultyId() {
+		return this.targetFacultyId;
+	}
+
+	UUID getBeforeFacultyId() {
+		return this.beforeFacultyId;
+	}
+
+	/** Where a move puts the lecture; null for a cancellation or a substitute. */
 	LectureSlot target() {
 		return (this.targetDate == null) ? null : new LectureSlot(this.targetDate, this.targetStartTime,
 				this.targetEndTime, this.targetMode, this.targetRoomId, this.targetMeetingLink);

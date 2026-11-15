@@ -43,7 +43,8 @@ final class TimetableMapper {
 				slot.mode(), lecture.divisionId(), lecture.divisionCode(), lecture.batchId(), lecture.batchCode(),
 				lecture.subjectCode(), lecture.subjectName(), lecture.facultyId(), lecture.facultyName(), slot.roomId(),
 				lecture.roomCode(), slot.meetingLink(), lecture.cancelled(), lecture.changed(),
-				moved ? base.date() : null, moved ? base.startTime() : null, moved ? base.endTime() : null);
+				moved ? base.date() : null, moved ? base.startTime() : null, moved ? base.endTime() : null,
+				lecture.extra(), lecture.substituted() ? lecture.baseFacultyId() : null);
 	}
 
 }

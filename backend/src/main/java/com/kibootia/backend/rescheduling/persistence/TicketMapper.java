@@ -17,13 +17,16 @@ final class TicketMapper {
 		return new Ticket(entity.getId(), entity.getTenantId(), entity.getType(), entity.getStatus(),
 				entity.getApprovalPath(), entity.getAuthorUserId(), entity.getActingFacultyId(), entity.getDescription(),
 				entity.getRevisionNo(), lecture, entity.getExpiresAt(), entity.isConflicted(), entity.getConflictedSince(),
-				entity.getClosedAt(), entity.getVersion(), entity.getCreatedAt(), entity.getUpdatedAt());
+				entity.getClosedAt(), entity.getVersion(), entity.getCreatedAt(), entity.getUpdatedAt(),
+				entity.getRevertsTicketId(), entity.getRevertedByTicketId());
 	}
 
 	static TicketChange toModel(TicketChangeEntity entity) {
 		return new TicketChange(entity.getId(), entity.getTicketId(), entity.getOperation(),
 				entity.getSourceOccurrenceId(), entity.getSourceRevision(), entity.target(), entity.getReason(),
-				entity.before());
+				entity.getTargetFacultyId(), entity.getAssignmentId(), entity.getCreatedOccurrenceId(), entity.getFacultyId(),
+				entity.before(),
+				entity.getBeforeFacultyId());
 	}
 
 	static TicketReview toModel(TicketReviewEntity entity) {

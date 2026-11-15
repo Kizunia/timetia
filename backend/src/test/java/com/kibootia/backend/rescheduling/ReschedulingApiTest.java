@@ -26,16 +26,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * clock starts before the term; a test moves it to show a lecture that has started.
  */
 @Import(MutableClockConfiguration.class)
-abstract class ReschedulingApiTest extends TimetableApiTest {
+public abstract class ReschedulingApiTest extends TimetableApiTest {
 
 	/** Before the first lecture, which is Monday 6 July at 09:00 on the campus clock, 03:30 UTC. */
-	static final Instant BEFORE_THE_TERM = Instant.parse("2026-07-01T00:00:00Z");
+	protected static final Instant BEFORE_THE_TERM = Instant.parse("2026-07-01T00:00:00Z");
 
 	/** After the first lecture of the term has started. */
-	static final Instant AFTER_THE_FIRST_LECTURE_STARTS = Instant.parse("2026-07-06T04:00:00Z");
+	protected static final Instant AFTER_THE_FIRST_LECTURE_STARTS = Instant.parse("2026-07-06T04:00:00Z");
 
 	@Autowired
-	MutableClock clock;
+	protected MutableClock clock;
 
 	@BeforeEach
 	void publishTheTimetableAndGiveTeachersTheirRole() throws Exception {

@@ -11,6 +11,8 @@ import com.kibootia.backend.timetable.LectureSlot;
  * since it was created.
  *
  * @param batchId the batch of a lab or tutorial, or null for a theory lecture, which is for the whole division
+ * @param facultyId the faculty member the teaching assignment gives it; never changes
+ * @param currentFacultyId who teaches it now, once a substitute is laid over it
  * @param baseSlot where and when the base timetable has it; never changes
  * @param slot where and when it is held now
  * @param cancelled whether a change cancelled it
@@ -18,7 +20,7 @@ import com.kibootia.backend.timetable.LectureSlot;
  * @param revision changes every time the lecture changes
  */
 public record Occurrence(UUID id, UUID tenantId, UUID entryId, UUID timetableVersionId, UUID assignmentId,
-		UUID departmentId, UUID divisionId, UUID batchId, SessionType sessionType, UUID facultyId, LectureSlot baseSlot,
-		LectureSlot slot, boolean cancelled, UUID changedByTicketId, long revision) {
+		UUID departmentId, UUID divisionId, UUID batchId, SessionType sessionType, UUID facultyId, UUID currentFacultyId,
+		LectureSlot baseSlot, LectureSlot slot, boolean cancelled, UUID changedByTicketId, long revision) {
 
 }

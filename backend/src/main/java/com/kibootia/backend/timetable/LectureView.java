@@ -23,14 +23,25 @@ import com.kibootia.backend.academic.SessionType;
  * @param revision changes every time the lecture changes, so a change made against an older state is noticed
  * @param batchId the batch of a lab or tutorial, or null for a theory lecture, which is for the whole division
  * @param batchIds every batch the lecture is for: all the batches of the division for a theory lecture
+ * @param facultyId who teaches it now: the faculty member of the teaching assignment, or the substitute a change put in front
+ *        of it
+ * @param baseFacultyId the faculty member of the teaching assignment, who teaches it when no substitute does
+ * @param extra whether a ticket added the lecture, so that no timetable entry produced it
+ * @param divisionFacultyUserIds the faculty who teach anything in the lecture's division, who see its timetable
  * @param roomCode the code of the room it is held in now, or null when online
  * @param startsAt the instant it starts now, in the campus time zone
  */
 public record LectureView(UUID id, UUID tenantId, UUID assignmentId, LectureSlot slot, LectureSlot baseSlot,
 		boolean cancelled, UUID changedByTicketId, long revision, UUID departmentId, UUID divisionId, String divisionCode,
 		UUID batchId, String batchCode, Set<UUID> batchIds, SessionType sessionType, UUID subjectId, String subjectCode,
-		String subjectName, UUID facultyId, String facultyName, Set<UUID> teachingFacultyUserIds, String roomCode,
-		Instant startsAt) implements LectureAccessFacts {
+		String subjectName, UUID facultyId, UUID baseFacultyId, String facultyName,
+		Set<UUID> teachingFacultyUserIds, String roomCode, Instant startsAt, boolean extra,
+		Set<UUID> divisionFacultyUserIds) implements LectureAccessFacts {
+
+	/** Whether a substitute teaches it in place of the faculty member of the teaching assignment. */
+	public boolean substituted() {
+		return !this.facultyId.equals(this.baseFacultyId);
+	}
 
 	/** Whether a change has been laid over this lecture. */
 	public boolean changed() {

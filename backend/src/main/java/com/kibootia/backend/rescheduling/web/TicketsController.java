@@ -24,6 +24,7 @@ import com.kibootia.backend.platform.web.PageQuery;
 import com.kibootia.backend.platform.web.PageResponse;
 import com.kibootia.backend.rescheduling.application.Progress;
 import com.kibootia.backend.rescheduling.application.TicketReviewService;
+import com.kibootia.backend.rescheduling.application.TicketRevertService;
 import com.kibootia.backend.rescheduling.application.TicketService;
 import com.kibootia.backend.rescheduling.application.TicketService.TicketFilter;
 import com.kibootia.backend.rescheduling.domain.TicketStatus;
@@ -50,9 +51,12 @@ class TicketsController {
 
 	private final TicketReviewService reviews;
 
-	TicketsController(TicketService tickets, TicketReviewService reviews) {
+	private final TicketRevertService reverts;
+
+	TicketsController(TicketService tickets, TicketReviewService reviews, TicketRevertService reverts) {
 		this.tickets = tickets;
 		this.reviews = reviews;
+		this.reverts = reverts;
 	}
 
 	@PostMapping
@@ -112,6 +116,18 @@ class TicketsController {
 	@PostMapping("/{id}/review")
 	TicketResponse review(@PathVariable UUID id, @Valid @RequestBody ReviewRequest request) {
 		return answered(this.reviews.review(id, request.decision(), request.reason()));
+	}
+
+	/**
+	 * Raises, as a new draft ticket, the revert of an applied ticket: it restores the lectures to where, and with whom, they
+	 * were. Apply it with {@code /apply}; if the original slot was taken meanwhile it is blocked until that is resolved.
+	 */
+	@PostMapping("/{id}/revert")
+	@ApiResponse(responseCode = "201", description = "The revert was raised as a new ticket and checked; `Location` is its URL.")
+	ResponseEntity<TicketResponse> revert(@PathVariable UUID id, @Valid @RequestBody(required = false) RevertRequest request) {
+		TicketResponse created = TicketMapper
+			.toResponse(this.reverts.revert(id, (request == null) ? null : request.reason()));
+		return ResponseEntity.created(URI.create("/api/v1/tickets/" + created.id())).body(created);
 	}
 
 	/** The author takes a rejection to the HOD, who decides. */

@@ -39,6 +39,13 @@ class JpaOccurrenceStore implements OccurrenceStore {
 	}
 
 	@Override
+	public Occurrence insertExtra(NewOccurrence newOccurrence, UUID ticketId) {
+		OccurrenceEntity entity = new OccurrenceEntity(newOccurrence);
+		entity.createdBy(ticketId);
+		return TimetableMapper.toModel(this.occurrences.saveAndFlush(entity));
+	}
+
+	@Override
 	public List<UUID> supersede(UUID divisionId, LocalDate from, LocalDate toExclusive) {
 		List<UUID> ids = this.occurrences.activeIdsBetween(divisionId, from, toExclusive, OccurrenceStatus.ACTIVE);
 		if (!ids.isEmpty()) {
@@ -70,6 +77,14 @@ class JpaOccurrenceStore implements OccurrenceStore {
 	}
 
 	@Override
+	public List<Occurrence> findOfEntryFrom(UUID entryId, LocalDate baseDate) {
+		return this.occurrences.ofEntryFrom(entryId, baseDate, OccurrenceStatus.ACTIVE)
+			.stream()
+			.map(TimetableMapper::toModel)
+			.toList();
+	}
+
+	@Override
 	public List<Occurrence> lockAll(Collection<UUID> ids) {
 		return ids.isEmpty() ? List.of()
 				: this.occurrences.lockActive(ids, OccurrenceStatus.ACTIVE).stream().map(TimetableMapper::toModel).toList();
@@ -86,6 +101,20 @@ class JpaOccurrenceStore implements OccurrenceStore {
 	public Occurrence cancel(UUID id, UUID ticketId) {
 		OccurrenceEntity entity = this.occurrences.findById(id).orElseThrow();
 		entity.cancel(ticketId);
+		return TimetableMapper.toModel(this.occurrences.saveAndFlush(entity));
+	}
+
+	@Override
+	public Occurrence restore(UUID id, LectureSlot slot, UUID facultyId, UUID ticketId) {
+		OccurrenceEntity entity = this.occurrences.findById(id).orElseThrow();
+		entity.restore(slot, facultyId, ticketId);
+		return TimetableMapper.toModel(this.occurrences.saveAndFlush(entity));
+	}
+
+	@Override
+	public Occurrence reassign(UUID id, UUID facultyId, UUID ticketId) {
+		OccurrenceEntity entity = this.occurrences.findById(id).orElseThrow();
+		entity.reassign(facultyId, ticketId);
 		return TimetableMapper.toModel(this.occurrences.saveAndFlush(entity));
 	}
 
