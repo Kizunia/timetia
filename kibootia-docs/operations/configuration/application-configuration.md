@@ -129,6 +129,7 @@ The application built on this platform adds these. They are in the repository wi
 | Setting | Read by | Default and notes | Secret |
 | --- | --- | --- | --- |
 | `kibootia.timetable.time-zone` (`KIBOOTIA_TIMETABLE_TIME_ZONE`) | Backend | `Asia/Kolkata`. The time zone of the campus, as a name. A lecture is held at an hour of the day with no zone of its own, so this says when it starts: a lecture that has started can no longer be changed, and a ticket not applied before its lecture starts expires. The server's own zone is never used, because a server need not be where the campus is. An unknown name stops the application at start-up | No |
+| `kibootia.rescheduling.expiry-cron` (`KIBOOTIA_RESCHEDULING_EXPIRY_CRON`) | Backend | `0 */5 * * * *`. When the job that expires tickets runs (a Spring cron with seconds). A ticket not applied before its lecture starts expires; the job finds the ones nobody touched. Runs only where jobs are enabled, one instance at a time | No |
 | `spring.jpa.properties.hibernate.type.java_time_use_direct_jdbc` | `application.properties` | `true`. A date or a time of day without a zone (a term's dates, the hour a lecture starts) is stored exactly as written. Without it, Hibernate converts it through the machine's zone and `hibernate.jdbc.time_zone=UTC`, so on a server in India a lecture at 09:00 is stored as 03:30. Instants are not affected | No |
 
 ## Related

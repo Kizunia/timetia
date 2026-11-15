@@ -3,11 +3,13 @@ package com.kibootia.backend.rescheduling.web;
 import java.util.List;
 
 import com.kibootia.backend.platform.errors.ApiFieldError;
+import com.kibootia.backend.rescheduling.application.ReviewerRequest;
 import com.kibootia.backend.rescheduling.application.Ticket;
 import com.kibootia.backend.rescheduling.application.TicketChange;
+import com.kibootia.backend.rescheduling.application.TicketDetail;
+import com.kibootia.backend.rescheduling.application.TicketReview;
 import com.kibootia.backend.rescheduling.application.TicketService.Draft;
 import com.kibootia.backend.rescheduling.application.TicketService.Edit;
-import com.kibootia.backend.rescheduling.application.TicketService.TicketDetail;
 import com.kibootia.backend.timetable.LectureConflict;
 import com.kibootia.backend.timetable.LectureSlot;
 
@@ -23,7 +25,14 @@ final class TicketMapper {
 	}
 
 	static Edit toEdit(UpdateTicketRequest request) {
-		return new Edit(request.description(), toSlot(request.target()), request.reason(), request.version());
+		return new Edit(request.description(), toSlot(request.target()), request.reason(), toReviewers(request.reviewers()),
+				request.version());
+	}
+
+	/** Null stays null: an edit that leaves the reviewers out keeps them. */
+	static List<ReviewerRequest> toReviewers(List<ReviewerBody> reviewers) {
+		return (reviewers == null) ? null
+				: reviewers.stream().map((reviewer) -> new ReviewerRequest(reviewer.userId(), reviewer.capacity())).toList();
 	}
 
 	private static LectureSlot toSlot(TargetRequest target) {
@@ -37,6 +46,7 @@ final class TicketMapper {
 				ticket.actingFacultyId(), ticket.description(), ticket.revisionNo(), ticket.lecture().divisionId(),
 				ticket.lecture().batchId(), ticket.lecture().sessionType(), ticket.lecture().facultyId(),
 				toResponse(detail.change()), detail.conflicts().stream().map(TicketMapper::toResponse).toList(),
+				detail.reviews().stream().map(TicketMapper::toResponse).toList(),
 				ticket.conflicted(), ticket.expiresAt(), ticket.closedAt(), ticket.version(), ticket.createdAt(),
 				ticket.updatedAt());
 	}
@@ -49,6 +59,11 @@ final class TicketMapper {
 	private static TargetResponse toResponse(LectureSlot slot) {
 		return (slot == null) ? null : new TargetResponse(slot.date(), slot.startTime(), slot.endTime(), slot.mode(),
 				slot.roomId(), slot.meetingLink());
+	}
+
+	static ReviewResponse toResponse(TicketReview review) {
+		return new ReviewResponse(review.reviewerUserId(), review.capacity(), review.status(), review.reason(),
+				review.decidedAt(), review.revisionNo(), review.escalation());
 	}
 
 	static ConflictResponse toResponse(LectureConflict conflict) {

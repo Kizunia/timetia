@@ -30,6 +30,26 @@ public record Ticket(UUID id, UUID tenantId, TicketType type, TicketStatus statu
 				this.version, this.createdAt, this.updatedAt);
 	}
 
+	/** Sent for review. */
+	public Ticket submitted() {
+		return moved(TicketStatus.IN_REVIEW, this.revisionNo);
+	}
+
+	/** A reviewer rejected it. It is not over: the author can edit and send it again, or take it to the HOD. */
+	public Ticket rejected() {
+		return moved(TicketStatus.REJECTED, this.revisionNo);
+	}
+
+	/** The author edited a rejected ticket: it is a draft again, one revision later. */
+	public Ticket resubmitted() {
+		return moved(TicketStatus.DRAFT, this.revisionNo + 1);
+	}
+
+	/** The author took a rejection to the HOD: back in review at once, one revision later, with the HOD to answer. */
+	public Ticket escalated() {
+		return moved(TicketStatus.IN_REVIEW, this.revisionNo + 1);
+	}
+
 	public Ticket withdrawn(Instant at) {
 		return closed(TicketStatus.WITHDRAWN, at);
 	}
@@ -50,6 +70,13 @@ public record Ticket(UUID id, UUID tenantId, TicketType type, TicketStatus statu
 	public Ticket edited(String newDescription, Instant newExpiresAt) {
 		return new Ticket(this.id, this.tenantId, this.type, this.status, this.approvalPath, this.authorUserId,
 				this.actingFacultyId, newDescription, this.revisionNo, this.lecture, newExpiresAt, this.conflicted,
+				this.conflictedSince, this.closedAt, this.version, this.createdAt, this.updatedAt);
+	}
+
+	private Ticket moved(TicketStatus next, int revision) {
+		requireCanBecome(next);
+		return new Ticket(this.id, this.tenantId, this.type, next, this.approvalPath, this.authorUserId,
+				this.actingFacultyId, this.description, revision, this.lecture, this.expiresAt, this.conflicted,
 				this.conflictedSince, this.closedAt, this.version, this.createdAt, this.updatedAt);
 	}
 

@@ -7,6 +7,9 @@ public enum CheckTrigger {
 	SUBMISSION,
 
 	/** The ticket was being applied. */
-	APPLY
+	APPLY,
+
+	/** Another change was applied that could be in the way of a ticket under review, or out of it. */
+	RECHECK
 
 }

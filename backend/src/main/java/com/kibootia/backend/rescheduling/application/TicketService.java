@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,40 +26,39 @@ import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.errors.ApiFieldError;
 import com.kibootia.backend.platform.errors.ProblemCodes;
 import com.kibootia.backend.reference.AcademicDirectory;
-import com.kibootia.backend.reference.AssignmentDetails;
 import com.kibootia.backend.rescheduling.application.TicketQuery.Visibility;
 import com.kibootia.backend.rescheduling.domain.ApprovalPath;
 import com.kibootia.backend.rescheduling.domain.ChangeOperation;
 import com.kibootia.backend.rescheduling.domain.CheckTrigger;
+import com.kibootia.backend.rescheduling.domain.ReviewStatus;
+import com.kibootia.backend.rescheduling.domain.Reviews;
+import com.kibootia.backend.rescheduling.domain.Reviews.Verdict;
 import com.kibootia.backend.rescheduling.domain.TicketStatus;
 import com.kibootia.backend.rescheduling.domain.TicketType;
-import com.kibootia.backend.timetable.ChangeConflictException;
 import com.kibootia.backend.timetable.LectureCalendar;
-import com.kibootia.backend.timetable.LectureChange;
 import com.kibootia.backend.timetable.LectureConflict;
 import com.kibootia.backend.timetable.LectureMode;
 import com.kibootia.backend.timetable.LectureSlot;
 import com.kibootia.backend.timetable.LectureView;
 
 /**
- * The use cases of tickets that reschedule or cancel one lecture, applied by their author (self-approval). A ticket is a
- * proposal: it is checked when it is raised and again when it is applied, and it changes nothing until then. Who may do what
- * is decided by the policy of the {@code academic} module from the lecture and the people on the ticket; the rules of state,
- * whether the lecture has started or the ticket is still a draft, are this class's.
+ * The use cases of tickets that reschedule or cancel one lecture: raising and editing them, applying them, withdrawing them,
+ * and reading them. Sending a ticket for review, answering a review and taking a rejection to the HOD are
+ * {@link TicketReviewService}'s. A ticket is a proposal: it is checked when it is raised and again when it is applied, and
+ * it changes nothing until then. Who may do what is decided by the policy of the {@code academic} module from the lecture and
+ * the people on the ticket; the rules of state, whether the lecture has started or the ticket is a draft, are this class's.
  *
  * <p>What the policy decides here:
  * <ul>
  * <li>raising a ticket: the teacher of the lecture, or the HOD of its department acting for them
  * ({@code create} and {@code create-on-behalf}, or {@code cancel} and {@code cancel-on-behalf} for a cancellation);</li>
- * <li>applying it: only its author. A reschedule needs {@code self-approve}, held by a faculty member who teaches the
- * lecture; an HOD does not hold it. A cancellation is applied directly by whoever may cancel the lecture;</li>
+ * <li>applying it: only its author. A draft is applied without a review: a reschedule needs {@code self-approve}, held by a
+ * faculty member who teaches the lecture, which an HOD does not hold, and a cancellation is applied directly by whoever may
+ * cancel the lecture. A ticket under review is applied when every reviewer has answered and none rejected it;</li>
  * <li>editing and withdrawing it: its author ({@code edit-own});</li>
- * <li>seeing it: the people on it, and the roles whose place covers the lecture.</li>
+ * <li>seeing it: the people on it, including the people asked to review it, and the roles whose place covers the lecture.</li>
  * </ul>
  * A ticket the caller may not see is answered as not found.
- *
- * <p>An apply that is refused for conflicts is returned, not thrown, so that the conflicts found are recorded and the ticket
- * is flagged in the same transaction; the web layer then answers 409.
  */
 @Service
 public class TicketService {
@@ -74,7 +73,13 @@ public class TicketService {
 
 	public static final String NOT_A_DRAFT = "rescheduling.ticket_not_draft";
 
+	public static final String NOT_EDITABLE = "rescheduling.ticket_not_editable";
+
+	public static final String REVIEWS_PENDING = "rescheduling.reviews_pending";
+
 	public static final String STALE_TICKET = "rescheduling.stale_ticket";
+
+	private static final Set<TicketStatus> EDITABLE = Set.of(TicketStatus.DRAFT, TicketStatus.IN_REVIEW, TicketStatus.REJECTED);
 
 	private final TicketStore tickets;
 
@@ -88,14 +93,20 @@ public class TicketService {
 
 	private final Clock clock;
 
+	private final TicketSupport support;
+
+	private final TicketApplier applier;
+
 	TicketService(TicketStore tickets, LectureCalendar calendar, AcademicDirectory directory, Authorization authorization,
-			AuditLog auditLog, Clock clock) {
+			AuditLog auditLog, Clock clock, TicketSupport support, TicketApplier applier) {
 		this.tickets = tickets;
 		this.calendar = calendar;
 		this.directory = directory;
 		this.authorization = authorization;
 		this.auditLog = auditLog;
 		this.clock = clock;
+		this.support = support;
+		this.applier = applier;
 	}
 
 	/**
@@ -108,29 +119,18 @@ public class TicketService {
 
 	}
 
-	/** What the author changes when editing a draft. {@code expectedVersion} is the version of the ticket they last read. */
-	public record Edit(String description, LectureSlot target, String reason, long expectedVersion) {
+	/**
+	 * What the author changes when editing. {@code expectedVersion} is the version of the ticket they last read.
+	 *
+	 * @param reviewers for a ticket under review, the people to ask from now on; null leaves them as they are
+	 */
+	public record Edit(String description, LectureSlot target, String reason, List<ReviewerRequest> reviewers,
+			long expectedVersion) {
 
 	}
 
 	/** Which tickets a list asks for. {@code mine} narrows it to the tickets the caller wrote. */
 	public record TicketFilter(TicketStatus status, UUID lectureId, boolean mine) {
-
-	}
-
-	/** A ticket with the change it makes and what the latest check found. A list leaves {@code conflicts} empty. */
-	public record TicketDetail(Ticket ticket, TicketChange change, List<LectureConflict> conflicts) {
-
-	}
-
-	public enum Outcome {
-
-		APPLIED, BLOCKED, EXPIRED
-
-	}
-
-	/** What happened when a ticket was applied; {@code detail} is the ticket as it is now, whichever the outcome. */
-	public record Applied(Outcome outcome, TicketDetail detail) {
 
 	}
 
@@ -150,7 +150,7 @@ public class TicketService {
 			this.authorization.require(cancel ? AcademicPermissions.TICKETS_CANCEL_ON_BEHALF
 					: AcademicPermissions.TICKETS_CREATE_ON_BEHALF, lecture);
 		}
-		requireChangeable(lecture);
+		this.support.requireChangeable(lecture);
 		NewTicket.Change change = validated(draft.type(), lecture, draft.target(), draft.reason());
 		LectureRef ref = new LectureRef(lecture.assignmentId(), lecture.departmentId(), lecture.divisionId(),
 				lecture.batchId(), lecture.sessionType(), lecture.facultyId());
@@ -161,112 +161,131 @@ public class TicketService {
 		return checked(ticket, CheckTrigger.SUBMISSION);
 	}
 
+	/**
+	 * Replaces the plan of a ticket that is not yet applied, and checks it again. A rejected ticket becomes a draft again, one
+	 * revision later, to be sent for review once more. A ticket under review keeps its approvals when only the description or
+	 * the people asked change, and loses them when the lecture's destination changes, because what was approved is no longer
+	 * what is proposed; the reviewers are asked again.
+	 */
 	@Transactional
 	public TicketDetail edit(UUID id, Edit edit) {
-		Ticket ticket = load(id);
-		TicketFacts facts = facts(ticket);
-		requireSeen(facts);
+		Ticket ticket = this.support.load(id);
+		TicketFacts facts = this.support.facts(ticket);
+		this.support.requireSeen(facts);
 		this.authorization.require(AcademicPermissions.TICKETS_EDIT_OWN, facts);
-		requireDraft(ticket);
+		if (!EDITABLE.contains(ticket.status())) {
+			throw ApiException.conflict(NOT_EDITABLE, "A ticket that is " + words(ticket.status()) + " cannot be edited.");
+		}
 		if (ticket.version() != edit.expectedVersion()) {
 			throw ApiException.conflict(STALE_TICKET, "The ticket was changed after you read it. Read it again.");
 		}
+		if (edit.reviewers() != null && ticket.status() != TicketStatus.IN_REVIEW) {
+			throw invalid(List.of(new ApiFieldError("reviewers", "not_in_review",
+					"The people to ask can be changed only while the ticket is under review.")));
+		}
 		TicketChange current = this.tickets.changeOf(id);
 		LectureView lecture = this.calendar.lecture(current.sourceOccurrenceId()).orElseThrow(TicketService::lectureGone);
-		requireChangeable(lecture);
+		this.support.requireChangeable(lecture);
 		// The plan is made against the lecture as it is now, so an edit also brings a stale ticket up to date.
 		NewTicket.Change change = validated(ticket.type(), lecture, edit.target(), edit.reason());
+		List<NewReview> reviewers = (edit.reviewers() == null) ? null
+				: this.support.validatedReviewers(ticket.authorUserId(), edit.reviewers());
+
+		boolean underReview = ticket.status() == TicketStatus.IN_REVIEW;
+		boolean approvalsCleared = underReview && planChanged(current, change);
 		this.tickets.replaceChange(id, change);
-		Ticket edited = this.tickets.update(ticket.edited(clean(edit.description()), expiresAt(lecture, change.target())));
-		this.auditLog.record(AuditEntry.of("rescheduling.ticket.edited", "ticket", id));
+		Ticket edited = ticket.edited(clean(edit.description()), expiresAt(lecture, change.target()));
+		if (ticket.status() == TicketStatus.REJECTED) {
+			edited = edited.resubmitted();
+		}
+		edited = this.tickets.update(edited);
+		if (approvalsCleared) {
+			this.tickets.resetDecisions(id, edited.revisionNo());
+		}
+		if (reviewers != null) {
+			this.tickets.syncReviewers(id, edited.revisionNo(), reviewers);
+		}
+		this.auditLog.record(AuditEntry.of("rescheduling.ticket.edited", "ticket", id)
+			.withChange("from", ticket.status().name())
+			.withChange("to", edited.status().name())
+			.withChange("approvalsCleared", String.valueOf(approvalsCleared)));
 		return checked(edited, CheckTrigger.SUBMISSION);
 	}
 
 	// --- applying ---------------------------------------------------------------------------------------------------
 
 	/**
-	 * Applies the ticket by its author, without a review. The conflicts are checked again with the lecture locked, because
-	 * something may have been done since the ticket was raised; the change is made only if nothing is in the way.
+	 * Applies the ticket by its author. A draft is applied without a review (self-approval); a ticket under review, once every
+	 * reviewer has answered and none rejected it. The conflicts are checked again with the lecture locked, because something may
+	 * have been done since; the change is made only if nothing is in the way.
 	 */
 	@Transactional
-	public Applied apply(UUID id) {
-		Ticket ticket = load(id);
-		TicketFacts facts = facts(ticket);
-		requireSeen(facts);
+	public Progress apply(UUID id) {
+		Ticket ticket = this.support.load(id);
+		TicketFacts facts = this.support.facts(ticket);
+		this.support.requireSeen(facts);
 		this.authorization.require(AcademicPermissions.TICKETS_EDIT_OWN, facts);
-		if (ticket.type() == TicketType.CANCEL) {
-			if (!this.authorization.can(AcademicPermissions.TICKETS_CANCEL, facts)) {
-				this.authorization.require(AcademicPermissions.TICKETS_CANCEL_ON_BEHALF, facts);
+		return switch (ticket.status()) {
+			case DRAFT -> {
+				if (ticket.type() == TicketType.CANCEL) {
+					if (!this.authorization.can(AcademicPermissions.TICKETS_CANCEL, facts)) {
+						this.authorization.require(AcademicPermissions.TICKETS_CANCEL_ON_BEHALF, facts);
+					}
+				}
+				else {
+					this.authorization.require(AcademicPermissions.TICKETS_SELF_APPROVE, facts);
+				}
+				yield this.applier.applyNow(ticket, ApprovalPath.SELF);
 			}
-		}
-		else {
-			this.authorization.require(AcademicPermissions.TICKETS_SELF_APPROVE, facts);
-		}
-		requireDraft(ticket);
-
-		Instant now = this.clock.instant();
-		if (!now.isBefore(ticket.expiresAt())) {
-			Ticket expired = this.tickets.update(ticket.expired(now));
-			this.auditLog.record(AuditEntry.of("rescheduling.ticket.expired", "ticket", id)
-				.withChange("from", ticket.status().name())
-				.withChange("to", expired.status().name()));
-			return new Applied(Outcome.EXPIRED, detail(expired));
-		}
-
-		TicketChange change = this.tickets.changeOf(id);
-		Optional<LectureView> lecture = this.calendar.lecture(change.sourceOccurrenceId());
-		try {
-			this.calendar.apply(List.of(toLectureChange(change)), ticket.id());
-		}
-		catch (ChangeConflictException ex) {
-			this.tickets.recordCheck(id, CheckTrigger.APPLY, ex.conflicts());
-			Ticket flagged = this.tickets.update(ticket.conflicted(true, now));
-			this.auditLog.record(AuditEntry.of("rescheduling.ticket.blocked", "ticket", id));
-			return new Applied(Outcome.BLOCKED, new TicketDetail(flagged, change, ex.conflicts()));
-		}
-		lecture.ifPresent((before) -> this.tickets.recordBefore(id, before.slot()));
-		this.tickets.recordCheck(id, CheckTrigger.APPLY, List.of());
-		Ticket applied = this.tickets.update(ticket.applied(ApprovalPath.SELF, now));
-		this.auditLog.record(AuditEntry.of("rescheduling.ticket.applied", "ticket", id)
-			.withChange("from", ticket.status().name())
-			.withChange("to", applied.status().name())
-			.withChange("path", ApprovalPath.SELF.name()));
-		return new Applied(Outcome.APPLIED, detail(applied));
+			case IN_REVIEW -> {
+				if (reviewVerdict(ticket) != Verdict.APPROVED) {
+					throw ApiException.conflict(REVIEWS_PENDING, "Not everyone asked to review the ticket has answered yet.");
+				}
+				yield this.applier.applyNow(ticket, ApprovalPath.REVIEWED);
+			}
+			default -> throw ApiException.conflict(NOT_A_DRAFT, "The ticket is " + words(ticket.status())
+					+ "; only a draft, or a ticket whose reviews are in, can be applied.");
+		};
 	}
 
 	@Transactional
 	public TicketDetail withdraw(UUID id) {
-		Ticket ticket = load(id);
-		TicketFacts facts = facts(ticket);
-		requireSeen(facts);
+		Ticket ticket = this.support.load(id);
+		TicketFacts facts = this.support.facts(ticket);
+		this.support.requireSeen(facts);
 		this.authorization.require(AcademicPermissions.TICKETS_EDIT_OWN, facts);
 		if (!ticket.status().canBecome(TicketStatus.WITHDRAWN)) {
-			throw ApiException.conflict(NOT_A_DRAFT, "A ticket that is " + ticket.status().name().toLowerCase().replace('_', ' ')
-					+ " cannot be withdrawn.");
+			throw ApiException.conflict(NOT_A_DRAFT, "A ticket that is " + words(ticket.status()) + " cannot be withdrawn.");
 		}
+		// Withdrawing after someone approved needs no extra step, but the history keeps that it happened.
+		boolean afterApproval = this.support.currentReviews(ticket)
+			.stream()
+			.anyMatch((review) -> review.status() == ReviewStatus.APPROVED);
 		Ticket withdrawn = this.tickets.update(ticket.withdrawn(this.clock.instant()));
 		this.auditLog.record(AuditEntry.of("rescheduling.ticket.withdrawn", "ticket", id)
 			.withChange("from", ticket.status().name())
-			.withChange("to", withdrawn.status().name()));
-		return detail(withdrawn);
+			.withChange("to", withdrawn.status().name())
+			.withChange("afterApproval", String.valueOf(afterApproval)));
+		return this.support.detail(withdrawn);
 	}
 
 	// --- reading ----------------------------------------------------------------------------------------------------
 
 	@Transactional(readOnly = true)
 	public TicketDetail get(UUID id) {
-		Ticket ticket = load(id);
-		TicketFacts facts = facts(ticket);
+		Ticket ticket = this.support.load(id);
+		TicketFacts facts = this.support.facts(ticket);
 		if (!this.authorization.can(AcademicPermissions.TICKETS_VIEW, facts)
 				&& !this.authorization.can(AcademicPermissions.TICKETS_VIEW_IN_SCOPE, facts)) {
-			throw ticketNotFound();
+			throw TicketSupport.ticketNotFound();
 		}
-		return detail(ticket);
+		return this.support.detail(ticket);
 	}
 
 	/**
-	 * The tickets the caller may see: those they are on (as the author, or as the teacher of the lecture), and those whose
-	 * lecture their role covers. Filtered in the query, from {@link Authorization#reach}, before paging.
+	 * The tickets the caller may see: those they are on (as the author, as the teacher of the lecture, or as a person asked to
+	 * review it), and those whose lecture their role covers. Filtered in the query, from {@link Authorization#reach}, before
+	 * paging.
 	 */
 	@Transactional(readOnly = true)
 	public Page<TicketDetail> list(TicketFilter filter, Pageable pageable) {
@@ -275,7 +294,7 @@ public class TicketService {
 		boolean onOwn = !this.authorization.reach(AcademicPermissions.TICKETS_VIEW).isEmpty();
 		Visibility visibility = new Visibility(inScope.everywhere(), inScope.idsOf(AcademicScopes.DEPARTMENT),
 				inScope.idsOf(AcademicScopes.DIVISION), inScope.idsOf(AcademicScopes.BATCH), onOwn ? me : null,
-				onOwn ? this.directory.facultyIdsOf(me) : Set.of());
+				onOwn ? this.directory.facultyIdsOf(me) : Set.of(), onOwn ? me : null);
 		if (visibility.isEmpty()) {
 			return Page.empty(pageable);
 		}
@@ -283,28 +302,10 @@ public class TicketService {
 				new TicketQuery(filter.status(), filter.lectureId(), filter.mine() ? me : null, visibility), pageable);
 		Map<UUID, TicketChange> changes = this.tickets
 			.changesOf(page.getContent().stream().map(Ticket::id).collect(Collectors.toList()));
-		return page.map((ticket) -> new TicketDetail(ticket, changes.get(ticket.id()), List.of()));
+		return page.map((ticket) -> new TicketDetail(ticket, changes.get(ticket.id()), List.of(), List.of()));
 	}
 
 	// --- helpers ----------------------------------------------------------------------------------------------------
-
-	private Ticket load(UUID id) {
-		return this.tickets.find(id).orElseThrow(TicketService::ticketNotFound);
-	}
-
-	/** A ticket the caller may not see is not found, whatever they ask to do with it. */
-	private void requireSeen(TicketFacts facts) {
-		if (!this.authorization.can(AcademicPermissions.TICKETS_VIEW, facts)
-				&& !this.authorization.can(AcademicPermissions.TICKETS_VIEW_IN_SCOPE, facts)) {
-			throw ticketNotFound();
-		}
-	}
-
-	private TicketFacts facts(Ticket ticket) {
-		UUID assignmentId = ticket.lecture().assignmentId();
-		AssignmentDetails assignment = this.directory.assignments(Set.of(assignmentId)).get(assignmentId);
-		return TicketFacts.of(ticket, assignment);
-	}
 
 	private boolean mayViewLecture(LectureView lecture) {
 		return this.authorization.can(AcademicPermissions.LIVE_VIEW_ALL)
@@ -312,41 +313,33 @@ public class TicketService {
 				|| this.authorization.can(AcademicPermissions.LIVE_VIEW_OWN, lecture);
 	}
 
-	private TicketDetail detail(Ticket ticket) {
-		return new TicketDetail(ticket, this.tickets.changeOf(ticket.id()), this.tickets.latestCheck(ticket.id()));
+	private Verdict reviewVerdict(Ticket ticket) {
+		return Reviews.verdictOf(this.support.currentReviews(ticket).stream().map(TicketReview::status).toList());
 	}
 
 	/** Checks the ticket's conflicts, records the result, and flags the ticket when something is in the way. */
 	private TicketDetail checked(Ticket ticket, CheckTrigger trigger) {
 		TicketChange change = this.tickets.changeOf(ticket.id());
-		List<LectureConflict> conflicts = this.calendar.check(List.of(toLectureChange(change)));
+		List<LectureConflict> conflicts = this.calendar.check(List.of(this.support.toLectureChange(change)));
 		this.tickets.recordCheck(ticket.id(), trigger, conflicts);
 		Ticket flagged = ticket.conflicted(!conflicts.isEmpty(), this.clock.instant());
 		Ticket saved = (flagged.conflicted() == ticket.conflicted()) ? ticket : this.tickets.update(flagged);
-		return new TicketDetail(saved, change, conflicts);
+		return new TicketDetail(saved, change, conflicts, this.tickets.reviewsOf(ticket.id()));
 	}
 
-	private static LectureChange toLectureChange(TicketChange change) {
-		return (change.operation() == ChangeOperation.CANCEL)
-				? LectureChange.cancel(change.sourceOccurrenceId(), change.sourceRevision())
-				: LectureChange.move(change.sourceOccurrenceId(), change.sourceRevision(), change.target());
-	}
-
-	/** A lecture that is cancelled or has started cannot be changed. */
-	private void requireChangeable(LectureView lecture) {
-		if (lecture.cancelled()) {
-			throw ApiException.conflict(LECTURE_CANCELLED, "The lecture is cancelled.");
+	/** Whether the edit changes what is proposed: what is done, or where the lecture goes. */
+	private static boolean planChanged(TicketChange current, NewTicket.Change change) {
+		if (current.operation() != change.operation()) {
+			return true;
 		}
-		if (!lecture.startsAt().isAfter(this.clock.instant())) {
-			throw ApiException.conflict(LECTURE_STARTED, "The lecture has started, so it can no longer be changed.");
+		LectureSlot before = current.target();
+		LectureSlot after = change.target();
+		if (before == null || after == null) {
+			return before != after;
 		}
-	}
-
-	private static void requireDraft(Ticket ticket) {
-		if (ticket.status() != TicketStatus.DRAFT) {
-			throw ApiException.conflict(NOT_A_DRAFT, "The ticket is " + ticket.status().name().toLowerCase().replace('_', ' ')
-					+ ", not a draft.");
-		}
+		return !before.date().equals(after.date()) || !before.startTime().equals(after.startTime())
+				|| !before.endTime().equals(after.endTime()) || before.mode() != after.mode()
+				|| !Objects.equals(before.roomId(), after.roomId());
 	}
 
 	/** The earliest lecture the ticket involves: when it lapses if not applied. */
@@ -413,16 +406,20 @@ public class TicketService {
 
 	private static void requireValid(List<ApiFieldError> errors) {
 		if (!errors.isEmpty()) {
-			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
+			throw invalid(errors);
 		}
+	}
+
+	private static ApiException invalid(List<ApiFieldError> errors) {
+		return ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
+	}
+
+	private static String words(TicketStatus status) {
+		return status.name().toLowerCase().replace('_', ' ');
 	}
 
 	private static String clean(String text) {
 		return (text == null || text.isBlank()) ? null : text.strip();
-	}
-
-	private static ApiException ticketNotFound() {
-		return ApiException.notFound(TICKET_NOT_FOUND, "There is no ticket with that ID.");
 	}
 
 	private static ApiException lectureNotFound() {

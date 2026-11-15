@@ -26,13 +26,15 @@ public record TicketQuery(TicketStatus status, UUID lectureId, UUID authoredBy, 
 	 * @param labsOfBatches lab and tutorial tickets of these batches
 	 * @param writtenBy tickets this user wrote, or null
 	 * @param teachingFaculty tickets about lectures these faculty members teach
+	 * @param reviewing tickets this user is asked to review, in the ticket's current revision, or null
 	 */
 	public record Visibility(boolean everywhere, Set<UUID> departments, Set<UUID> theoryOfDivisions,
-			Set<UUID> labsOfBatches, UUID writtenBy, Set<UUID> teachingFaculty) {
+			Set<UUID> labsOfBatches, UUID writtenBy, Set<UUID> teachingFaculty, UUID reviewing) {
 
 		public boolean isEmpty() {
 			return !this.everywhere && this.departments.isEmpty() && this.theoryOfDivisions.isEmpty()
-					&& this.labsOfBatches.isEmpty() && this.writtenBy == null && this.teachingFaculty.isEmpty();
+					&& this.labsOfBatches.isEmpty() && this.writtenBy == null && this.teachingFaculty.isEmpty()
+					&& this.reviewing == null;
 		}
 
 	}

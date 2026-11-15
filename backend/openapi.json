@@ -546,6 +546,16 @@
         "required" : [ "code", "createdAt", "departmentId", "id", "name", "updatedAt", "version" ],
         "type" : "object"
       },
+      "EscalateRequest" : {
+        "properties" : {
+          "hodUserId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "hodUserId" ],
+        "type" : "object"
+      },
       "FacultyResponse" : {
         "properties" : {
           "code" : {
@@ -1290,6 +1300,67 @@
         "required" : [ "roleIds" ],
         "type" : "object"
       },
+      "ReviewRequest" : {
+        "properties" : {
+          "decision" : {
+            "enum" : [ "APPROVE", "REJECT", "ACKNOWLEDGE" ],
+            "type" : "string"
+          },
+          "reason" : {
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "decision" ],
+        "type" : "object"
+      },
+      "ReviewResponse" : {
+        "properties" : {
+          "capacity" : {
+            "enum" : [ "HOD", "CR", "BR", "AFFECTED_FACULTY", "OTHER_FACULTY" ],
+            "type" : "string"
+          },
+          "decidedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "escalation" : {
+            "type" : "boolean"
+          },
+          "reason" : {
+            "type" : [ "string", "null" ]
+          },
+          "reviewerUserId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "revisionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "APPROVED", "REJECTED", "ACKNOWLEDGED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "capacity", "escalation", "reviewerUserId", "revisionNo", "status" ],
+        "type" : "object"
+      },
+      "ReviewerBody" : {
+        "properties" : {
+          "capacity" : {
+            "enum" : [ "HOD", "CR", "BR", "AFFECTED_FACULTY", "OTHER_FACULTY" ],
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "capacity", "userId" ],
+        "type" : "object"
+      },
       "RoleResponse" : {
         "properties" : {
           "assignedUsers" : {
@@ -1451,6 +1522,20 @@
           }
         },
         "required" : [ "code", "createdAt", "id", "name", "updatedAt", "version" ],
+        "type" : "object"
+      },
+      "SubmitTicketRequest" : {
+        "properties" : {
+          "reviewers" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewerBody"
+            },
+            "maxItems" : 20,
+            "minItems" : 0,
+            "type" : "array"
+          }
+        },
+        "required" : [ "reviewers" ],
         "type" : "object"
       },
       "TargetRequest" : {
@@ -1649,6 +1734,13 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "reviews" : {
+            "description" : "Who was asked to review it, of every revision, oldest first; empty in a list.",
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewResponse"
+            },
+            "type" : "array"
+          },
           "revisionNo" : {
             "format" : "int32",
             "type" : "integer"
@@ -1674,7 +1766,7 @@
             "type" : "integer"
           }
         },
-        "required" : [ "authorUserId", "change", "conflicted", "conflicts", "createdAt", "divisionId", "expiresAt", "facultyId", "id", "revisionNo", "sessionType", "status", "type", "updatedAt", "version" ],
+        "required" : [ "authorUserId", "change", "conflicted", "conflicts", "createdAt", "divisionId", "expiresAt", "facultyId", "id", "reviews", "revisionNo", "sessionType", "status", "type", "updatedAt", "version" ],
         "type" : "object"
       },
       "TimetableEntryResponse" : {
@@ -1829,6 +1921,14 @@
             "maxLength" : 500,
             "minLength" : 0,
             "type" : "string"
+          },
+          "reviewers" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewerBody"
+            },
+            "maxItems" : 20,
+            "minItems" : 0,
+            "type" : "array"
           },
           "target" : {
             "$ref" : "#/components/schemas/TargetRequest"
@@ -7379,6 +7479,297 @@
             "type" : "string"
           }
         } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "tickets" ]
+      }
+    },
+    "/api/v1/tickets/{id}/escalate" : {
+      "post" : {
+        "operationId" : "ticketsEscalate",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EscalateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "tickets" ]
+      }
+    },
+    "/api/v1/tickets/{id}/review" : {
+      "post" : {
+        "operationId" : "ticketsReview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "tickets" ]
+      }
+    },
+    "/api/v1/tickets/{id}/submit" : {
+      "post" : {
+        "operationId" : "ticketsSubmit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SubmitTicketRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

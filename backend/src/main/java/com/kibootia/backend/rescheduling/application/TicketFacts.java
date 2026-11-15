@@ -17,14 +17,17 @@ public record TicketFacts(UUID tenantId, UUID departmentId, UUID divisionId, Set
 		Set<UUID> teachingFacultyUserIds, UUID authorUserId, Set<UUID> affectedFacultyUserIds,
 		Set<UUID> requestedReviewerUserIds, boolean permanentChange) implements TicketAccessFacts {
 
-	/** @param assignment the lecture's teaching assignment as it is now, or null when it no longer exists */
-	public static TicketFacts of(Ticket ticket, AssignmentDetails assignment) {
+	/**
+	 * @param assignment the lecture's teaching assignment as it is now, or null when it no longer exists
+	 * @param reviewers the people asked to review the ticket in its current revision
+	 */
+	public static TicketFacts of(Ticket ticket, AssignmentDetails assignment, Set<UUID> reviewers) {
 		Set<UUID> batches = (assignment == null) ? Set.of() : assignment.batchIds();
 		Set<UUID> teachers = (assignment == null || assignment.facultyUserId() == null) ? Set.of()
 				: Set.of(assignment.facultyUserId());
 		LectureRef lecture = ticket.lecture();
 		return new TicketFacts(ticket.tenantId(), lecture.departmentId(), lecture.divisionId(), batches,
-				lecture.sessionType(), teachers, ticket.authorUserId(), teachers, Set.of(), false);
+				lecture.sessionType(), teachers, ticket.authorUserId(), teachers, Set.copyOf(reviewers), false);
 	}
 
 }

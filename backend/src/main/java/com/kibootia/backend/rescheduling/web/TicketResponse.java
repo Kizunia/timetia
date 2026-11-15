@@ -33,6 +33,7 @@ public record TicketResponse(
 		@Schema(requiredMode = REQUIRED) UUID facultyId,
 		@Schema(requiredMode = REQUIRED) ChangeResponse change,
 		@Schema(requiredMode = REQUIRED) List<ConflictResponse> conflicts,
+		@Schema(requiredMode = REQUIRED, description = "Who was asked to review it, of every revision, oldest first; empty in a list.") List<ReviewResponse> reviews,
 		@Schema(requiredMode = REQUIRED) boolean conflicted,
 		@Schema(requiredMode = REQUIRED, description = "When the earliest lecture it involves starts; a ticket not yet applied lapses then.") Instant expiresAt,
 		@Schema(nullable = true) Instant closedAt,

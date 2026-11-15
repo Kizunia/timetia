@@ -61,6 +61,16 @@ final class TicketSpecifications {
 				if (!visibility.teachingFaculty().isEmpty()) {
 					any.add(root.get("facultyId").in(visibility.teachingFaculty()));
 				}
+				if (visibility.reviewing() != null) {
+					// Asked to review it, in the revision it is in now: an earlier revision's request no longer counts.
+					Subquery<UUID> asked = criteria.subquery(UUID.class);
+					Root<TicketReviewEntity> review = asked.from(TicketReviewEntity.class);
+					asked.select(review.get("ticketId"))
+						.where(builder.equal(review.get("reviewerUserId"), visibility.reviewing()),
+								builder.equal(review.get("ticketId"), root.get("id")),
+								builder.equal(review.get("ticketRevisionNo"), root.get("revisionNo")));
+					any.add(builder.exists(asked));
+				}
 				all.add(any.isEmpty() ? builder.disjunction() : builder.or(any.toArray(new Predicate[0])));
 			}
 			return builder.and(all.toArray(new Predicate[0]));

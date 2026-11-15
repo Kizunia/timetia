@@ -327,7 +327,7 @@ class TicketApiIT extends ReschedulingApiTest {
 		post(user(RAO_USER), path + "/apply", null).andExpect(status().isOk());
 		String applied = read(get(user(RAO_USER), path), "$.version");
 		put(user(RAO_USER), path, edit + applied + "}").andExpect(status().isConflict())
-			.andExpect(jsonPath("$.code").value("rescheduling.ticket_not_draft"));
+			.andExpect(jsonPath("$.code").value("rescheduling.ticket_not_editable"));
 	}
 
 	private void raiseAndApplyCancel(String lecture) throws Exception {

@@ -101,7 +101,8 @@ class OpenApiContractIT {
 				"/api/v1/timetable/versions/{id}/entries/{entryId}", "/api/v1/timetable/versions/{id}/publish",
 				"/api/v1/timetable/live", "/api/v1/timetable/live/{id}",
 				// Tickets that reschedule or cancel a lecture.
-				"/api/v1/tickets", "/api/v1/tickets/{id}", "/api/v1/tickets/{id}/apply", "/api/v1/tickets/{id}/withdraw");
+				"/api/v1/tickets", "/api/v1/tickets/{id}", "/api/v1/tickets/{id}/apply", "/api/v1/tickets/{id}/withdraw",
+				"/api/v1/tickets/{id}/submit", "/api/v1/tickets/{id}/review", "/api/v1/tickets/{id}/escalate");
 	}
 
 	@Test

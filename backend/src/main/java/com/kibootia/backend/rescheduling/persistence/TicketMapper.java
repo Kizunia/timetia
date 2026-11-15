@@ -3,6 +3,7 @@ package com.kibootia.backend.rescheduling.persistence;
 import com.kibootia.backend.rescheduling.application.LectureRef;
 import com.kibootia.backend.rescheduling.application.Ticket;
 import com.kibootia.backend.rescheduling.application.TicketChange;
+import com.kibootia.backend.rescheduling.application.TicketReview;
 
 /** Converts between the ticket persistence entities and the application models by hand (ADR 0005). */
 final class TicketMapper {
@@ -23,6 +24,12 @@ final class TicketMapper {
 		return new TicketChange(entity.getId(), entity.getTicketId(), entity.getOperation(),
 				entity.getSourceOccurrenceId(), entity.getSourceRevision(), entity.target(), entity.getReason(),
 				entity.before());
+	}
+
+	static TicketReview toModel(TicketReviewEntity entity) {
+		return new TicketReview(entity.getId(), entity.getTicketId(), entity.getTicketRevisionNo(),
+				entity.getReviewerUserId(), entity.getCapacity(), entity.getStatus(), entity.getReason(),
+				entity.getDecidedAt(), entity.isEscalation(), entity.getEscalatedFromReviewId());
 	}
 
 }
