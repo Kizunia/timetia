@@ -90,7 +90,12 @@ class OpenApiContractIT {
 				"/api/v1/users/{id}/disable", "/api/v1/users/{id}/enable", "/api/v1/users/{id}/restore",
 				"/api/v1/users/{id}/erase", "/api/v1/users/{userId}/roles", "/api/v1/users/{userId}/scoped-roles",
 				"/api/v1/users/{userId}/scoped-roles/{roleId}", "/api/v1/user-imports",
-				"/api/v1/audit-entries");
+				"/api/v1/audit-entries",
+				// Reference data; not a removable module, so its endpoints are in the main contract.
+				"/api/v1/departments", "/api/v1/departments/{id}", "/api/v1/divisions", "/api/v1/divisions/{id}",
+				"/api/v1/batches", "/api/v1/batches/{id}", "/api/v1/subjects", "/api/v1/subjects/{id}", "/api/v1/rooms",
+				"/api/v1/rooms/{id}", "/api/v1/faculties", "/api/v1/faculties/{id}", "/api/v1/academic-terms",
+				"/api/v1/academic-terms/{id}", "/api/v1/teaching-assignments", "/api/v1/teaching-assignments/{id}");
 	}
 
 	@Test

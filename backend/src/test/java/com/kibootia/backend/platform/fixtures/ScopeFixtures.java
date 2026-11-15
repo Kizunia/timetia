@@ -10,18 +10,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 import com.kibootia.backend.platform.authorization.ScopeDirectory;
 
 /**
- * A stand-in for the module that will own departments, divisions and batches: it knows only the places a test adds. The
- * application has no such bean, so without this import a scoped role cannot be assigned (it fails closed). Imported by
- * the tests that assign scoped roles.
+ * A light stand-in for the places the reference module owns: it knows only the places a test adds, so an authorization
+ * test need not create real departments in the database. The reference module now provides a real {@code ScopeDirectory}
+ * that is always a bean, so this fake is marked {@link Primary}: a test that imports these fixtures gets the fake, while
+ * a test that does not (and production) uses the real provider. Imported by the tests that assign scoped roles.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class ScopeFixtures {
 
 	@Bean
+	@Primary
 	FakeScopeDirectory scopeDirectory() {
 		return new FakeScopeDirectory();
 	}
