@@ -1,5 +1,7 @@
 package com.kibootia.backend.reference.persistence;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -145,6 +147,25 @@ class JpaCampusStore implements CampusStore {
 	@Override
 	public boolean batchCodeInUse(String code) {
 		return this.batches.existsByCode(code);
+	}
+
+	// --- bulk lookups -----------------------------------------------------------------------------------------------
+
+	@Override
+	public List<Division> findDivisions(Collection<UUID> ids) {
+		return ids.isEmpty() ? List.of()
+				: this.divisions.findAllById(ids).stream().map(CampusEntityMapper::toModel).toList();
+	}
+
+	@Override
+	public List<Batch> findBatches(Collection<UUID> ids) {
+		return ids.isEmpty() ? List.of() : this.batches.findAllById(ids).stream().map(CampusEntityMapper::toModel).toList();
+	}
+
+	@Override
+	public List<Batch> findBatchesOfDivisions(Collection<UUID> divisionIds) {
+		return divisionIds.isEmpty() ? List.of()
+				: this.batches.findByDivisionIdIn(divisionIds).stream().map(CampusEntityMapper::toModel).toList();
 	}
 
 	// --- helpers ----------------------------------------------------------------------------------------------------

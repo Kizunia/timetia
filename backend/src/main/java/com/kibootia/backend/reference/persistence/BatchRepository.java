@@ -20,6 +20,8 @@ interface BatchRepository extends JpaRepository<BatchEntity, UUID> {
 
 	boolean existsByCode(String code);
 
+	List<BatchEntity> findByDivisionIdIn(Collection<UUID> divisionIds);
+
 	@Query("""
 			select b from BatchEntity b
 			where (:division is null or b.divisionId = :division)

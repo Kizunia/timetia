@@ -6,10 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 
 import com.kibootia.backend.AdminApiTest;
 import com.kibootia.backend.academic.application.RoleTemplateSeeder;
+import com.kibootia.backend.platform.fixtures.WithoutScopeDirectory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -17,10 +19,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The application as it runs today: nothing provides departments, divisions and batches, so the import cannot check a
- * place and must not guess. Rows for roles that apply everywhere work; every row that names a place is refused, and a
- * person with such a row is left out entirely (Timetia ADR 0004 and 0006). This context has no scope directory.
+ * When nothing provides departments, divisions and batches, the import cannot check a place and must not guess. Rows for
+ * roles that apply everywhere work; every row that names a place is refused, and a person with such a row is left out
+ * entirely (Timetia ADR 0004 and 0006). This context has no scope directory, unlike the application, which now has one.
  */
+@Import(WithoutScopeDirectory.class)
 class UserImportWithoutDirectoryIT extends AdminApiTest {
 
 	@Autowired

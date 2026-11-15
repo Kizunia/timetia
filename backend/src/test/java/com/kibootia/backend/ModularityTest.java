@@ -22,14 +22,16 @@ class ModularityTest {
 	@Test
 	void coreModulesExist() {
 		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
-		assertThat(names).contains("academic", "access", "audit", "identity", "platform", "reference");
+		assertThat(names).contains("academic", "access", "audit", "identity", "platform", "reference", "rescheduling",
+				"timetable");
 	}
 
 	/** Every module is one of the known ones, so a stray package cannot become a module unnoticed. */
 	@Test
 	void everyModuleIsKnown() {
 		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
-		assertThat(names).isSubsetOf("academic", "access", "audit", "files", "identity", "notes", "platform", "reference");
+		assertThat(names).isSubsetOf("academic", "access", "audit", "files", "identity", "notes", "platform", "reference",
+				"rescheduling", "timetable");
 	}
 
 	@Test
@@ -51,6 +53,10 @@ class ModularityTest {
 		// reference uses the academic scope-kind constants, but those are compile-time inlined, so at the bytecode level
 		// it depends only on the platform persistence and authorization ports.
 		assertThat(dependenciesOf("reference")).as("reference builds on the platform ports").contains("platform");
+		assertThat(dependenciesOf("timetable")).as("timetable reads reference data only through its published port")
+			.contains("reference", "academic", "platform");
+		assertThat(dependenciesOf("rescheduling")).as("rescheduling reaches lectures and reference data only through their ports")
+			.contains("timetable", "reference", "academic", "platform");
 		assertThat(dependenciesOf("platform")).as("platform depends on no other module (rule 8)").isEmpty();
 	}
 

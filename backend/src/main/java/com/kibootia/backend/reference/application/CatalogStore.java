@@ -1,6 +1,8 @@
 package com.kibootia.backend.reference.application;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -76,5 +78,16 @@ public interface CatalogStore {
 	boolean termExists(UUID id);
 
 	boolean termCodeInUse(String code);
+
+	// --- bulk lookups, for the directory other modules read through --------------------------------------------------
+
+	List<Subject> findSubjects(Collection<UUID> ids);
+
+	List<Room> findRooms(Collection<UUID> ids);
+
+	List<Faculty> findFacultyByIds(Collection<UUID> ids);
+
+	/** The ids of the live faculty records that belong to this user account (normally one). */
+	List<UUID> findFacultyIdsOfUser(UUID userId);
 
 }

@@ -1,5 +1,7 @@
 package com.kibootia.backend.reference.application;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,5 +60,16 @@ public interface CampusStore {
 	void deleteBatch(UUID id);
 
 	boolean batchCodeInUse(String code);
+
+	// --- bulk lookups, for the directory other modules read through --------------------------------------------------
+
+	/** The live divisions among these ids; an id with no live division is absent. */
+	List<Division> findDivisions(Collection<UUID> ids);
+
+	/** The live batches among these ids; an id with no live batch is absent. */
+	List<Batch> findBatches(Collection<UUID> ids);
+
+	/** Every live batch of these divisions. */
+	List<Batch> findBatchesOfDivisions(Collection<UUID> divisionIds);
 
 }

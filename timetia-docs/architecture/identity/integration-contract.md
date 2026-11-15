@@ -125,12 +125,24 @@ What it does not show: an HTTP controller (map the two exceptions as the other m
 
 | Needed | Status |
 | --- | --- |
-| A **scope directory**: something that says a department, division or batch exists, and what its code is | Nobody provides it in the application. The port (`ScopeDirectory`) exists. **Until a module provides it, a role that needs a place cannot be assigned**, by the screen or by an import: the assignment is refused with `access.scope_unvalidated`. Global roles work. The owner of department, division and batch data implements the port. See "The scope directory" below ([OQ-A15](open-questions.md)). |
-| Facts for tickets, lectures and issues | The interfaces exist. The module that owns the records implements them when it exists. |
+| Facts for **issues** | The interface exists. The issues module implements it when it exists. It is not built. |
 | A person directory | Deferred. The facts carry user ids. |
 | A way for a person to see their own roles in a place | Not built. `GET /me` lists platform roles and flat permissions only; a role in a place is shown to an administrator on the person's page and to nobody else. Checked in the browser on 2026-11-12: a person holding Faculty sees only `User` on their profile. A screen that needs it ("what can I do here") needs an endpoint first. |
-| An owner for the scope directory | The owner is a teammate who has not been named in this repository. When named, record them in [OQ-A15](open-questions.md). |
 | Expiry of a role at the end of a term | Not designed. See [OQ-A2](open-questions.md). |
+
+## Built since this contract was first written (2026-11-15)
+
+These were "not built yet" and now are, in the repository with tests. They have been run locally only (on JDK 21 with the release set to 21, against MySQL in Docker), and **no CI run covers them yet**.
+
+| Was missing | Now |
+| --- | --- |
+| A **scope directory** | The `reference` module provides it (`JpaScopeDirectory`), over departments, divisions and batches that a Super Admin creates through `/api/v1/departments`, `/divisions` and `/batches`. It passes `ScopeDirectoryContract` (`ReferenceScopeDirectoryIT`). A role that needs a place can now be assigned, by the screen and by an import, in a place created through the API (`CampusAdminApiIT`). The fail-closed path when there is no directory is still in the code and is still tested, with a context that has none (`ScopedAssignmentsWithoutDirectoryIT`, `UserImportWithoutDirectoryIT`). |
+| Facts for **lectures** | The `timetable` module builds `OccurrenceFacts` for each dated lecture. A batch's lectures and a faculty member's account are looked up when they are read, so a new batch or a newly linked account applies at once. |
+| Facts for **tickets** | The `rescheduling` module builds `TicketFacts` for each ticket: the author and the lecture are those stored with the ticket, and the batches the lecture is for and the teacher's account are looked up when used. The requested reviewers are empty until the review flow is built, and no ticket is permanent yet. |
+| Something that uses the permissions over HTTP | `GET /api/v1/timetable/live` and `/live/{id}` use `timetable.live.view`, `timetable.live.view-own` and `timetable.live.view-all`. `TicketApiIT` and `TicketVisibilityApiIT` show the ticket permissions over HTTP (`create`, `create-on-behalf`, `cancel`, `cancel-on-behalf`, `self-approve`, `edit-own`, `view`, `view-in-scope`): a teacher raises and applies a reschedule, an HOD raises one for a teacher but cannot apply it, a cancellation is applied directly, and a CR, a BR and a student see what the model gives them, with the list agreeing with the single-ticket decision for 14 people. `LiveTimetableApiIT` shows what each role sees through the API, built from the real reference data and the real scope directory, and that **the list and the single-lecture decision agree for 15 people**, as the worked example requires. |
+| An owner for the scope directory | The `reference` module, which the backend owner built. Whether that closes [OQ-A15](open-questions.md), and the code format, are for the owner to decide; the question records the new fact. |
+
+What a module that owns data must still supply is unchanged. How the reference data is read by other modules is `reference.AcademicDirectory`, the only way they may read it.
 
 ## What to do now
 

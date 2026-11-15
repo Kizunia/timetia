@@ -1,5 +1,7 @@
 package com.kibootia.backend.reference.persistence;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +33,12 @@ class JpaTeachingAssignmentStore implements TeachingAssignmentStore {
 	@Override
 	public Optional<TeachingAssignment> find(UUID id) {
 		return this.assignments.findById(id).map(JpaTeachingAssignmentStore::toModel);
+	}
+
+	@Override
+	public List<TeachingAssignment> findAll(Collection<UUID> ids) {
+		return ids.isEmpty() ? List.of()
+				: this.assignments.findAllById(ids).stream().map(JpaTeachingAssignmentStore::toModel).toList();
 	}
 
 	@Override

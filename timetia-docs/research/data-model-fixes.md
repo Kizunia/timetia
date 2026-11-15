@@ -351,3 +351,23 @@ Bold means new. Later: ExternalRef, FacultyLeave, shared-course tables.
 8. Write audit, outbox event and notifications.
 
 All or nothing, as in the original.
+
+## 5. What the implementation changed (2026-11-15)
+
+The tables for reference data, the base timetable, lecture occurrences, tickets, conflict checks and claims are built. They
+follow this note except where listed here. These are the places where building it showed a better or simpler shape, or where
+the data needed does not exist yet. Each is a decision for the owner to confirm; none changes a rule in
+[the rules](../modules/lecture-rescheduling/rules/README.md).
+
+| Change | Why |
+| --- | --- |
+| **`OccurrenceEffectiveState` is columns of the lecture's own row**, beside the base columns (`effective_date`, `effective_start_time`, `effective_end_time`, `effective_room_id`, `effective_mode`, `effective_meeting_link`, `is_cancelled`, `changed_by_ticket_id`). The base columns are never changed after the lecture is created. | A list of the live timetable filters and sorts on the effective date, and a separate table would need a join in every such query. The row's own version is the `state_revision` a change is checked against. A revert restores the effective columns from the base. |
+| **`AppliedChange` and `AppliedChangeItem` are not separate tables.** The ticket's change item keeps where the lecture was (`before_*` columns), set when the ticket is applied. | One change per ticket needs no second table to hold its before state. Permanent changes and exchanges may bring one back; add it then. |
+| **A fourth claim kind, `DIVISION`**, held by a theory lecture, beside `FACULTY`, `ROOM` and `STUDENT_BATCH`. | A theory lecture also holds a row per batch of the division, as in F-C4, but the batches are those at the time it is published. `DIVISION` keeps two theory lectures of a division apart even if the division has no batches yet or gains one later. A batch added after publishing is not in the claims of the theory lectures already published; publishing the version again fixes that. |
+| **Claims belong to the timetable module**, and publishing a base timetable writes them, not only an applied ticket. | Every dated lecture must hold what it needs from the start, or the first change could move a lecture into a slot the base timetable already uses. |
+| **A new conflict type, `OCCURRENCE_CHANGED`**: the lecture is gone, is cancelled, or was changed by another ticket after this one was planned. | A ticket is planned against a state of the lecture (`source_revision`). Applying it against a different state would overwrite another ticket's work. |
+| **`ROOM_UNFIT` and the holidays and exam weeks of `OUTSIDE_CALENDAR` are not checked yet.** A Sunday and a date outside the term are. | Room fit needs what each kind of session requires (`SubjectComponent`) and the strength of a division, and the calendar needs `AcademicCalendarDay`. Neither table exists yet. |
+| **A move keeps the lecture's length.** | A reschedule changes when a lecture is, not how long. This is a validation of the request, not a conflict. |
+| **Only `SUBMISSION` and `APPLY` check triggers exist.** | `VERSION_UPDATE` belongs to carrying changes over to a new timetable version, which is not built. Until it is, publishing a version that would replace a lecture with an applied change is refused (`timetable.changes_would_be_lost`) instead of discarding the change. |
+| **A lecture's department, division, batch, session type and faculty member are copied onto the occurrence and the ticket; the batches it is for and the faculty member's account are not.** | The first group cannot change. The second can, so the authorization facts read them from the reference data when they are used, and a new batch or a newly linked account applies at once. |
+| **The LIVE_VIEW list reaches theory lectures through the division of a held batch**, not through a table listing each lecture's batches. | It gives the same answer as the facts (a theory lecture is for every batch of its division) without a second table that goes stale. |

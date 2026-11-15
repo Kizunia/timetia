@@ -1,5 +1,7 @@
 package com.kibootia.backend.reference.application;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +16,9 @@ public interface TeachingAssignmentStore {
 	TeachingAssignment insert(UUID divisionId, UUID batchId, UUID subjectId, UUID facultyId, SessionType sessionType);
 
 	Optional<TeachingAssignment> find(UUID id);
+
+	/** The live assignments among these ids; an id with no live assignment is absent. */
+	List<TeachingAssignment> findAll(Collection<UUID> ids);
 
 	Page<TeachingAssignment> search(UUID division, UUID faculty, UUID subject, Pageable pageable);
 

@@ -95,7 +95,13 @@ class OpenApiContractIT {
 				"/api/v1/departments", "/api/v1/departments/{id}", "/api/v1/divisions", "/api/v1/divisions/{id}",
 				"/api/v1/batches", "/api/v1/batches/{id}", "/api/v1/subjects", "/api/v1/subjects/{id}", "/api/v1/rooms",
 				"/api/v1/rooms/{id}", "/api/v1/faculties", "/api/v1/faculties/{id}", "/api/v1/academic-terms",
-				"/api/v1/academic-terms/{id}", "/api/v1/teaching-assignments", "/api/v1/teaching-assignments/{id}");
+				"/api/v1/academic-terms/{id}", "/api/v1/teaching-assignments", "/api/v1/teaching-assignments/{id}",
+				// The base timetable and its live view.
+				"/api/v1/timetable/versions", "/api/v1/timetable/versions/{id}", "/api/v1/timetable/versions/{id}/entries",
+				"/api/v1/timetable/versions/{id}/entries/{entryId}", "/api/v1/timetable/versions/{id}/publish",
+				"/api/v1/timetable/live", "/api/v1/timetable/live/{id}",
+				// Tickets that reschedule or cancel a lecture.
+				"/api/v1/tickets", "/api/v1/tickets/{id}", "/api/v1/tickets/{id}/apply", "/api/v1/tickets/{id}/withdraw");
 	}
 
 	@Test

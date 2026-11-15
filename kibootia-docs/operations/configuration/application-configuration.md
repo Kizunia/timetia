@@ -122,6 +122,15 @@ The one list of every setting. Rows are added in the same change that introduces
 
 Exact names are fixed when each setting is implemented, following the naming rules above.
 
+## Settings added by Timetia
+
+The application built on this platform adds these. They are in the repository with tests, run locally; no CI run covers them yet.
+
+| Setting | Read by | Default and notes | Secret |
+| --- | --- | --- | --- |
+| `kibootia.timetable.time-zone` (`KIBOOTIA_TIMETABLE_TIME_ZONE`) | Backend | `Asia/Kolkata`. The time zone of the campus, as a name. A lecture is held at an hour of the day with no zone of its own, so this says when it starts: a lecture that has started can no longer be changed, and a ticket not applied before its lecture starts expires. The server's own zone is never used, because a server need not be where the campus is. An unknown name stops the application at start-up | No |
+| `spring.jpa.properties.hibernate.type.java_time_use_direct_jdbc` | `application.properties` | `true`. A date or a time of day without a zone (a term's dates, the hour a lecture starts) is stored exactly as written. Without it, Hibernate converts it through the machine's zone and `hibernate.jdbc.time_zone=UTC`, so on a server in India a lecture at 09:00 is stored as 03:30. Instants are not affected | No |
+
 ## Related
 
 [Local setup](../../engineering/getting-started/local-setup.md), [milestone 0](../../product/roadmap/milestone-0-hygiene-and-guardrails.md).

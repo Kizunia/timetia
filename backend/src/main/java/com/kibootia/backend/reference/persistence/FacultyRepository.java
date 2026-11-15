@@ -1,5 +1,6 @@
 package com.kibootia.backend.reference.persistence;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -11,6 +12,9 @@ import org.springframework.data.jpa.repository.Query;
 interface FacultyRepository extends JpaRepository<FacultyEntity, UUID> {
 
 	boolean existsByCode(String code);
+
+	@Query("select f.id from FacultyEntity f where f.userId = :userId")
+	List<UUID> findIdsByUserId(UUID userId);
 
 	@Query("""
 			select f from FacultyEntity f

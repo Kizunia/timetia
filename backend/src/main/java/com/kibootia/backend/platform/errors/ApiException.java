@@ -49,6 +49,14 @@ public class ApiException extends RuntimeException {
 		return new ApiException(HttpStatus.CONFLICT, code, message);
 	}
 
+	/**
+	 * 409 that says what is in the way, one entry each, for a request that is well formed but cannot be done in the state
+	 * things are in, such as a change that clashes with other lectures.
+	 */
+	public static ApiException conflict(String code, String message, List<ApiFieldError> errors) {
+		return new ApiException(HttpStatus.CONFLICT, code, message, errors, new HttpHeaders());
+	}
+
 	/** 413. */
 	public static ApiException payloadTooLarge(String code, String message) {
 		return new ApiException(HttpStatus.PAYLOAD_TOO_LARGE, code, message);

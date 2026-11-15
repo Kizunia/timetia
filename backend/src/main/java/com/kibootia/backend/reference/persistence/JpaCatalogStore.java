@@ -1,6 +1,8 @@
 package com.kibootia.backend.reference.persistence;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -198,6 +200,30 @@ class JpaCatalogStore implements CatalogStore {
 	@Override
 	public boolean termCodeInUse(String code) {
 		return this.terms.existsByCode(code);
+	}
+
+	// --- bulk lookups -----------------------------------------------------------------------------------------------
+
+	@Override
+	public List<Subject> findSubjects(Collection<UUID> ids) {
+		return ids.isEmpty() ? List.of()
+				: this.subjects.findAllById(ids).stream().map(CatalogEntityMapper::toModel).toList();
+	}
+
+	@Override
+	public List<Room> findRooms(Collection<UUID> ids) {
+		return ids.isEmpty() ? List.of() : this.rooms.findAllById(ids).stream().map(CatalogEntityMapper::toModel).toList();
+	}
+
+	@Override
+	public List<Faculty> findFacultyByIds(Collection<UUID> ids) {
+		return ids.isEmpty() ? List.of()
+				: this.faculty.findAllById(ids).stream().map(CatalogEntityMapper::toModel).toList();
+	}
+
+	@Override
+	public List<UUID> findFacultyIdsOfUser(UUID userId) {
+		return this.faculty.findIdsByUserId(userId);
 	}
 
 	// --- helpers ----------------------------------------------------------------------------------------------------

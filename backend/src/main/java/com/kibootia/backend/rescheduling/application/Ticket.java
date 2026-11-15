@@ -1,0 +1,69 @@
+package com.kibootia.backend.rescheduling.application;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import com.kibootia.backend.rescheduling.domain.ApprovalPath;
+import com.kibootia.backend.rescheduling.domain.TicketStatus;
+import com.kibootia.backend.rescheduling.domain.TicketType;
+
+/**
+ * A ticket as the use cases see it: plain data with no persistence or HTTP concerns (ADR 0004). A change of state returns a
+ * new ticket and refuses a move the lifecycle does not allow, so no use case can put a ticket in a state it cannot be in.
+ *
+ * @param actingFacultyId the faculty member an HOD acts for, or null when the author is the teacher
+ * @param approvalPath how it was applied; null until it is
+ * @param revisionNo starts at 1 and rises each time a rejected ticket is edited and sent again
+ * @param expiresAt when the earliest lecture it involves starts; a ticket not yet applied lapses then
+ * @param conflicted whether the latest check found something in the way
+ * @param closedAt when its own life ended (applied, withdrawn, expired or reverted); null before
+ */
+public record Ticket(UUID id, UUID tenantId, TicketType type, TicketStatus status, ApprovalPath approvalPath,
+		UUID authorUserId, UUID actingFacultyId, String description, int revisionNo, LectureRef lecture,
+		Instant expiresAt, boolean conflicted, Instant conflictedSince, Instant closedAt, long version, Instant createdAt,
+		Instant updatedAt) {
+
+	public Ticket applied(ApprovalPath path, Instant at) {
+		requireCanBecome(TicketStatus.APPLIED);
+		return new Ticket(this.id, this.tenantId, this.type, TicketStatus.APPLIED, path, this.authorUserId,
+				this.actingFacultyId, this.description, this.revisionNo, this.lecture, this.expiresAt, false, null, at,
+				this.version, this.createdAt, this.updatedAt);
+	}
+
+	public Ticket withdrawn(Instant at) {
+		return closed(TicketStatus.WITHDRAWN, at);
+	}
+
+	public Ticket expired(Instant at) {
+		return closed(TicketStatus.EXPIRED, at);
+	}
+
+	/** Records whether the latest check found something in the way, keeping the time it first did. */
+	public Ticket conflicted(boolean blocked, Instant at) {
+		Instant since = blocked ? ((this.conflictedSince != null) ? this.conflictedSince : at) : null;
+		return new Ticket(this.id, this.tenantId, this.type, this.status, this.approvalPath, this.authorUserId,
+				this.actingFacultyId, this.description, this.revisionNo, this.lecture, this.expiresAt, blocked, since,
+				this.closedAt, this.version, this.createdAt, this.updatedAt);
+	}
+
+	/** The ticket after its author edited it: a new description and, since the plan changed, a new expiry. */
+	public Ticket edited(String newDescription, Instant newExpiresAt) {
+		return new Ticket(this.id, this.tenantId, this.type, this.status, this.approvalPath, this.authorUserId,
+				this.actingFacultyId, newDescription, this.revisionNo, this.lecture, newExpiresAt, this.conflicted,
+				this.conflictedSince, this.closedAt, this.version, this.createdAt, this.updatedAt);
+	}
+
+	private Ticket closed(TicketStatus next, Instant at) {
+		requireCanBecome(next);
+		return new Ticket(this.id, this.tenantId, this.type, next, this.approvalPath, this.authorUserId,
+				this.actingFacultyId, this.description, this.revisionNo, this.lecture, this.expiresAt, this.conflicted,
+				this.conflictedSince, at, this.version, this.createdAt, this.updatedAt);
+	}
+
+	private void requireCanBecome(TicketStatus next) {
+		if (!this.status.canBecome(next)) {
+			throw new IllegalStateException("A ticket that is " + this.status + " cannot become " + next);
+		}
+	}
+
+}
