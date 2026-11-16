@@ -4,7 +4,7 @@
  * What it creates (once; to start over run `pnpm reset`, see scripts/PRESENT.md)
  *   2 branches (departments): CSE with divisions CSE-A, CSE-B, CSE-C; ME with divisions ME-A, ME-B
  *   2 batches in every division (CSE-A1, CSE-A2, ...) = 10 batches, and 5 students in every batch = 50 student accounts
- *   subjects, rooms (6 classrooms, 2 labs), teachers, a 4-week term starting next Monday, and a PUBLISHED weekly timetable
+ *   subjects, rooms (6 classrooms, 2 labs), teachers, a 4-week term starting on the Monday of the current week, and a PUBLISHED weekly timetable
  *   for every division (theory on Monday, a two-hour lab on its own weekday, a Friday theory lecture for CSE/ME)
  *   roles: demo = Faculty; demo-admin = Faculty + HOD of CSE; first student of each batch is also its BR (batch
  *   representative); first student of each division is also its CR (class representative)
@@ -44,9 +44,11 @@
   if (!demo) throw new Error("Sign in once as `demo` first so the account exists, then run this again.");
 
   const iso = (d) => d.toISOString().slice(0, 10);
-  const start = new Date();
-  start.setUTCHours(12, 0, 0, 0);
-  do start.setUTCDate(start.getUTCDate() + 1); while (start.getUTCDay() !== 1);
+  // The term starts on the Monday of the CURRENT week (today, if today is a Monday), by the browser's local date, so this
+  // week's timetable is already there. Lectures that have started cannot be changed by tickets; the later ones can.
+  const today = new Date();
+  const start = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12));
+  while (start.getUTCDay() !== 1) start.setUTCDate(start.getUTCDate() - 1);
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 27);
   const hh = (h) => `${String(h).padStart(2, "0")}:00`;

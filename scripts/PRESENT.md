@@ -51,7 +51,7 @@ What you get (1 college, 2 branches):
 | ME | ME-A, ME-B | 2 each | 5 per batch |
 
 That is 5 divisions, 10 batches, 50 student accounts (invited, so their emails are in Mailpit), 6 teachers, 8 rooms, a 4-week term
-starting next Monday and a published weekly timetable for every division. `demo` is Dr Demo (Faculty), `demo-admin` is Dr Admin
+starting on the Monday of the current week (so today's timetable is there) and a published weekly timetable for every division. `demo` is Dr Demo (Faculty), `demo-admin` is Dr Admin
 (Faculty + HOD of CSE). The first student of each batch is also its BR, the first of each division also its CR.
 To change the size (divisions, batches per division, students), edit the `branches` list and the `[1, 2]` / `s <= 5` loops in the script.
 
@@ -61,7 +61,7 @@ The older, smaller `scripts/demo-seed.browser.js` (one division) still works on 
 
 Use two windows: one normal for `demo-admin`, one private window for `demo`. In the private window sign in as `demo`.
 
-1. **Timetable** (`/timetable`): Next until the term starts; filter by division and batch; "Only my lectures" as `demo`; click a lecture.
+1. **Timetable** (`/timetable`): the current week is shown at once; filter by division and batch; "Only my lectures" as `demo`; click a lecture.
 2. **Reschedule** (as `demo`): click the Monday OOP lecture → Change this lecture → Reschedule → Thursday 09:00. Only free rooms are offered.
    Create the ticket → Apply → the timetable shows "Moved".
 3. **Conflict**: reschedule another lecture into an occupied slot → "Something is in the way", Apply is disabled → edit the time → apply.
