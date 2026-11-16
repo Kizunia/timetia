@@ -8,7 +8,8 @@
  *   for every division (theory on Monday, a two-hour lab on its own weekday, a Friday theory lecture for CSE/ME)
  *   roles: demo = Faculty; demo-admin = Faculty + HOD of CSE; first student of each batch is also its BR (batch
  *   representative); first student of each division is also its CR (class representative)
- *   Dr Demo (the `demo` account) and Dr Admin (`demo-admin`) are CSE teachers with accounts, the others have none.
+ *   Dr Demo (`demo`), Dr Admin (`demo-admin`), Dr Rao (`rao`), Dr Mehta (`mehta`), Dr Iyer (`iyer`), Dr Khan (`khan`) are teachers whose
+ *   accounts exist when scripts/seed.mjs ran first; `hod.me`, `cr.cse-a`, `stu.cse-a1`, `stu.me-a2` get HOD/CR/BR/Student roles.
  *
  * How to run it
  *   1. Sign in ONCE as `demo` (any window), sign out. 2. Sign in as `demo-admin`. 3. F12 -> Console, paste this file, Enter.
@@ -40,7 +41,9 @@
     console.warn("The college already exists. Nothing was changed. Run `pnpm reset` to start over (scripts/PRESENT.md).");
     return;
   }
-  const demo = (await tt.get("/api/v1/users?size=100")).items.find((u) => u.username === "demo");
+  const people = (await tt.get("/api/v1/users?size=100")).items;
+  const demo = people.find((u) => u.username === "demo");
+  const idOf = (username) => people.find((u) => u.username === username)?.id ?? null;
   if (!demo) throw new Error("Sign in once as `demo` first so the account exists, then run this again.");
 
   const iso = (d) => d.toISOString().slice(0, 10);
@@ -66,9 +69,9 @@
   // --- branches, subjects, teachers -------------------------------------------------------------------------------
   const branches = [
     { code: "CSE", name: "Computer Science and Engineering", divisions: ["A", "B", "C"], subjects: [["OOP", "Object-Oriented Programming"], ["DBMS", "Database Systems"], ["DSA", "Data Structures"]],
-      teachers: [["DEMO", "Dr Demo", demo.id], ["ADMIN", "Dr Admin", me.id], ["RAO", "Dr Rao", null]] },
+      teachers: [["DEMO", "Dr Demo", demo.id], ["ADMIN", "Dr Admin", me.id], ["RAO", "Dr Rao", idOf("rao")]] },
     { code: "ME", name: "Mechanical Engineering", divisions: ["A", "B"], subjects: [["THERMO", "Thermodynamics"], ["FM", "Fluid Mechanics"], ["MD", "Machine Design"]],
-      teachers: [["MEHTA", "Dr Mehta", null], ["IYER", "Dr Iyer", null], ["KHAN", "Dr Khan", null]] },
+      teachers: [["MEHTA", "Dr Mehta", idOf("mehta")], ["IYER", "Dr Iyer", idOf("iyer")], ["KHAN", "Dr Khan", idOf("khan")]] },
   ];
   const college = { rooms: room, term, departments: {}, divisions: {}, batches: {} };
   const csv = [];                       // student rows per division: [email, role, scope]
@@ -133,6 +136,19 @@
   await tt.post(`/api/v1/users/${demo.id}/scoped-roles`, { roleId: role("Faculty") });
   await tt.post(`/api/v1/users/${me.id}/scoped-roles`, { roleId: role("Faculty") });
   await tt.post(`/api/v1/users/${me.id}/scoped-roles`, { roleId: role("HOD"), scopeId: college.departments.CSE });
+
+  // Extra accounts that can really sign in (made by scripts/seed.mjs): [username, role, place]. A missing account is skipped.
+  const place = (kind, code) => ({ dept: college.departments, div: college.divisions, batch: college.batches })[kind][code];
+  for (const [username, roleName, where] of [
+    ["rao", "Faculty"], ["mehta", "Faculty"], ["iyer", "Faculty"], ["khan", "Faculty"],
+    ["hod.me", "HOD", "dept:ME"], ["cr.cse-a", "CR", "div:CSE-A"],
+    ["stu.cse-a1", "Student", "batch:CSE-A1"], ["stu.cse-a1", "BR", "batch:CSE-A1"], ["stu.me-a2", "Student", "batch:ME-A2"],
+  ]) {
+    const userId = idOf(username);
+    if (!userId) { console.warn("no account " + username); continue; }
+    const [kind, code] = where ? where.split(":") : [];
+    await tt.post(`/api/v1/users/${userId}/scoped-roles`, { roleId: role(roleName), ...(where ? { scopeId: place(kind, code) } : {}) });
+  }
 
   // --- students: invited through the CSV import, 25 rows at a time -----------------------------------------------
   for (let from = 0; from < csv.length; from += 25) {

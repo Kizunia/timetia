@@ -9,7 +9,8 @@
     "dev": "node scripts/dev.mjs",
     "apps:up": "node scripts/apps.mjs up",
     "apps:down": "node scripts/apps.mjs down",
-    "reset": "node scripts/reset.mjs"
+    "reset": "node scripts/reset.mjs",
+    "seed": "node scripts/seed.mjs"
   },
   "engines": {
     "node": ">=22"

@@ -34,46 +34,59 @@ Problems seen on this machine:
 - Backend says "Access denied for user 'kibootia_app'": the database volume was made with another `.env`. Run `pnpm reset`.
 - Run the frontend unit tests (`pnpm --filter kibootia-frontend test`) from **PowerShell**, not Git Bash.
 
-## 3. Seed the fake data (needed after every reset)
+## 3. Seed the fake data: one command, no manual work
 
-The data is made through the real API from the signed-in web app, so it needs a login.
+With `pnpm infra:up` and `pnpm dev` running (the backend must say "Started BackendApplication"):
 
-1. Open <http://localhost:3470>, sign in as **`demo`** (password `DEMO_USER_PASSWORD` in `.env`), sign out. This only creates the account.
-2. Sign in as **`demo-admin`** (password `DEMO_ADMIN_PASSWORD`).
-3. Press **F12 → Console**, paste the whole of **`scripts/seed-college.browser.js`**, press Enter. It takes about a minute and ends with
-   `College ready`. (If it says the college already exists, nothing was changed.)
+```powershell
+pnpm seed          # about 3 minutes; safe to run again (it skips what exists)
+```
 
-What you get (1 college, 2 branches):
+It creates the sign-in accounts in Keycloak, signs each in once in a headless browser, builds the college through the real API and
+adds sample activity. The data starts in the **current week** (the term begins on this week's Monday, 4 weeks long).
 
-| Branch | Divisions | Batches | Students |
-| --- | --- | --- | --- |
-| CSE | CSE-A, CSE-B, CSE-C | 2 each (CSE-A1, CSE-A2, ...) | 5 per batch |
-| ME | ME-A, ME-B | 2 each | 5 per batch |
+**Accounts** (all use the password `DEMO_USER_PASSWORD` from `.env`, except `demo-admin`, which uses `DEMO_ADMIN_PASSWORD`):
 
-That is 5 divisions, 10 batches, 50 student accounts (invited, so their emails are in Mailpit), 6 teachers, 8 rooms, a 4-week term
-starting on the Monday of the current week (so today's timetable is there) and a published weekly timetable for every division. `demo` is Dr Demo (Faculty), `demo-admin` is Dr Admin
-(Faculty + HOD of CSE). The first student of each batch is also its BR, the first of each division also its CR.
-To change the size (divisions, batches per division, students), edit the `branches` list and the `[1, 2]` / `s <= 5` loops in the script.
+| Username | Who | What to look at |
+| --- | --- | --- |
+| `demo-admin` | Dr Admin, CSE teacher, **HOD of CSE**, Super Admin | reviews tickets, Administration area, all CSE tickets |
+| `demo` | Dr Demo, CSE teacher (OOP in CSE-A/B/C) | raise tickets, "Only my lectures" |
+| `rao` | Dr Rao, CSE teacher | a second teacher's own timetable |
+| `mehta`, `iyer`, `khan` | ME teachers | the ME timetable |
+| `hod.me` | HOD of ME | sees all ME tickets |
+| `cr.cse-a` | class representative of CSE-A | opens and sees issues of CSE-A |
+| `stu.cse-a1` | student and batch representative of CSE-A1 | sees only CSE-A1's lectures |
+| `stu.me-a2` | student of ME-A2 | sees only ME-A2's lectures |
 
-The older, smaller `scripts/demo-seed.browser.js` (one division) still works on its own but must not be run after the big one.
+The 50 other students (5 per batch) are invited accounts (emails in Mailpit); they have no password yet. The college has 2 branches
+(CSE with divisions A, B, C; ME with A, B), 2 batches in each division, 6 teachers, 8 rooms. Sample activity: one applied
+reschedule, one reschedule waiting for the HOD (`demo-admin`), one cancel draft, one issue from the CR mentioning Dr Demo.
+To change the size edit the `branches` list and loops in `scripts/seed-college.browser.js`.
+
+If `pnpm seed` fails: make sure the stack is up and the backend finished starting; fix, then run it again.
 
 ## 4. Demo flow for the presentation (about 10 minutes)
 
-Use two windows: one normal for `demo-admin`, one private window for `demo`. In the private window sign in as `demo`.
+Use two windows: a normal one for `demo-admin` and a private window for `demo`.
 
-1. **Timetable** (`/timetable`): the current week is shown at once; filter by division and batch; "Only my lectures" as `demo`; click a lecture.
-2. **Reschedule** (as `demo`): click the Monday OOP lecture → Change this lecture → Reschedule → Thursday 09:00. Only free rooms are offered.
-   Create the ticket → Apply → the timetable shows "Moved".
-3. **Conflict**: reschedule another lecture into an occupied slot → "Something is in the way", Apply is disabled → edit the time → apply.
-4. **Review**: raise a ticket, Send for review, pick the HOD. As `demo-admin` open `/tickets` → **To review** → Review → Approve → it is applied.
+1. **Timetable** (`/timetable`): this week is shown; filter by division and batch; as `rao` or `demo` tick "Only my lectures";
+   sign in as `stu.cse-a1` to show a student sees only their batch.
+2. **Reschedule** (as `demo`): click a lecture that is still ahead (not one that has started) -> Change this lecture -> Reschedule.
+   Only free rooms are offered. Create -> Apply -> the timetable shows "Moved".
+3. **Conflict**: move a lecture into an occupied slot -> "Something is in the way", Apply is disabled -> edit the time -> apply.
+4. **Review**: as `demo-admin` open **Tickets -> To review** (the seeded ticket is waiting) -> Review -> Approve -> applied.
+   The bell in the header counts new notifications; open **Notifications**.
 5. **Reject and escalate**: reject with a reason; as `demo` Edit (round 2) or Take to the HOD.
-6. **Other kinds**: Cancel, Substitute, Exchange, Permanent change (needs the HOD), New extra lecture (`/tickets/new`), and Revert.
-7. **Database**: open Adminer and show `lecture_occurrence`, `occurrence_claim` (the double-booking guard), `timetable_change_ticket`, `ticket_review`.
-   The full explanation (schema, every important query, viva questions) is in `timetia-docs/engineering/database.md`.
+6. **Other kinds**: Cancel, Substitute, Exchange, Permanent change (needs the HOD), New extra lecture (Tickets -> New extra lecture), Revert.
+7. **Issues**: as `cr.cse-a` open **Issues** -> Open an issue (mention a teacher). As `demo` the mention shows in Notifications;
+   open the issue and close it.
+8. **Database**: open Adminer and show `lecture_occurrence`, `occurrence_claim` (the double-booking guard), `timetable_change_ticket`,
+   `ticket_review`. The full explanation (schema, queries, viva questions) is `timetia-docs/engineering/database.md`.
 
-## 5. What is built, and what is not
+## 5. What is built
 
-Built: the live timetable, tickets of every kind with review, conflict checking, free-room suggestions, revert, names everywhere.
-Not built in the web app yet (the backend for them exists, see `scripts/DEMO.md` section 5 for the console calls): the issues
-screens, the notifications bell and page, and the admin screens for campus data and timetables. Browser exit checks of the
-timetable and ticket screens have not been run by a machine; walk through section 4 once before presenting.
+Live timetable, tickets of every kind with review/escalation/revert, conflict checks, free-room suggestions, notifications
+(bell and page), issues (open, list, detail, close), role-based visibility, audit log, user and role administration.
+Not built in the web app: screens to edit campus data and timetables (use the admin API / `scripts/seed-college.browser.js`),
+linking a ticket to an issue from the issue page (API exists), and browser-level automated tests. Walk through section 4 once
+before presenting.

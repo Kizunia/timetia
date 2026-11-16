@@ -48,6 +48,16 @@ export const FEATURE_MODULES: readonly FeatureModule[] = [
     protectedPrefixes: ["/tickets"],
   },
   // module:tickets:end
+  // module:issues:start
+  {
+    id: "issues",
+    nav: { href: "/issues", label: "Issues", permissions: ["rescheduling.issues.view", "rescheduling.issues.view-in-scope"] },
+    protectedPrefixes: ["/issues"],
+  },
+  // module:issues:end
+  // module:notifications:start
+  { id: "notifications", protectedPrefixes: ["/notifications"] },
+  // module:notifications:end
 ];
 
 /** The navigation links a user may see, in the order the modules are listed. */
