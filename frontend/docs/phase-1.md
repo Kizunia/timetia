@@ -279,6 +279,6 @@ Write the results (including the numbers of tests run) in your report. Tick the 
 
 ## 6. Checklist
 
-- [ ] B1.1 DirectoryService  - [ ] B1.2 DirectoryController  - [ ] B1.3 MyScopedRoles  - [ ] B1.4 tests + OpenApi list  - [ ] Gate B1 + `api:generate`
-- [ ] F1.1 deps  - [ ] F1.2 dates  - [ ] F1.3 labels  - [ ] F1.4 messages  - [ ] F1.5 registry/proxy  - [ ] F1.6 campus  - [ ] F1.7 timetable  - [ ] F1.8 routes  - [ ] F1.9 tests  - [ ] Gate F1
-- [ ] Backend full `verify` green  - [ ] `build` green  - [ ] Exit check done  - [ ] `timetia-docs/modules/lecture-rescheduling/changelog.md` line added
+- [x] B1.1 DirectoryService  - [x] B1.2 DirectoryController  - [x] B1.3 MyScopedRoles  - [x] B1.4 tests + OpenApi list  - [x] Gate B1 + `api:generate`
+- [x] F1.1 deps  - [x] F1.2 dates  - [x] F1.3 labels  - [x] F1.4 messages  - [x] F1.5 registry/proxy  - [x] F1.6 campus  - [x] F1.7 timetable  - [x] F1.8 routes  - [x] F1.9 tests  - [x] Gate F1
+- [ ] Backend full `verify` green  - [x] `build` green  - [ ] Exit check done  - [x] `timetia-docs/modules/lecture-rescheduling/changelog.md` line added

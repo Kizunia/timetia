@@ -33,6 +33,8 @@ export async function signIn(page: Page, username: string, password: string, pat
   await page.goto(path);
   if (!/localhost:8180/.test(page.url())) await page.getByRole("link", { name: "Sign in" }).click();
   await signInOnKeycloak(page, username, password);
+  // A person with a role in Timetia is sent on from `/` to the timetable, so either page means the sign-in worked.
+  await Promise.race([page.getByTestId("signed-in").waitFor(), page.waitForURL(/\/timetable/)]);
 }
 
 export async function signOut(page: Page) {

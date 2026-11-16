@@ -75,6 +75,12 @@ describe("messageFor", () => {
     expect(messageFor(error)).not.toContain("internal");
   });
 
+  it("has words for the Timetia codes", () => {
+    const error = new ApiError(409, { title: "x", status: 409, code: "rescheduling.lecture_started" });
+
+    expect(messageFor(error)).toBe("The lecture has started, so it can no longer be changed.");
+  });
+
   it("falls back to a generic message for an unknown code, a missing code or another kind of error", () => {
     expect(messageFor(new ApiError(500, { title: "x", status: 500, code: "future.new_code" }))).toBe(GENERIC_MESSAGE);
     expect(messageFor(new ApiError(502))).toBe(GENERIC_MESSAGE);

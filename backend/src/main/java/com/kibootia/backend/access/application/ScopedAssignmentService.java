@@ -24,6 +24,7 @@ import com.kibootia.backend.audit.AuditEntry;
 import com.kibootia.backend.audit.AuditLog;
 import com.kibootia.backend.platform.authorization.Authorization;
 import com.kibootia.backend.platform.authorization.GrantedScope;
+import com.kibootia.backend.platform.authorization.NoAuthorization;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
 import com.kibootia.backend.platform.authorization.ScopeDirectory;
 import com.kibootia.backend.platform.directory.UserDirectory;
@@ -92,6 +93,14 @@ public class ScopedAssignmentService implements ScopedAssignments {
 	public List<ScopedRole> scopedRolesOf(UUID userId) {
 		requireExistingUser(userId);
 		return view(userId);
+	}
+
+	/** The roles the caller holds in places. It is their own data, so it asks no permission, only a verified email. */
+	@Transactional(readOnly = true)
+	@NoAuthorization("a person reads the roles they hold in places; it is their own data")
+	public List<ScopedRole> myScopedRoles() {
+		this.authorization.requireVerified();
+		return view(this.authorization.currentUserId());
 	}
 
 	/**

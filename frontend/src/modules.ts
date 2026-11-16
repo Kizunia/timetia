@@ -12,8 +12,8 @@
 export interface FeatureModule {
   /** The module's name, the same as its folder in `src/features`. */
   id: string;
-  /** The link in the main navigation, shown to a user who holds the permission. */
-  nav?: { href: string; label: string; permission: string };
+  /** The link in the main navigation, shown to a user who holds any one of the permissions. */
+  nav?: { href: string; label: string; permissions: readonly string[] };
   /** Paths that need a signed-in user: the path itself and everything below it. */
   protectedPrefixes: readonly string[];
 }
@@ -22,16 +22,27 @@ export const FEATURE_MODULES: readonly FeatureModule[] = [
   // module:notes:start
   {
     id: "notes",
-    nav: { href: "/notes", label: "Notes", permission: "notes.notes.view" },
+    nav: { href: "/notes", label: "Notes", permissions: ["notes.notes.view"] },
     protectedPrefixes: ["/notes"],
   },
   // module:notes:end
+  // module:timetable:start
+  {
+    id: "timetable",
+    nav: {
+      href: "/timetable",
+      label: "Timetable",
+      permissions: ["timetable.live.view", "timetable.live.view-own", "timetable.live.view-all"],
+    },
+    protectedPrefixes: ["/timetable"],
+  },
+  // module:timetable:end
 ];
 
 /** The navigation links a user may see, in the order the modules are listed. */
 export function moduleLinks(permissions: readonly string[]): { href: string; label: string }[] {
   return FEATURE_MODULES.flatMap((module) =>
-    module.nav && permissions.includes(module.nav.permission) ? [{ href: module.nav.href, label: module.nav.label }] : [],
+    module.nav && module.nav.permissions.some((permission) => permissions.includes(permission)) ? [{ href: module.nav.href, label: module.nav.label }] : [],
   );
 }
 

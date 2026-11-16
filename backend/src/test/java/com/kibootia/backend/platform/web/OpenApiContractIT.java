@@ -105,7 +105,11 @@ class OpenApiContractIT {
 				"/api/v1/tickets/{id}/submit", "/api/v1/tickets/{id}/review", "/api/v1/tickets/{id}/escalate", "/api/v1/tickets/{id}/revert", "/api/v1/issues", "/api/v1/issues/{id}",
 				"/api/v1/issues/{id}/close", "/api/v1/issues/{id}/mentions", "/api/v1/issues/{id}/links",
 				"/api/v1/notifications", "/api/v1/notifications/unread-count", "/api/v1/notifications/{id}/read",
-				"/api/v1/notifications/read-all");
+				"/api/v1/notifications/read-all",
+				// The campus directory any verified person reads, and the caller's own roles in places.
+				"/api/v1/directory/departments", "/api/v1/directory/divisions", "/api/v1/directory/batches",
+				"/api/v1/directory/rooms", "/api/v1/directory/faculties", "/api/v1/directory/me",
+				"/api/v1/me/scoped-roles");
 	}
 
 	@Test

@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { PageShell } from "@/components/PageShell";
 import { getMe } from "@/lib/server-me";
 
 export const dynamic = "force-dynamic";
 
+/** Holding any of these means the person has a role in Timetia and so has a timetable to read. */
+const TIMETABLE_PERMISSIONS = ["timetable.live.view", "timetable.live.view-own", "timetable.live.view-all"];
+
 export default async function Home() {
   const me = await getMe(true);
+  if (me?.permissions.some((permission) => TIMETABLE_PERMISSIONS.includes(permission))) redirect("/timetable");
 
   return (
     <PageShell signedInOnly={false}>
@@ -14,6 +19,7 @@ export default async function Home() {
       {me ? (
         <div className="mt-6 space-y-3">
           <p data-testid="signed-in">You are signed in.</p>
+          <p>You have no role in Timetia yet. Ask an administrator.</p>
           <p>
             <Link href="/profile" className="font-medium text-primary underline underline-offset-2">
               Your profile

@@ -62,7 +62,7 @@ class ScopedUserRolesController {
 		return toResponses(this.assignments.removeScopedRole(userId, roleId, scopeId));
 	}
 
-	private static List<ScopedRoleResponse> toResponses(List<ScopedRole> roles) {
+	static List<ScopedRoleResponse> toResponses(List<ScopedRole> roles) {
 		return roles.stream()
 			.map((role) -> new ScopedRoleResponse(role.roleId(), role.roleName(), role.scopeType(), role.scopeId(),
 					role.scopeCode()))

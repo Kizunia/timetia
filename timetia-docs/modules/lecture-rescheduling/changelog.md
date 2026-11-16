@@ -62,3 +62,8 @@ History of business-logic decisions, in the order they were taken with the owner
 
 - A rejected ticket is edited and resubmitted on the same ticket, with a revision number; Rejected is no longer final ([ADR 0006](decisions/0006-rejected-tickets-edit-and-resubmit.md), [ticket lifecycle](rules/ticket-lifecycle.md)).
 - The scraped data model was audited against these docs and standalone version 1 was confirmed ([ADR 0001](decisions/0001-standalone-version-1.md)). Findings and fixes: [audit](../../research/data-model-audit.md), [fixes](../../research/data-model-fixes.md).
+
+## 2026-11-16 Frontend phase 1: the live timetable
+
+- Any signed-in person with a verified email can read campus names (`GET /api/v1/directory/{departments,divisions,batches,rooms,faculties}`), what they teach (`GET /api/v1/directory/me`) and the roles they hold in places (`GET /api/v1/me/scoped-roles`). Before this only a Super Admin could read campus data.
+- The web app has a timetable page at `/timetable` (a week in six day columns, division/batch/teacher filters, a side sheet per lecture, `?lecture=<id>` links). A person with a Timetia role is sent there from `/`. Nothing can be changed from it yet.
