@@ -1,0 +1,65 @@
+-- 04_queries_om.sql: SQL queries by Om (SE2004 Database Management Systems, practicals 5 and 6).
+--
+-- The lab requires each student to write and run at least 20 queries independently. This file is yours: write the queries below.
+-- It holds no queries yet. (Rename the file if your name in the group is not "om": the pattern is 04_queries_<name>.sql.)
+--
+-- Name:          ____________________      Roll no.: ____________   Division: ____________
+-- Group / project: Timetia
+--
+-- Set up the database first: 01_schema.sql, 02_seed.sql, 03_foreign_keys.sql (see README.md). Then:  USE timetia_lab;
+--
+-- ---------------------------------------------------------------------------------------------------------------------------
+-- The tables you query (the full DDL is in 01_schema.sql)
+--
+--   Campus      department (code, name)
+--               division (code, name, department_id)            batch (code, name, division_id)
+--               subject (code, name)                            room (code, name, room_type, capacity)
+--               faculty (code, name, department_id, user_id)    academic_term (code, name, start_date, end_date)
+--   Teaching    teaching_assignment (division_id, batch_id, subject_id, faculty_id, session_type)
+--                  session_type is THEORY, LAB or TUTORIAL; batch_id is NULL for THEORY.
+--   Timetable   timetable_version (division_id, term_id, effective_from, status: DRAFT or PUBLISHED)
+--               timetable_entry (timetable_version_id, assignment_id, day_of_week 1-6, start_time, end_time, room_id, mode)
+--               lecture_occurrence (one lecture on one date: occurrence_date, start_time, end_time and the effective_* columns
+--                  for where it is now; is_cancelled; changed_by_ticket_id; record_status)
+--               occurrence_claim (what a lecture holds each hour: claim_kind FACULTY, ROOM, DIVISION or STUDENT_BATCH)
+--   Tickets     timetable_change_ticket (ticket_type, status, author_user_id, faculty_id, division_id, expires_at, ...)
+--               ticket_change_item (ticket_id, operation_type, source_occurrence_id, reason, target_*)
+--               ticket_review (ticket_id, reviewer_capacity, review_status, decision_reason)
+--               conflict_check_run (ticket_id, check_trigger, result)   conflict_finding (run_id, conflict_type, message)
+--   Messages    notification (recipient_user_id, notification_type, ticket_id, read_at)
+--
+-- Things to know while writing:
+--   * Every table has id BINARY(16): show one with BIN_TO_UUID(id), or HEX(id). Join on the ids, not on the text.
+--   * Every table has tenant_id; the lab has one tenant, so you do not need to filter on it.
+--   * Soft delete: department, division, batch, subject, room, faculty, academic_term and teaching_assignment have deleted_at;
+--     a live row has deleted_at IS NULL. Nothing in the seed is deleted, but a correct query on those tables says so.
+--   * Created and updated times are UTC. The campus clock is five and a half hours ahead.
+--   * 02_seed.sql lists on its first lines what the data was built to contain (a subject nobody teaches, a faculty member
+--     with no assignments, a department with no timetable): outer joins and NOT EXISTS have something to find.
+--
+-- ---------------------------------------------------------------------------------------------------------------------------
+-- What the syllabus asks the queries to cover (practicals 5 and 6). Tick each when a query of yours does it, and name the query.
+--
+--   Practical 5: data extraction
+--     [ ] SELECT with WHERE                          [ ] ORDER BY                  [ ] DISTINCT
+--     [ ] COUNT()        [ ] SUM()      [ ] AVG()     [ ] MIN()      [ ] MAX()
+--     [ ] GROUP BY                                    [ ] HAVING
+--   Practical 6: related tables and nested queries
+--     [ ] INNER JOIN                                 [ ] LEFT or RIGHT OUTER JOIN  [ ] SELF JOIN
+--     [ ] a subquery that returns one value (single-row)
+--     [ ] a subquery that returns a list (multi-row: IN, ANY, ALL)
+--     [ ] a correlated subquery (it refers to the row of the outer query)          [ ] EXISTS or NOT EXISTS
+--   Also in the syllabus
+--     [ ] built-in functions (string, date, numeric, CASE)                         [ ] a set operation (UNION and the like)
+--
+-- Suggested layout of each query, so that the file reads as a lab record:
+--
+--   -- Q1. What the query answers, in one line.                            [topics: join, group by, having]
+--   <your SQL>;
+--   -- Result: what it shows on the seed data.
+--
+-- ---------------------------------------------------------------------------------------------------------------------------
+
+USE timetia_lab;
+
+-- Write your queries below this line.

@@ -47,6 +47,11 @@ class PersistenceConfiguration {
 		return (properties) -> properties.put(MultiTenancySettings.MULTI_TENANT_IDENTIFIER_RESOLVER, resolver);
 	}
 
+	/** The audit actor of the work running now: what auditing writes for a JPA entity, and what {@link JdbcSupport} writes. */
+	static UUID currentActor() {
+		return currentUser().orElse(SYSTEM_ACTOR);
+	}
+
 	private static Optional<UUID> currentUser() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication != null && authentication.getPrincipal() instanceof Jwt token) {

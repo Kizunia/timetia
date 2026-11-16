@@ -1,0 +1,441 @@
+-- 01_schema.sql: the Timetia lab database (SE2004 DBMS, practical 4: DDL and constraints).
+--
+-- The final-state DDL of the tables that carry the product: the campus and the catalogue (reference), the weekly timetable and
+-- its dated lectures (timetable), the change tickets with their reviews and conflict checks (rescheduling) and the in-app
+-- notifications. It was produced by replaying every Flyway migration of backend/src/main/resources/db/migration into an empty
+-- MySQL 8.4 and dumping the result, so it is the schema the application runs on, not a second design that can drift.
+--
+-- Flyway stays the owner of the application's schema. This script builds a SEPARATE database, timetia_lab, for the lab
+-- (queries, views, indexes, grants and transactions); nothing here is run against the application's database.
+--
+-- Not in this lab database: sign-in and roles (access, identity), the audit log, files, notes, issues and the platform's event
+-- tables. They are plumbing the course does not mark.
+--
+-- Things worth reading in the DDL:
+--   * Every table has tenant_id, version (optimistic locking) and created_*/updated_* audit columns; ids are BINARY(16) UUIDs.
+--   * Soft delete: deleted_at, and a generated active_marker (1 while live, NULL once deleted). MySQL treats NULLs in a unique
+--     key as distinct, so a unique key that ends in active_marker forbids two LIVE rows with one code but lets a deleted
+--     row's code be used again.
+--   * occurrence_claim's unique key (tenant, kind, resource, date, hour) is what stops two lectures taking one teacher, room or
+--     class at the same hour: the database refuses the second, whatever the application does.
+--   * timetable_version.published_from (generated) and its unique key allow only one published version per division and date.
+--   * CHECK constraints state the business rules: a move names its slot, an in-person lecture has a room and an online one has
+--     none, a rejection gives its reason, an applied ticket says how it was approved.
+--
+-- Run order: 01_schema.sql, 02_seed.sql, 03_foreign_keys.sql, then 04 to 07 (05 before 06, which grants on its views). To start
+-- again: DROP DATABASE timetia_lab; and re-run. See README.md.
+--
+-- This script has no foreign keys because the application's schema has none (modules refer to each other by id). The lab adds
+-- them in 03_foreign_keys.sql, to the lab database only.
+
+CREATE DATABASE timetia_lab CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE timetia_lab;
+
+CREATE TABLE `department` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `code` varchar(30) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_department_code` (`tenant_id`,`code`,`active_marker`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `division` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `code` varchar(40) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `department_id` binary(16) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_division_code` (`tenant_id`,`code`,`active_marker`),
+  KEY `division_by_department_idx` (`tenant_id`,`department_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `batch` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `code` varchar(40) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `division_id` binary(16) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_batch_code` (`tenant_id`,`code`,`active_marker`),
+  KEY `batch_by_division_idx` (`tenant_id`,`division_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `subject` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `code` varchar(30) NOT NULL,
+  `name` varchar(150) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_subject_code` (`tenant_id`,`code`,`active_marker`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `room` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `code` varchar(20) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `room_type` varchar(20) NOT NULL,
+  `capacity` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_room_code` (`tenant_id`,`code`,`active_marker`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `faculty` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `code` varchar(30) NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `department_id` binary(16) NOT NULL,
+  `user_id` binary(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_faculty_code` (`tenant_id`,`code`,`active_marker`),
+  KEY `faculty_by_department_idx` (`tenant_id`,`department_id`),
+  KEY `faculty_by_user_idx` (`tenant_id`,`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `academic_term` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `code` varchar(30) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_term_code` (`tenant_id`,`code`,`active_marker`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `teaching_assignment` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `active_marker` tinyint GENERATED ALWAYS AS (if((`deleted_at` is null),1,NULL)) STORED,
+  `division_id` binary(16) NOT NULL,
+  `batch_id` binary(16) DEFAULT NULL,
+  `subject_id` binary(16) NOT NULL,
+  `faculty_id` binary(16) NOT NULL,
+  `session_type` varchar(20) NOT NULL,
+  `batch_scope` binary(16) GENERATED ALWAYS AS (ifnull(`batch_id`,0x00000000000000000000000000000000)) STORED,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_teaching_assignment` (`tenant_id`,`division_id`,`subject_id`,`session_type`,`batch_scope`,`active_marker`),
+  KEY `teaching_assignment_by_division_idx` (`tenant_id`,`division_id`),
+  KEY `teaching_assignment_by_faculty_idx` (`tenant_id`,`faculty_id`),
+  CONSTRAINT `ck_teaching_assignment_batch` CHECK ((((`session_type` = _latin1'THEORY') and (`batch_id` is null)) or ((`session_type` in (_latin1'LAB',_latin1'TUTORIAL')) and (`batch_id` is not null))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `timetable_version` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `division_id` binary(16) NOT NULL,
+  `term_id` binary(16) NOT NULL,
+  `effective_from` date NOT NULL,
+  `status` varchar(12) NOT NULL,
+  `published_from` date GENERATED ALWAYS AS (if((`status` = _utf8mb4'PUBLISHED'),`effective_from`,NULL)) STORED,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_timetable_version_published` (`tenant_id`,`division_id`,`published_from`),
+  KEY `timetable_version_by_division_idx` (`tenant_id`,`division_id`,`status`),
+  CONSTRAINT `ck_timetable_version_status` CHECK ((`status` in (_latin1'DRAFT',_latin1'PUBLISHED')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `timetable_entry` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `timetable_version_id` binary(16) NOT NULL,
+  `assignment_id` binary(16) NOT NULL,
+  `day_of_week` tinyint NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `room_id` binary(16) DEFAULT NULL,
+  `mode` varchar(10) NOT NULL,
+  `meeting_link` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `timetable_entry_by_version_idx` (`tenant_id`,`timetable_version_id`),
+  CONSTRAINT `ck_timetable_entry_day` CHECK ((`day_of_week` between 1 and 6)),
+  CONSTRAINT `ck_timetable_entry_mode` CHECK ((((`mode` = _latin1'IN_PERSON') and (`room_id` is not null)) or ((`mode` = _latin1'ONLINE') and (`room_id` is null)))),
+  CONSTRAINT `ck_timetable_entry_time` CHECK (((`start_time` < `end_time`) and (`start_time` >= _latin1'08:00:00') and (`end_time` <= _latin1'20:00:00')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `lecture_occurrence` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `timetable_entry_id` binary(16) DEFAULT NULL,
+  `timetable_version_id` binary(16) NOT NULL,
+  `assignment_id` binary(16) NOT NULL,
+  `occurrence_date` date NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `department_id` binary(16) NOT NULL,
+  `division_id` binary(16) NOT NULL,
+  `batch_id` binary(16) DEFAULT NULL,
+  `session_type` varchar(10) NOT NULL,
+  `faculty_id` binary(16) NOT NULL,
+  `room_id` binary(16) DEFAULT NULL,
+  `mode` varchar(10) NOT NULL,
+  `meeting_link` varchar(500) DEFAULT NULL,
+  `record_status` varchar(12) NOT NULL,
+  `effective_date` date NOT NULL,
+  `effective_start_time` time NOT NULL,
+  `effective_end_time` time NOT NULL,
+  `effective_room_id` binary(16) DEFAULT NULL,
+  `effective_mode` varchar(10) NOT NULL,
+  `effective_meeting_link` varchar(500) DEFAULT NULL,
+  `is_cancelled` tinyint(1) NOT NULL DEFAULT '0',
+  `changed_by_ticket_id` binary(16) DEFAULT NULL,
+  `effective_faculty_id` binary(16) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_lecture_occurrence_entry_date` (`tenant_id`,`timetable_entry_id`,`occurrence_date`),
+  KEY `lecture_occurrence_by_date_idx` (`tenant_id`,`record_status`,`effective_date`),
+  KEY `lecture_occurrence_by_division_idx` (`tenant_id`,`division_id`,`record_status`,`effective_date`),
+  KEY `lecture_occurrence_by_base_idx` (`tenant_id`,`division_id`,`record_status`,`occurrence_date`),
+  KEY `lecture_occurrence_by_faculty_idx` (`tenant_id`,`effective_faculty_id`,`record_status`,`effective_date`),
+  CONSTRAINT `ck_lecture_occurrence_effective_mode` CHECK ((((`effective_mode` = _utf8mb4'IN_PERSON') and (`effective_room_id` is not null)) or ((`effective_mode` = _utf8mb4'ONLINE') and (`effective_room_id` is null)))),
+  CONSTRAINT `ck_lecture_occurrence_effective_time` CHECK (((`effective_start_time` < `effective_end_time`) and (`effective_start_time` >= '08:00:00') and (`effective_end_time` <= '20:00:00'))),
+  CONSTRAINT `ck_lecture_occurrence_mode` CHECK ((((`mode` = _utf8mb4'IN_PERSON') and (`room_id` is not null)) or ((`mode` = _utf8mb4'ONLINE') and (`room_id` is null)))),
+  CONSTRAINT `ck_lecture_occurrence_status` CHECK ((`record_status` in (_utf8mb4'ACTIVE',_utf8mb4'SUPERSEDED')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `occurrence_claim` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `occurrence_id` binary(16) NOT NULL,
+  `claim_kind` varchar(16) NOT NULL,
+  `resource_id` binary(16) NOT NULL,
+  `claim_date` date NOT NULL,
+  `cell_hour` tinyint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_occurrence_claim_cell` (`tenant_id`,`claim_kind`,`resource_id`,`claim_date`,`cell_hour`),
+  KEY `occurrence_claim_by_occurrence_idx` (`tenant_id`,`occurrence_id`),
+  CONSTRAINT `ck_occurrence_claim_hour` CHECK ((`cell_hour` between 8 and 19)),
+  CONSTRAINT `ck_occurrence_claim_kind` CHECK ((`claim_kind` in (_latin1'FACULTY',_latin1'ROOM',_latin1'DIVISION',_latin1'STUDENT_BATCH')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `timetable_change_ticket` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `ticket_type` varchar(20) NOT NULL,
+  `status` varchar(12) NOT NULL,
+  `approval_path` varchar(10) DEFAULT NULL,
+  `author_user_id` binary(16) NOT NULL,
+  `acting_faculty_id` binary(16) DEFAULT NULL,
+  `description` varchar(1000) DEFAULT NULL,
+  `revision_no` smallint NOT NULL,
+  `assignment_id` binary(16) NOT NULL,
+  `department_id` binary(16) NOT NULL,
+  `division_id` binary(16) NOT NULL,
+  `batch_id` binary(16) DEFAULT NULL,
+  `session_type` varchar(10) NOT NULL,
+  `faculty_id` binary(16) NOT NULL,
+  `expires_at` datetime(6) NOT NULL,
+  `is_conflicted` tinyint(1) NOT NULL DEFAULT '0',
+  `conflicted_since` datetime(6) DEFAULT NULL,
+  `closed_at` datetime(6) DEFAULT NULL,
+  `reverts_ticket_id` binary(16) DEFAULT NULL,
+  `reverted_by_ticket_id` binary(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ticket_by_author_idx` (`tenant_id`,`author_user_id`,`status`),
+  KEY `ticket_by_faculty_idx` (`tenant_id`,`faculty_id`,`status`),
+  KEY `ticket_by_department_idx` (`tenant_id`,`department_id`,`status`),
+  KEY `ticket_by_division_idx` (`tenant_id`,`division_id`,`status`),
+  KEY `ticket_by_batch_idx` (`tenant_id`,`batch_id`,`status`),
+  KEY `ticket_by_reverts_idx` (`tenant_id`,`reverts_ticket_id`,`status`),
+  CONSTRAINT `ck_ticket_applied_path` CHECK (((`status` <> _utf8mb4'APPLIED') or (`approval_path` is not null))),
+  CONSTRAINT `ck_ticket_approval_path` CHECK (((`approval_path` is null) or (`approval_path` in (_utf8mb4'SELF',_utf8mb4'REVIEWED')))),
+  CONSTRAINT `ck_ticket_closed` CHECK (((`status` in (_utf8mb4'APPLIED',_utf8mb4'WITHDRAWN',_utf8mb4'EXPIRED',_utf8mb4'REVERTED')) = (`closed_at` is not null))),
+  CONSTRAINT `ck_ticket_permanent_path` CHECK (((`ticket_type` <> _latin1'PERMANENT_CHANGE') or (`approval_path` is null) or (`approval_path` = _latin1'REVIEWED'))),
+  CONSTRAINT `ck_ticket_revert_link` CHECK (((`ticket_type` = _utf8mb4'REVERT') = (`reverts_ticket_id` is not null))),
+  CONSTRAINT `ck_ticket_reverted_by` CHECK (((`status` = _utf8mb4'REVERTED') = (`reverted_by_ticket_id` is not null))),
+  CONSTRAINT `ck_ticket_status` CHECK ((`status` in (_utf8mb4'DRAFT',_utf8mb4'IN_REVIEW',_utf8mb4'APPLIED',_utf8mb4'REJECTED',_utf8mb4'WITHDRAWN',_utf8mb4'EXPIRED',_utf8mb4'REVERTED'))),
+  CONSTRAINT `ck_ticket_type` CHECK ((`ticket_type` in (_latin1'RESCHEDULE',_latin1'CANCEL',_latin1'SUBSTITUTE',_latin1'EXTRA',_latin1'EXCHANGE',_latin1'REVERT',_latin1'PERMANENT_CHANGE')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `ticket_change_item` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `ticket_id` binary(16) NOT NULL,
+  `operation_type` varchar(20) NOT NULL,
+  `source_occurrence_id` binary(16) DEFAULT NULL,
+  `source_revision` bigint NOT NULL,
+  `reason` varchar(500) DEFAULT NULL,
+  `target_date` date DEFAULT NULL,
+  `target_start_time` time DEFAULT NULL,
+  `target_end_time` time DEFAULT NULL,
+  `target_mode` varchar(10) DEFAULT NULL,
+  `target_room_id` binary(16) DEFAULT NULL,
+  `target_meeting_link` varchar(500) DEFAULT NULL,
+  `before_date` date DEFAULT NULL,
+  `before_start_time` time DEFAULT NULL,
+  `before_end_time` time DEFAULT NULL,
+  `before_mode` varchar(10) DEFAULT NULL,
+  `before_room_id` binary(16) DEFAULT NULL,
+  `before_meeting_link` varchar(500) DEFAULT NULL,
+  `target_faculty_id` binary(16) DEFAULT NULL,
+  `before_faculty_id` binary(16) DEFAULT NULL,
+  `teaching_assignment_id` binary(16) DEFAULT NULL,
+  `created_occurrence_id` binary(16) DEFAULT NULL,
+  `item_no` int NOT NULL DEFAULT '1',
+  `faculty_id` binary(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ticket_change_item_no` (`tenant_id`,`ticket_id`,`item_no`),
+  KEY `ticket_change_by_ticket_idx` (`tenant_id`,`ticket_id`),
+  KEY `ticket_change_by_lecture_idx` (`tenant_id`,`source_occurrence_id`),
+  KEY `ticket_change_by_created_idx` (`tenant_id`,`created_occurrence_id`),
+  KEY `ticket_change_by_faculty_idx` (`tenant_id`,`faculty_id`),
+  CONSTRAINT `ck_change_cancel` CHECK (((`operation_type` <> _utf8mb4'CANCEL') or ((`reason` is not null) and (`target_date` is null) and (`target_start_time` is null) and (`target_end_time` is null) and (`target_mode` is null) and (`target_room_id` is null) and (`target_meeting_link` is null) and (`target_faculty_id` is null)))),
+  CONSTRAINT `ck_change_move` CHECK (((`operation_type` not in (_utf8mb4'MOVE',_utf8mb4'CREATE_EXTRA')) or ((`target_date` is not null) and (`target_start_time` is not null) and (`target_end_time` is not null) and (`target_faculty_id` is null) and (((`target_mode` = _utf8mb4'IN_PERSON') and (`target_room_id` is not null)) or ((`target_mode` = _utf8mb4'ONLINE') and (`target_room_id` is null)))))),
+  CONSTRAINT `ck_change_operation` CHECK ((`operation_type` in (_latin1'MOVE',_latin1'CANCEL',_latin1'REASSIGN_FACULTY',_latin1'CREATE_EXTRA',_latin1'RESTORE'))),
+  CONSTRAINT `ck_change_reassign` CHECK (((`operation_type` <> _utf8mb4'REASSIGN_FACULTY') or ((`target_faculty_id` is not null) and (`target_date` is null) and (`target_start_time` is null) and (`target_end_time` is null) and (`target_mode` is null) and (`target_room_id` is null) and (`target_meeting_link` is null)))),
+  CONSTRAINT `ck_change_restore` CHECK (((`operation_type` <> _latin1'RESTORE') or ((`target_date` is not null) and (`target_start_time` is not null) and (`target_end_time` is not null) and (`target_faculty_id` is not null) and (((`target_mode` = _latin1'IN_PERSON') and (`target_room_id` is not null)) or ((`target_mode` = _latin1'ONLINE') and (`target_room_id` is null)))))),
+  CONSTRAINT `ck_change_source` CHECK ((((`operation_type` = _utf8mb4'CREATE_EXTRA') and (`source_occurrence_id` is null) and (`teaching_assignment_id` is not null)) or ((`operation_type` <> _utf8mb4'CREATE_EXTRA') and (`source_occurrence_id` is not null) and (`teaching_assignment_id` is null) and (`created_occurrence_id` is null))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `ticket_review` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `ticket_id` binary(16) NOT NULL,
+  `ticket_revision_no` smallint NOT NULL,
+  `reviewer_user_id` binary(16) NOT NULL,
+  `reviewer_capacity` varchar(20) NOT NULL,
+  `review_status` varchar(12) NOT NULL,
+  `decision_reason` varchar(500) DEFAULT NULL,
+  `decided_at` datetime(6) DEFAULT NULL,
+  `is_escalation` tinyint(1) NOT NULL DEFAULT '0',
+  `escalated_from_review_id` binary(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ticket_review` (`tenant_id`,`ticket_id`,`ticket_revision_no`,`reviewer_user_id`,`reviewer_capacity`),
+  KEY `ticket_review_by_reviewer_idx` (`tenant_id`,`reviewer_user_id`,`review_status`),
+  CONSTRAINT `ck_ticket_review_capacity` CHECK ((`reviewer_capacity` in (_latin1'HOD',_latin1'CR',_latin1'BR',_latin1'AFFECTED_FACULTY',_latin1'OTHER_FACULTY'))),
+  CONSTRAINT `ck_ticket_review_decided` CHECK (((`review_status` = _latin1'PENDING') = (`decided_at` is null))),
+  CONSTRAINT `ck_ticket_review_rejection` CHECK (((`review_status` <> _latin1'REJECTED') or (`decision_reason` is not null))),
+  CONSTRAINT `ck_ticket_review_status` CHECK ((`review_status` in (_latin1'PENDING',_latin1'APPROVED',_latin1'REJECTED',_latin1'ACKNOWLEDGED')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `conflict_check_run` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `ticket_id` binary(16) NOT NULL,
+  `check_trigger` varchar(12) NOT NULL,
+  `result` varchar(8) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `conflict_run_by_ticket_idx` (`tenant_id`,`ticket_id`,`created_at`),
+  CONSTRAINT `ck_conflict_run_result` CHECK ((`result` in (_utf8mb4'CLEAR',_utf8mb4'BLOCKED'))),
+  CONSTRAINT `ck_conflict_run_trigger` CHECK ((`check_trigger` in (_latin1'SUBMISSION',_latin1'APPLY',_latin1'RECHECK')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `conflict_finding` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `run_id` binary(16) NOT NULL,
+  `ticket_id` binary(16) NOT NULL,
+  `conflict_type` varchar(20) NOT NULL,
+  `message` varchar(500) NOT NULL,
+  `occurrence_id` binary(16) DEFAULT NULL,
+  `conflicting_occurrence_id` binary(16) DEFAULT NULL,
+  `conflicting_ticket_id` binary(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `conflict_finding_by_run_idx` (`tenant_id`,`run_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `notification` (
+  `id` binary(16) NOT NULL,
+  `tenant_id` binary(16) NOT NULL,
+  `version` bigint NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `created_by` binary(16) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `updated_by` binary(16) NOT NULL,
+  `recipient_user_id` binary(16) NOT NULL,
+  `notification_type` varchar(20) NOT NULL,
+  `ticket_id` binary(16) DEFAULT NULL,
+  `issue_id` binary(16) DEFAULT NULL,
+  `actor_user_id` binary(16) DEFAULT NULL,
+  `source_event_id` binary(16) NOT NULL,
+  `read_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_notification_once` (`tenant_id`,`source_event_id`,`recipient_user_id`,`notification_type`),
+  KEY `notification_by_recipient_idx` (`tenant_id`,`recipient_user_id`,`read_at`,`created_at`),
+  CONSTRAINT `ck_notification_subject` CHECK (((`ticket_id` is not null) or (`issue_id` is not null))),
+  CONSTRAINT `ck_notification_type` CHECK ((`notification_type` in (_latin1'REVIEW_REQUESTED',_latin1'REVIEW_APPROVED',_latin1'REVIEW_REJECTED',_latin1'TICKET_APPLIED',_latin1'TICKET_CONFLICTED',_latin1'TICKET_EDITED',_latin1'TICKET_WITHDRAWN',_latin1'TICKET_REVERTED',_latin1'ISSUE_MENTION')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
