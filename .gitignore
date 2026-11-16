@@ -14,3 +14,5 @@ node_modules/
 # Local build logs
 /build-log.txt
 /build-full.txt
+/dev-out.log
+/dev-err.log
