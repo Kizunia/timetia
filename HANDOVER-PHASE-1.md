@@ -1,6 +1,6 @@
 # Handover: Phase 1 (foundations + live timetable, read path)
 
-Branch `dog`, nothing committed. Written 2026-11-16 after implementing `frontend/docs/phase-1.md`.
+Branch `dog`. Written 2026-11-16 after implementing `frontend/docs/phase-1.md`.
 The plan documents are in `frontend/docs/` (read `README.md` first, then `phase-2.md` for what comes next).
 
 ## 1. Status at a glance
@@ -10,7 +10,7 @@ The plan documents are in `frontend/docs/` (read `README.md` first, then `phase-
 | Backend: 7 new read endpoints, tests, OpenAPI list | Done and green (Gate B1) |
 | Generated client (`openapi.json`, `schema.gen.ts`) | Regenerated, in sync |
 | Frontend: libs, `campus`, `timetable`, routes, tests | Done (Gate F1: typecheck, lint, test, build) |
-| Full backend `verify` | **Was still running when this was written.** See section 5 |
+| Full backend `verify` | Done and green: `BUILD SUCCESS`, 250 unit + 563 integration = 813 tests, 0 failures, 37 min (JDK 27) |
 | Browser exit check (phase-1.md section 5) | **Not done.** See section 4 |
 | E2E suite | Not run (the plan says Phase 3) |
 
@@ -74,9 +74,8 @@ Note for anyone reading the plan: the persistence layer is plain JDBC now (commi
 
 ## 4. What remains from Phase 1
 
-1. **Full backend `verify`** (checklist item). Started in the background (`mvnw -B clean verify`, log `build-full.txt` in the repo root). Expect about 20 minutes and 798 tests (772 existing + the 26 added since the JDBC work and this phase). If it ends with `BUILD SUCCESS`, tick the box in `frontend/docs/phase-1.md`. If the OS kills it for low memory, that is not a test failure: close heavy programs and re-run. Delete `build-full.txt` afterwards; it is not ignored by git.
-2. **Browser exit check** (phase-1.md section 5, eight steps). Needs the real stack: `pnpm infra:up`, `pnpm dev`, the demo campus seeded per `scripts/DEMO.md` section 4, accounts `demo`, `demo-admin`, a Student of batch A1 and a user with no role, in separate browser profiles. Nothing has been checked in a browser yet: layout at 400 px, the redirect from `/`, the lecture sheet, and the Cancelled/Moved badges are covered only by unit tests. Write the results (with test counts) into the report and tick the box.
-3. **Commit.** Nothing is committed. Files to include: all of `git status` (backend sources and tests, `openapi.json`, `schema.gen.ts`, `pnpm-lock.yaml`, `frontend/`, docs). CI fails if either generated file is stale, so commit them together.
+1. **Browser exit check** (phase-1.md section 5, eight steps). Needs the real stack: `pnpm infra:up`, `pnpm dev`, the demo campus seeded per `scripts/DEMO.md` section 4, accounts `demo`, `demo-admin`, a Student of batch A1 and a user with no role, in separate browser profiles. Nothing has been checked in a browser yet: layout at 400 px, the redirect from `/`, the lecture sheet, and the Cancelled/Moved badges are covered only by unit tests. Write the results (with test counts) into the report and tick the box.
+(`build-full.txt` in the repo root is the log of the full verify. It is not committed and not git-ignored; delete it.)
 
 ## 5. Things to watch
 
