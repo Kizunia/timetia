@@ -10,3 +10,7 @@ node_modules/
 
 # IDE
 .vscode
+
+# Local build logs
+/build-log.txt
+/build-full.txt

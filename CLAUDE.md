@@ -34,21 +34,21 @@ pnpm apps:up / apps:down   # run both apps as containers instead (stop `pnpm dev
 
 ### Backend (run Maven from `backend/`)
 
-CI uses JDK 25. **This machine has only JDK 21**, so always pass `-Dmaven.compiler.release=21`; the code uses no Java 22+
-features. In PowerShell, **quote every `-D` argument**. Run Maven with `backend/` as the working directory, because from
+CI uses JDK 25. On a machine with only JDK 21 pass `-Dmaven.compiler.release=21` (the code uses no Java 22+
+features). In PowerShell, **quote every `-D` argument**. Run Maven with `backend/` as the working directory, because from
 anywhere else Spring Modulith writes a stray `build/` folder there. Every `*IT` needs Docker (Testcontainers MySQL). Send
 output to a log file and read the file. Do not pipe Maven through `Select-Object -First`.
 
 ```powershell
 Set-Location backend
 # one unit test (Surefire, *Test):
-.\mvnw.cmd -B '-Dmaven.compiler.release=21' '-Dtest=ClashesTest' '-DfailIfNoTests=false' test *> ..\build-log.txt
+.\mvnw.cmd -B '-Dtest=ClashesTest' '-DfailIfNoTests=false' test *> ..\build-log.txt
 # one integration test (Failsafe, *IT):
-.\mvnw.cmd -B '-Dmaven.compiler.release=21' '-Dtest=none' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dit.test=TicketApiIT' '-DfailIfNoTests=false' verify *> ..\build-log.txt
+.\mvnw.cmd -B '-Dtest=none' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dit.test=TicketApiIT' '-DfailIfNoTests=false' verify *> ..\build-log.txt
 # architecture rules, after any new application class or cross-module call:
-.\mvnw.cmd -B '-Dmaven.compiler.release=21' '-Dtest=ArchitectureTest,ModularityTest' '-DfailIfNoTests=false' test *> ..\build-log.txt
+.\mvnw.cmd -B '-Dtest=ArchitectureTest,ModularityTest' '-DfailIfNoTests=false' test *> ..\build-log.txt
 # everything (~770 tests, 10-15 min, ~5 GB free RAM; run in the background):
-.\mvnw.cmd -B '-Dmaven.compiler.release=21' verify *> ..\build-log.txt
+.\mvnw.cmd -B verify *> ..\build-log.txt
 ```
 
 If the OS kills a run for low memory, that is not a test failure. Re-run it. `-Dgroups=startup` runs only the startup
