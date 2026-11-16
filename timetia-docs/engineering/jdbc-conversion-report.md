@@ -17,6 +17,7 @@ What was converted from JPA to hand-written JDBC, what was not, what was added, 
 | `timetable` | `JdbcClaimStore`, `JdbcTimetableStore`, `JdbcOccurrenceStore` | 3 entities, 3 repositories, specifications, mapper, 3 stores |
 | `rescheduling` | `JdbcTicketStore` | 5 entities, 5 repositories, specifications, mapper, store |
 | `reference` | `JdbcCampusStore`, `JdbcCatalogStore`, `JdbcTeachingAssignmentStore`, `JdbcScopeDirectory`, base class `JdbcReferenceSupport` | 8 entities, 8 repositories, 2 mappers, 4 stores |
+| `issues` (converted later, with Phase 2) | `JdbcIssueStore` | 3 entities, 3 repositories, `IssueSpecifications`, mapper, `JpaIssueStore` |
 
 Port interfaces, services, controllers and security are unchanged. No converted module imports `jakarta.persistence`,
 Hibernate or Spring Data JPA, and none uses `JdbcClient`, `JdbcTemplate` or another library; the adapters use `DataSource`,
@@ -27,7 +28,9 @@ list.
 `JdbcScopeDirectory` (was `JpaScopeDirectory`) is not one of the three ports the plan names, but it read the same repositories,
 so it had to move with them (rule: one table, one technology).
 
-**Not converted, as decided:** `access`, `identity`, `audit`, `files`, `notes`, `platform`, `academic`, `issues`.
+**Not converted, as decided:** `access`, `identity`, `audit`, `files`, `notes`, `platform`, `academic`. (`issues` was first left
+out and converted afterwards: its list of visible issues, the Criteria `IssueSpecifications`, is now the SQL
+`JdbcIssueStore.visibilityCondition`, written like the one in `JdbcTicketStore`.)
 
 ## 2. Added
 
