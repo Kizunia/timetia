@@ -89,7 +89,7 @@ class ReportExportIT extends ReschedulingApiTest {
 		String moved = raise(RAO_USER, move(lecture(this.theoryOop, "2026-07-13"), "2026-07-16", 9, 10, this.room101));
 		Path file = this.folder.resolve("tickets.csv");
 
-		int written = asCaller(RAO_USER, () -> this.ticketReport.exportTickets(new TicketFilter(null, null, true), file));
+		int written = asCaller(RAO_USER, () -> this.ticketReport.exportTickets(new TicketFilter(null, null, true, false), file));
 
 		List<String> lines = Files.readAllLines(file);
 		assertThat(written).isEqualTo(2);
@@ -106,7 +106,7 @@ class ReportExportIT extends ReschedulingApiTest {
 		raise(RAO_USER, cancel(lecture(this.theoryOop, "2026-07-06"), "Unwell"));
 		Path file = this.folder.resolve("tickets.csv");
 
-		int written = asCaller(ROY_USER, () -> this.ticketReport.exportTickets(new TicketFilter(null, null, false), file));
+		int written = asCaller(ROY_USER, () -> this.ticketReport.exportTickets(new TicketFilter(null, null, false, false), file));
 
 		assertThat(written).isZero();
 		assertThat(Files.readAllLines(file)).hasSize(1);
@@ -117,7 +117,7 @@ class ReportExportIT extends ReschedulingApiTest {
 	void aFailureIsReported() {
 		Path file = this.folder.resolve("no-such-folder").resolve("tickets.csv");
 
-		assertThatThrownBy(() -> asCaller(ADMIN, () -> this.ticketReport.exportTickets(new TicketFilter(null, null, false), file)))
+		assertThatThrownBy(() -> asCaller(ADMIN, () -> this.ticketReport.exportTickets(new TicketFilter(null, null, false, false), file)))
 			.hasRootCauseInstanceOf(IOException.class)
 			.hasCauseInstanceOf(ReportExportException.class);
 	}

@@ -1,11 +1,13 @@
 package com.kibootia.backend.timetable.application;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.kibootia.backend.timetable.domain.ClaimKey;
+import com.kibootia.backend.timetable.domain.ClaimKind;
 
 /**
  * Where what each lecture holds is kept (see {@link com.kibootia.backend.timetable.domain.Claims}). The use cases depend on
@@ -27,5 +29,11 @@ public interface ClaimStore {
 
 	/** For each of these keys that is held, the lecture that holds it. */
 	Map<ClaimKey, UUID> holders(Collection<ClaimKey> keys);
+
+	/**
+	 * What is held among these resources of one kind on one date, in these hours, answered with a single query however many
+	 * resources are asked about (for example every room, to find the free ones). Keys that are not held are absent.
+	 */
+	Map<ClaimKey, UUID> holdersOf(ClaimKind kind, Collection<UUID> resourceIds, LocalDate date, Collection<Integer> hours);
 
 }

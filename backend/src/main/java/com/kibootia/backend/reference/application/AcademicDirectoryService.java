@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import com.kibootia.backend.reference.AssignmentDetails;
 import com.kibootia.backend.reference.DivisionDetails;
 import com.kibootia.backend.reference.FacultyDetails;
 import com.kibootia.backend.reference.RoomDetails;
+import com.kibootia.backend.reference.RoomOption;
 import com.kibootia.backend.reference.TermDetails;
 
 /**
@@ -30,6 +33,9 @@ import com.kibootia.backend.reference.TermDetails;
  */
 @Service
 class AcademicDirectoryService implements AcademicDirectory {
+
+	/** The most rooms one answer holds; a campus has far fewer. */
+	private static final int ROOM_LIMIT = 500;
 
 	private final TeachingAssignmentStore assignments;
 
@@ -91,6 +97,17 @@ class AcademicDirectoryService implements AcademicDirectory {
 		return this.catalog.findRooms(roomIds)
 			.stream()
 			.collect(Collectors.toUnmodifiableMap(Room::id, (room) -> new RoomDetails(room.id(), room.code(), room.name())));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("a read-only lookup for modules that have already authorized the request")
+	public List<RoomOption> roomOptions() {
+		return this.catalog.searchRooms(null, PageRequest.of(0, ROOM_LIMIT, Sort.by("code")))
+			.getContent()
+			.stream()
+			.map((room) -> new RoomOption(room.id(), room.code(), room.name(), room.roomType().name(), room.capacity()))
+			.toList();
 	}
 
 	@Override

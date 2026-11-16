@@ -365,6 +365,14 @@ class JdbcTicketStore extends JdbcSupport implements TicketStore {
 		if (!query.visibility().everywhere()) {
 			conditions.append(visibilityCondition(query.visibility(), parameters));
 		}
+		if (query.awaitingAnswerOf() != null) {
+			// Asked to review it in the revision it is in now, and has not answered: the "to review" list.
+			conditions.append(" AND EXISTS (SELECT 1 FROM ticket_review w WHERE w.tenant_id = ? AND w.reviewer_user_id = ?")
+				.append(" AND w.ticket_id = t.id AND w.ticket_revision_no = t.revision_no AND w.review_status = ?)");
+			parameters.add(tenant());
+			parameters.add(query.awaitingAnswerOf());
+			parameters.add(ReviewStatus.PENDING);
+		}
 		String where = conditions.toString();
 		String select = SEARCH_TICKETS.formatted(where) + orderBy(pageable.getSort(), SORT_COLUMNS);
 		return queryPage(select, COUNT_TICKETS.formatted(where), JdbcTicketStore::toTicket, pageable,

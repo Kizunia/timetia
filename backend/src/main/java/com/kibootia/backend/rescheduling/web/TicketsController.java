@@ -1,6 +1,7 @@
 package com.kibootia.backend.rescheduling.web;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -8,6 +9,7 @@ import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,10 @@ import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.web.PageQuery;
 import com.kibootia.backend.platform.web.PageResponse;
 import com.kibootia.backend.rescheduling.application.Progress;
+import com.kibootia.backend.rescheduling.application.ReviewerCandidateService;
+import com.kibootia.backend.rescheduling.application.TicketDetail;
+import com.kibootia.backend.rescheduling.application.TicketNameService;
+import com.kibootia.backend.rescheduling.application.TicketNames;
 import com.kibootia.backend.rescheduling.application.TicketReviewService;
 import com.kibootia.backend.rescheduling.application.TicketRevertService;
 import com.kibootia.backend.rescheduling.application.TicketService;
@@ -53,22 +59,41 @@ class TicketsController {
 
 	private final TicketRevertService reverts;
 
-	TicketsController(TicketService tickets, TicketReviewService reviews, TicketRevertService reverts) {
+	private final TicketNameService names;
+
+	private final ReviewerCandidateService candidates;
+
+	TicketsController(TicketService tickets, TicketReviewService reviews, TicketRevertService reverts,
+			TicketNameService names, ReviewerCandidateService candidates) {
 		this.tickets = tickets;
 		this.reviews = reviews;
 		this.reverts = reverts;
+		this.names = names;
+		this.candidates = candidates;
 	}
 
 	@PostMapping
 	@ApiResponse(responseCode = "201", description = "The draft was raised and checked; `Location` is its URL.")
 	ResponseEntity<TicketResponse> create(@Valid @RequestBody CreateTicketRequest request) {
-		TicketResponse created = TicketMapper.toResponse(this.tickets.create(TicketMapper.toDraft(request)));
+		TicketResponse created = respond(this.tickets.create(TicketMapper.toDraft(request)));
 		return ResponseEntity.created(URI.create("/api/v1/tickets/" + created.id())).body(created);
 	}
 
 	@GetMapping("/{id}")
 	TicketResponse get(@PathVariable UUID id) {
-		return TicketMapper.toResponse(this.tickets.get(id));
+		return respond(this.tickets.get(id));
+	}
+
+	/**
+	 * The people the author may ask to review this ticket: the HODs of its department, the CR or BR of its class, and the
+	 * faculty it affects, each with the capacity to name when asking. Only the author may ask; the author is never listed.
+	 */
+	@GetMapping("/{id}/reviewer-candidates")
+	List<ReviewerCandidateResponse> reviewerCandidates(@PathVariable UUID id) {
+		return this.candidates.candidates(id)
+			.stream()
+			.map((candidate) -> new ReviewerCandidateResponse(candidate.userId(), candidate.name(), candidate.capacity()))
+			.toList();
 	}
 
 	/**
@@ -77,7 +102,7 @@ class TicketsController {
 	 */
 	@PutMapping("/{id}")
 	TicketResponse edit(@PathVariable UUID id, @Valid @RequestBody UpdateTicketRequest request) {
-		return TicketMapper.toResponse(this.tickets.edit(id, TicketMapper.toEdit(request)));
+		return respond(this.tickets.edit(id, TicketMapper.toEdit(request)));
 	}
 
 	/**
@@ -89,7 +114,7 @@ class TicketsController {
 	TicketResponse apply(@PathVariable UUID id) {
 		Progress result = this.tickets.apply(id);
 		return switch (result.outcome()) {
-			case APPLIED, DONE -> TicketMapper.toResponse(result.detail());
+			case APPLIED, DONE -> respond(result.detail());
 			case BLOCKED -> throw ApiException.conflict(BLOCKED,
 					"The change cannot be applied: something is in the way. Nothing was changed.",
 					TicketMapper.toErrors(result.detail().conflicts()));
@@ -99,7 +124,7 @@ class TicketsController {
 
 	@PostMapping("/{id}/withdraw")
 	TicketResponse withdraw(@PathVariable UUID id) {
-		return TicketMapper.toResponse(this.tickets.withdraw(id));
+		return respond(this.tickets.withdraw(id));
 	}
 
 	/** Sends a draft for review by the people named. A ticket with a conflict can still be sent. */
@@ -125,8 +150,7 @@ class TicketsController {
 	@PostMapping("/{id}/revert")
 	@ApiResponse(responseCode = "201", description = "The revert was raised as a new ticket and checked; `Location` is its URL.")
 	ResponseEntity<TicketResponse> revert(@PathVariable UUID id, @Valid @RequestBody(required = false) RevertRequest request) {
-		TicketResponse created = TicketMapper
-			.toResponse(this.reverts.revert(id, (request == null) ? null : request.reason()));
+		TicketResponse created = respond(this.reverts.revert(id, (request == null) ? null : request.reason()));
 		return ResponseEntity.created(URI.create("/api/v1/tickets/" + created.id())).body(created);
 	}
 
@@ -140,22 +164,31 @@ class TicketsController {
 	 * @param status only tickets in this state
 	 * @param lecture only tickets that concern this lecture
 	 * @param mine only tickets the caller wrote
+	 * @param awaitingReview only tickets under review where the caller has been asked and has not answered yet
 	 */
 	@GetMapping
 	PageResponse<TicketResponse> list(@ParameterObject @Valid PageQuery query,
 			@RequestParam(required = false) TicketStatus status, @RequestParam(required = false) UUID lecture,
-			@RequestParam(defaultValue = "false") boolean mine) {
-		return PageResponse.of(
-				this.tickets.list(new TicketFilter(status, lecture, mine), query.toPageable(SORTABLE, NEWEST_FIRST)),
-				TicketMapper::toResponse);
+			@RequestParam(defaultValue = "false") boolean mine,
+			@RequestParam(defaultValue = "false") boolean awaitingReview) {
+		Page<TicketDetail> page = this.tickets.list(new TicketFilter(status, lecture, mine, awaitingReview),
+				query.toPageable(SORTABLE, NEWEST_FIRST));
+		// One lookup of each kind of name for the whole page, not one for each row.
+		TicketNames found = this.names.namesFor(page.getContent(), false);
+		return PageResponse.of(page, (detail) -> TicketMapper.toResponse(detail, found));
+	}
+
+	/** The ticket with the names behind its ids. For one ticket the changed lectures are read as well. */
+	private TicketResponse respond(TicketDetail detail) {
+		return TicketMapper.toResponse(detail, this.names.namesFor(List.of(detail), true));
 	}
 
 	/** The answer to an action that was done: the ticket as it is now, unless the lecture started first. */
-	private static TicketResponse answered(Progress result) {
+	private TicketResponse answered(Progress result) {
 		if (result.outcome() == Progress.Outcome.EXPIRED) {
 			throw expired();
 		}
-		return TicketMapper.toResponse(result.detail());
+		return respond(result.detail());
 	}
 
 	private static ApiException expired() {

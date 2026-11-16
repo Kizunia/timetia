@@ -19,7 +19,10 @@ public record ChangeResponse(
 		@Schema(nullable = true) TargetResponse target,
 		@Schema(nullable = true) String reason,
 		@Schema(nullable = true, description = "Who takes the lecture; present for a substitute.") UUID substituteFacultyId,
+		@Schema(nullable = true) String substituteFacultyName,
 		@Schema(nullable = true) TargetResponse before,
-		@Schema(nullable = true, description = "Who taught the lecture before the ticket was applied.") UUID beforeFacultyId) {
+		@Schema(nullable = true, description = "Who taught the lecture before the ticket was applied.") UUID beforeFacultyId,
+		@Schema(nullable = true) String beforeFacultyName,
+		@Schema(nullable = true, description = "The lecture as it is now. Only in the detail of one ticket, never in a list.") LectureSummaryResponse lecture) {
 
 }

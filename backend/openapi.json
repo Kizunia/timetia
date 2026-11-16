@@ -115,6 +115,14 @@
             "format" : "uuid",
             "type" : [ "string", "null" ]
           },
+          "beforeFacultyName" : {
+            "type" : [ "string", "null" ]
+          },
+          "lecture" : {
+            "$ref" : "#/components/schemas/LectureSummaryResponse",
+            "description" : "The lecture as it is now. Only in the detail of one ticket, never in a list.",
+            "type" : "null"
+          },
           "lectureId" : {
             "description" : "The lecture the ticket changes; for an extra lecture, the one it made, once applied.",
             "format" : "uuid",
@@ -130,6 +138,9 @@
           "substituteFacultyId" : {
             "description" : "Who takes the lecture; present for a substitute.",
             "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
+          "substituteFacultyName" : {
             "type" : [ "string", "null" ]
           },
           "target" : {
@@ -792,6 +803,35 @@
         "required" : [ "attempts", "eventType", "id", "lastAttemptAt", "listener", "publishedAt", "retriesExhausted" ],
         "type" : "object"
       },
+      "FreeRoomResponse" : {
+        "properties" : {
+          "capacity" : {
+            "description" : "The number of seats, when it was recorded.",
+            "format" : "int32",
+            "type" : [ "integer", "null" ]
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "fits" : {
+            "description" : "Whether the kind of room suits the session type asked for; true when none was asked.",
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "roomType" : {
+            "description" : "CLASSROOM, TUTORIAL_ROOM or LAB.",
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "fits", "id", "name", "roomType" ],
+        "type" : "object"
+      },
       "InviteUserRequest" : {
         "properties" : {
           "email" : {
@@ -885,6 +925,37 @@
           }
         },
         "required" : [ "createdAt", "departmentId", "divisionId", "id", "linkedTicketIds", "mentionedFacultyIds", "openerUserId", "sessionType", "status", "title", "updatedAt", "version" ],
+        "type" : "object"
+      },
+      "LectureSummaryResponse" : {
+        "properties" : {
+          "date" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "endTime" : {
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "facultyName" : {
+            "type" : [ "string", "null" ]
+          },
+          "mode" : {
+            "enum" : [ "IN_PERSON", "ONLINE" ],
+            "type" : "string"
+          },
+          "roomCode" : {
+            "type" : [ "string", "null" ]
+          },
+          "startTime" : {
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "subjectCode" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "date", "endTime", "mode", "startTime" ],
         "type" : "object"
       },
       "Line" : {
@@ -1748,6 +1819,10 @@
           "reason" : {
             "type" : [ "string", "null" ]
           },
+          "reviewerName" : {
+            "description" : "The reviewer's name; absent when the account is gone.",
+            "type" : [ "string", "null" ]
+          },
           "reviewerUserId" : {
             "format" : "uuid",
             "type" : "string"
@@ -1776,6 +1851,24 @@
           }
         },
         "required" : [ "capacity", "userId" ],
+        "type" : "object"
+      },
+      "ReviewerCandidateResponse" : {
+        "properties" : {
+          "capacity" : {
+            "description" : "The capacity to name when asking this person: HOD, CR, BR or AFFECTED_FACULTY.",
+            "enum" : [ "HOD", "CR", "BR", "AFFECTED_FACULTY", "OTHER_FACULTY" ],
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "capacity", "name", "userId" ],
         "type" : "object"
       },
       "RoleResponse" : {
@@ -2003,6 +2096,10 @@
             "enum" : [ "IN_PERSON", "ONLINE" ],
             "type" : "string"
           },
+          "roomCode" : {
+            "description" : "The room's code; absent when it is online or the room was deleted.",
+            "type" : [ "string", "null" ]
+          },
           "roomId" : {
             "format" : "uuid",
             "type" : [ "string", "null" ]
@@ -2103,9 +2200,17 @@
             "enum" : [ "SELF", "REVIEWED" ],
             "type" : [ "string", "null" ]
           },
+          "authorName" : {
+            "description" : "The author's name; absent when the account is gone.",
+            "type" : [ "string", "null" ]
+          },
           "authorUserId" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "batchCode" : {
+            "description" : "Batch code of a lab or tutorial; absent for theory.",
+            "type" : [ "string", "null" ]
           },
           "batchId" : {
             "format" : "uuid",
@@ -2142,6 +2247,9 @@
           "description" : {
             "type" : [ "string", "null" ]
           },
+          "divisionCode" : {
+            "type" : [ "string", "null" ]
+          },
           "divisionId" : {
             "format" : "uuid",
             "type" : "string"
@@ -2154,6 +2262,10 @@
           "facultyId" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "facultyName" : {
+            "description" : "Name of the teacher the lecture had when the ticket was raised.",
+            "type" : [ "string", "null" ]
           },
           "id" : {
             "format" : "uuid",
@@ -2187,6 +2299,13 @@
           "status" : {
             "enum" : [ "DRAFT", "IN_REVIEW", "APPLIED", "REJECTED", "WITHDRAWN", "EXPIRED", "REVERTED" ],
             "type" : "string"
+          },
+          "subjectCode" : {
+            "description" : "Subject code of the lecture's teaching assignment; absent when it was deleted.",
+            "type" : [ "string", "null" ]
+          },
+          "subjectName" : {
+            "type" : [ "string", "null" ]
           },
           "type" : {
             "enum" : [ "RESCHEDULE", "CANCEL", "SUBSTITUTE", "EXTRA", "EXCHANGE", "REVERT", "PERMANENT_CHANGE" ],
@@ -8825,6 +8944,14 @@
             "default" : false,
             "type" : "boolean"
           }
+        }, {
+          "in" : "query",
+          "name" : "awaitingReview",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -9506,6 +9633,86 @@
         "tags" : [ "tickets" ]
       }
     },
+    "/api/v1/tickets/{id}/reviewer-candidates" : {
+      "get" : {
+        "operationId" : "ticketsReviewerCandidates",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReviewerCandidateResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "tickets" ]
+      }
+    },
     "/api/v1/tickets/{id}/submit" : {
       "post" : {
         "operationId" : "ticketsSubmit",
@@ -9688,6 +9895,108 @@
           }
         },
         "tags" : [ "tickets" ]
+      }
+    },
+    "/api/v1/timetable/free-rooms" : {
+      "get" : {
+        "operationId" : "freeRoomsList",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "date",
+          "required" : true,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "startTime",
+          "required" : true,
+          "schema" : {
+            "format" : "time-local",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "endTime",
+          "required" : true,
+          "schema" : {
+            "format" : "time-local",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "sessionType",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "THEORY", "LAB", "TUTORIAL" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "excludeLecture",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/FreeRoomResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "free-rooms" ]
       }
     },
     "/api/v1/timetable/live" : {

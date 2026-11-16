@@ -17,6 +17,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
  */
 public record ReviewResponse(
 		@Schema(requiredMode = REQUIRED) UUID reviewerUserId,
+		@Schema(nullable = true, description = "The reviewer's name; absent when the account is gone.") String reviewerName,
 		@Schema(requiredMode = REQUIRED) ReviewerCapacity capacity,
 		@Schema(requiredMode = REQUIRED) ReviewStatus status,
 		@Schema(nullable = true) String reason,

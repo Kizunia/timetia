@@ -19,4 +19,10 @@ public interface ScopeHolders {
 	 */
 	Map<UUID, Set<UUID>> usersIn(String scopeType, Collection<UUID> scopeIds);
 
+	/**
+	 * Like {@link #usersIn}, but only the users whose role in the place carries this permission (for example the people in a
+	 * department who may approve a permanent change). A place nobody holds it in is absent.
+	 */
+	Map<UUID, Set<UUID>> usersHolding(String scopeType, Collection<UUID> scopeIds, String permission);
+
 }

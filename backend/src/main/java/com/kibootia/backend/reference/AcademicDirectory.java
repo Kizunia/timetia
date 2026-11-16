@@ -1,6 +1,7 @@
 package com.kibootia.backend.reference;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +24,9 @@ public interface AcademicDirectory {
 	Map<UUID, AssignmentDetails> assignments(Collection<UUID> assignmentIds);
 
 	Map<UUID, RoomDetails> rooms(Collection<UUID> roomIds);
+
+	/** Every room of the campus (at most 500), by code, with its kind and seats. */
+	List<RoomOption> roomOptions();
 
 	/** The faculty members among these ids; one that was deleted is absent. */
 	Map<UUID, FacultyDetails> faculties(Collection<UUID> facultyIds);

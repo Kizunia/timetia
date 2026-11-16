@@ -17,6 +17,7 @@ public record TargetResponse(
 		@Schema(requiredMode = REQUIRED) LocalTime endTime,
 		@Schema(requiredMode = REQUIRED) LectureMode mode,
 		@Schema(nullable = true) UUID roomId,
+		@Schema(nullable = true, description = "The room's code; absent when it is online or the room was deleted.") String roomCode,
 		@Schema(nullable = true) String meetingLink) {
 
 }

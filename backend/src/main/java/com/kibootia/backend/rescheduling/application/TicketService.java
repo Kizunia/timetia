@@ -147,8 +147,11 @@ public class TicketService {
 
 	}
 
-	/** Which tickets a list asks for. {@code mine} narrows it to the tickets the caller wrote. */
-	public record TicketFilter(TicketStatus status, UUID lectureId, boolean mine) {
+	/**
+	 * Which tickets a list asks for. {@code mine} narrows it to the tickets the caller wrote. {@code awaitingReview} narrows
+	 * it to the tickets under review where the caller's own answer is still missing.
+	 */
+	public record TicketFilter(TicketStatus status, UUID lectureId, boolean mine, boolean awaitingReview) {
 
 	}
 
@@ -586,11 +589,20 @@ public class TicketService {
 		Visibility visibility = new Visibility(inScope.everywhere(), inScope.idsOf(AcademicScopes.DEPARTMENT),
 				inScope.idsOf(AcademicScopes.DIVISION), inScope.idsOf(AcademicScopes.BATCH), onOwn ? me : null,
 				onOwn ? this.directory.facultyIdsOf(me) : Set.of(), onOwn ? me : null);
+		TicketStatus status = filter.status();
+		if (filter.awaitingReview()) {
+			// Only a ticket under review waits for an answer. The list is narrowed, not widened: a ticket the caller could not
+			// open is not listed because they were asked about it.
+			if (status != null && status != TicketStatus.IN_REVIEW) {
+				return Page.empty(pageable);
+			}
+			status = TicketStatus.IN_REVIEW;
+		}
 		if (visibility.isEmpty()) {
 			return Page.empty(pageable);
 		}
-		Page<Ticket> page = this.tickets.search(
-				new TicketQuery(filter.status(), filter.lectureId(), filter.mine() ? me : null, visibility), pageable);
+		Page<Ticket> page = this.tickets.search(new TicketQuery(status, filter.lectureId(), filter.mine() ? me : null,
+				visibility, filter.awaitingReview() ? me : null), pageable);
 		Map<UUID, List<TicketChange>> changes = this.tickets
 			.changesOf(page.getContent().stream().map(Ticket::id).collect(Collectors.toList()));
 		return page.map((ticket) -> new TicketDetail(ticket, changes.get(ticket.id()), List.of(), List.of()));

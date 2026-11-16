@@ -55,8 +55,10 @@ class ModularityTest {
 		assertThat(dependenciesOf("reference")).as("reference builds on the platform ports").contains("platform");
 		assertThat(dependenciesOf("timetable")).as("timetable reads reference data only through its published port")
 			.contains("reference", "academic", "platform");
-		assertThat(dependenciesOf("rescheduling")).as("rescheduling reaches lectures and reference data only through their ports")
-			.contains("timetable", "reference", "academic", "platform");
+		assertThat(dependenciesOf("rescheduling")).as("rescheduling reaches lectures and reference data only through their ports, and asks access who holds a place to list the people a ticket can be sent to")
+			.contains("timetable", "reference", "academic", "access", "platform");
+		assertThat(dependenciesOf("access")).as("access knows nothing of tickets (the edge only goes one way)")
+			.doesNotContain("rescheduling");
 		assertThat(dependenciesOf("issues")).as("issues reach reference data and tickets only through their ports")
 			.contains("reference", "rescheduling", "academic", "platform");
 		assertThat(dependenciesOf("notifications")).as("notifications react to the events of other modules and ask access who holds a place")

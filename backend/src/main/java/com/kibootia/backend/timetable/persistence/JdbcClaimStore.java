@@ -50,6 +50,13 @@ class JdbcClaimStore extends JdbcSupport implements ClaimStore {
 			WHERE tenant_id = ? AND claim_kind = ? AND resource_id = ? AND claim_date IN (%s) AND cell_hour IN (%s)
 			""";
 
+	// Who holds any of these resources of one kind, on one date, in these hours: every room at once for the free-room search.
+	private static final String FIND_AMONG = """
+			SELECT resource_id, cell_hour, occurrence_id
+			FROM occurrence_claim
+			WHERE tenant_id = ? AND claim_kind = ? AND claim_date = ? AND resource_id IN (%s) AND cell_hour IN (%s)
+			""";
+
 	JdbcClaimStore(DataSource dataSource) {
 		super(dataSource);
 	}
@@ -112,6 +119,28 @@ class JdbcClaimStore extends JdbcSupport implements ClaimStore {
 				}
 			}
 		}
+		return holders;
+	}
+
+	@Override
+	public Map<ClaimKey, UUID> holdersOf(ClaimKind kind, Collection<UUID> resourceIds, LocalDate date,
+			Collection<Integer> hours) {
+		if (resourceIds.isEmpty() || hours.isEmpty()) {
+			return Map.of();
+		}
+		List<Object> parameters = new ArrayList<>();
+		parameters.add(tenant());
+		parameters.add(kind);
+		parameters.add(date);
+		parameters.addAll(resourceIds);
+		parameters.addAll(hours);
+		String sql = FIND_AMONG.formatted(placeholders(resourceIds.size()), placeholders(hours.size()));
+		Map<ClaimKey, UUID> holders = new HashMap<>();
+		queryList(sql, (row) -> {
+			ClaimKey key = new ClaimKey(kind, uuid(row, "resource_id"), date, row.getInt("cell_hour"));
+			holders.put(key, uuid(row, "occurrence_id"));
+			return Boolean.TRUE;
+		}, parameters.toArray());
 		return holders;
 	}
 

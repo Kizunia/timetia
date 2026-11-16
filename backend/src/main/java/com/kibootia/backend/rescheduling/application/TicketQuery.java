@@ -12,8 +12,11 @@ import com.kibootia.backend.rescheduling.domain.TicketStatus;
  * @param status only tickets in this state, or all when null
  * @param lectureId only tickets that concern this lecture, or all when null
  * @param authoredBy only tickets this user wrote, or all when null
+ * @param awaitingAnswerOf only tickets where this user was asked to review, in the ticket's current revision, and has not
+ * answered yet; or all when null. It narrows the tickets {@code visibility} allows, it never adds to them.
  */
-public record TicketQuery(TicketStatus status, UUID lectureId, UUID authoredBy, Visibility visibility) {
+public record TicketQuery(TicketStatus status, UUID lectureId, UUID authoredBy, Visibility visibility,
+		UUID awaitingAnswerOf) {
 
 	/**
 	 * Which tickets the caller may see, as conditions on the ticket's own columns. A ticket is visible when any one holds.

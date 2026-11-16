@@ -244,6 +244,10 @@ export const DAY_LABEL = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Fri
 
 ## 7. Problem codes and the words to show
 
+**Field error codes added in Phase 2** (shown with the server's own sentence, so they need no entry below):
+`GET /timetable/free-rooms` answers 400 `platform.validation_failed` with field `date` code `sunday` for a Sunday, and field
+`startTime` code `invalid_time` for a time that is off the hour, outside 08:00 to 20:00, or an end that is not after the start.
+
 Add these lines to `MESSAGES` in `frontend/src/lib/api/problem.ts` (the map is keyed by `problem.code`; `messageFor`
 falls back to "The request failed."). Every code below exists in the backend today except those marked NEW (added in the
 phase named).
