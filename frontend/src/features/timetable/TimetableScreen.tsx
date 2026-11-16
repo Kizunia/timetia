@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import { ErrorAlert } from "@/components/ErrorAlert";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBatches, useDivisions, useFaculties } from "@/features/campus/api";
 import { useMyPlaces } from "@/features/campus/useMyPlaces";
 import { usePermissions } from "@/features/identity/permissions";
-import { useLecture, useLiveWeek } from "@/features/timetable/api";
+import { useLecture, useLiveWeek, type Lecture } from "@/features/timetable/api";
 import { Filters, type FilterValues } from "@/features/timetable/components/Filters";
 import { LectureSheet } from "@/features/timetable/components/LectureSheet";
 import { WeekGrid } from "@/features/timetable/components/WeekGrid";
@@ -19,8 +19,12 @@ import { addDays, formatWeek, startOfWeek, todayIso } from "@/lib/dates";
 
 const LIVE_PERMISSIONS = ["timetable.live.view", "timetable.live.view-own", "timetable.live.view-all"];
 
-/** The week's timetable, with week navigation, filters and a side sheet for the lecture that was clicked. */
-export function TimetableScreen() {
+/**
+ * The week's timetable, with week navigation, filters and a side sheet for the lecture that was clicked.
+ *
+ * @param renderActions what to show in the sheet for the open lecture, such as the buttons that raise a ticket
+ */
+export function TimetableScreen({ renderActions }: { renderActions?: (lecture: Lecture) => ReactNode }) {
   const router = useRouter();
   const linkedLecture = useSearchParams().get("lecture");
   const { hasAny } = usePermissions();
@@ -112,7 +116,7 @@ export function TimetableScreen() {
         <WeekGrid weekStart={weekStart} lectures={lectures} onSelect={select} />
       )}
 
-      <LectureSheet lectureId={selectedLectureId} onClose={close} />
+      <LectureSheet lectureId={selectedLectureId} onClose={close} renderActions={renderActions} />
     </section>
   );
 }

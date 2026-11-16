@@ -836,6 +836,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tickets/{id}/reviewer-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ticketsReviewerCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tickets/{id}/submit": {
         parameters: {
             query?: never;
@@ -862,6 +878,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ticketsWithdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/timetable/free-rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["freeRoomsList"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1230,6 +1262,9 @@ export interface components {
              * @description Who taught the lecture before the ticket was applied.
              */
             beforeFacultyId?: string | null;
+            beforeFacultyName?: string | null;
+            /** @description The lecture as it is now. Only in the detail of one ticket, never in a list. */
+            lecture?: components["schemas"]["LectureSummaryResponse"];
             /**
              * Format: uuid
              * @description The lecture the ticket changes; for an extra lecture, the one it made, once applied.
@@ -1243,6 +1278,7 @@ export interface components {
              * @description Who takes the lecture; present for a substitute.
              */
             substituteFacultyId?: string | null;
+            substituteFacultyName?: string | null;
             target?: components["schemas"]["TargetResponse"];
         };
         ConflictResponse: {
@@ -1505,6 +1541,21 @@ export interface components {
             publishedAt: string;
             retriesExhausted: boolean;
         };
+        FreeRoomResponse: {
+            /**
+             * Format: int32
+             * @description The number of seats, when it was recorded.
+             */
+            capacity?: number | null;
+            code: string;
+            /** @description Whether the kind of room suits the session type asked for; true when none was asked. */
+            fits: boolean;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description CLASSROOM, TUTORIAL_ROOM or LAB. */
+            roomType: string;
+        };
         InviteUserRequest: {
             email: string;
             roleIds?: string[];
@@ -1538,6 +1589,19 @@ export interface components {
             updatedAt: string;
             /** Format: int64 */
             version: number;
+        };
+        LectureSummaryResponse: {
+            /** Format: date */
+            date: string;
+            /** Format: time-local */
+            endTime: string;
+            facultyName?: string | null;
+            /** @enum {string} */
+            mode: "IN_PERSON" | "ONLINE";
+            roomCode?: string | null;
+            /** Format: time-local */
+            startTime: string;
+            subjectCode?: string | null;
         };
         Line: {
             /** @description True when this row's person got their account from this import. */
@@ -1867,6 +1931,8 @@ export interface components {
             decidedAt?: string | null;
             escalation: boolean;
             reason?: string | null;
+            /** @description The reviewer's name; absent when the account is gone. */
+            reviewerName?: string | null;
             /** Format: uuid */
             reviewerUserId: string;
             /** Format: int32 */
@@ -1877,6 +1943,16 @@ export interface components {
         ReviewerBody: {
             /** @enum {string} */
             capacity: "HOD" | "CR" | "BR" | "AFFECTED_FACULTY" | "OTHER_FACULTY";
+            /** Format: uuid */
+            userId: string;
+        };
+        ReviewerCandidateResponse: {
+            /**
+             * @description The capacity to name when asking this person: HOD, CR, BR or AFFECTED_FACULTY.
+             * @enum {string}
+             */
+            capacity: "HOD" | "CR" | "BR" | "AFFECTED_FACULTY" | "OTHER_FACULTY";
+            name: string;
             /** Format: uuid */
             userId: string;
         };
@@ -1972,6 +2048,8 @@ export interface components {
             meetingLink?: string | null;
             /** @enum {string} */
             mode: "IN_PERSON" | "ONLINE";
+            /** @description The room's code; absent when it is online or the room was deleted. */
+            roomCode?: string | null;
             /** Format: uuid */
             roomId?: string | null;
             /** Format: time-local */
@@ -2018,8 +2096,12 @@ export interface components {
             actingFacultyId?: string | null;
             /** @enum {string|null} */
             approvalPath?: "SELF" | "REVIEWED" | null;
+            /** @description The author's name; absent when the account is gone. */
+            authorName?: string | null;
             /** Format: uuid */
             authorUserId: string;
+            /** @description Batch code of a lab or tutorial; absent for theory. */
+            batchCode?: string | null;
             /** Format: uuid */
             batchId?: string | null;
             /** @description The first change: the only one of most tickets, and for an exchange the one about the author's own lecture. */
@@ -2033,6 +2115,7 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             description?: string | null;
+            divisionCode?: string | null;
             /** Format: uuid */
             divisionId: string;
             /**
@@ -2042,6 +2125,8 @@ export interface components {
             expiresAt: string;
             /** Format: uuid */
             facultyId: string;
+            /** @description Name of the teacher the lecture had when the ticket was raised. */
+            facultyName?: string | null;
             /** Format: uuid */
             id: string;
             /**
@@ -2062,6 +2147,9 @@ export interface components {
             sessionType: "THEORY" | "LAB" | "TUTORIAL";
             /** @enum {string} */
             status: "DRAFT" | "IN_REVIEW" | "APPLIED" | "REJECTED" | "WITHDRAWN" | "EXPIRED" | "REVERTED";
+            /** @description Subject code of the lecture's teaching assignment; absent when it was deleted. */
+            subjectCode?: string | null;
+            subjectName?: string | null;
             /** @enum {string} */
             type: "RESCHEDULE" | "CANCEL" | "SUBSTITUTE" | "EXTRA" | "EXCHANGE" | "REVERT" | "PERMANENT_CHANGE";
             /** Format: date-time */
@@ -7401,6 +7489,7 @@ export interface operations {
                 status?: "DRAFT" | "IN_REVIEW" | "APPLIED" | "REJECTED" | "WITHDRAWN" | "EXPIRED" | "REVERTED";
                 lecture?: string;
                 mine?: boolean;
+                awaitingReview?: boolean;
             };
             header?: never;
             path?: never;
@@ -7987,6 +8076,73 @@ export interface operations {
             };
         };
     };
+    ticketsReviewerCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewerCandidateResponse"][];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     ticketsSubmit: {
         parameters: {
             query?: never;
@@ -8125,6 +8281,68 @@ export interface operations {
             };
             /** @description The record changed meanwhile, or the request clashes with its state. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    freeRoomsList: {
+        parameters: {
+            query: {
+                date: string;
+                startTime: string;
+                endTime: string;
+                sessionType?: "THEORY" | "LAB" | "TUTORIAL";
+                excludeLecture?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreeRoomResponse"][];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

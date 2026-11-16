@@ -76,5 +76,6 @@ export const config = {
     "/admin/:path*",
     "/notes", "/notes/:path*", // module:notes
     "/timetable", "/timetable/:path*", // module:timetable
+    "/tickets", "/tickets/:path*", // module:tickets
   ],
 };

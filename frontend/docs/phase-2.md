@@ -264,6 +264,6 @@ Follow `scripts/DEMO.md` section 5, but by clicking, and record each result:
 
 ## 6. Checklist
 
-- [ ] B2.1 names  - [ ] B2.2 candidates (+ModularityTest edge)  - [ ] B2.3 awaitingReview  - [ ] B2.4 free rooms  - [ ] B2.5 OpenApi list, Gate B2, `api:generate`
-- [ ] F2.1 registry  - [ ] F2.2 api  - [ ] F2.3 pure logic + tests  - [ ] F2.4 components  - [ ] F2.5 raise forms  - [ ] F2.6 screens/routes  - [ ] F2.7 sheet wiring  - [ ] F2.8 tests  - [ ] Gate F2
-- [ ] Backend full `verify` green  - [ ] `build` green  - [ ] Exit check 1 to 9 done  - [ ] changelog line added
+- [x] B2.1 names  - [x] B2.2 candidates (+ModularityTest edge)  - [x] B2.3 awaitingReview  - [x] B2.4 free rooms  - [x] B2.5 OpenApi list, Gate B2, `api:generate`
+- [x] F2.1 registry  - [x] F2.2 api  - [x] F2.3 pure logic + tests  - [x] F2.4 components  - [x] F2.5 raise forms  - [x] F2.6 screens/routes  - [x] F2.7 sheet wiring  - [ ] F2.8 tests (only the pure-logic tests exist: `tickets-actions`, `tickets-lib`; the screen, dialog and picker component tests are not written)  - [x] Gate F2 (typecheck, lint, 302 unit tests pass, build)
+- [ ] Backend full `verify` green (Gate B2 ITs were run, 118 integration + 14 unit tests green; the full suite was not)  - [x] `build` green  - [ ] Exit check 1 to 9 done (not run in a browser)  - [ ] changelog line added

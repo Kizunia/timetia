@@ -18,11 +18,12 @@ const PAGE_SIZE = 100;
 
 /**
  * Every lecture from one date to another (inclusive), read page by page until the last. The server refuses a range of more
- * than 62 days. A filter that is null is not sent.
+ * than 62 days. A filter that is null is not sent. With `enabled` false nothing is requested.
  */
-export function useLiveRange(from: IsoDate, to: IsoDate, filters: LiveFilters = {}) {
+export function useLiveRange(from: IsoDate, to: IsoDate, filters: LiveFilters = {}, enabled = true) {
   const { division = null, batch = null, faculty = null } = filters;
   return useQuery({
+    enabled,
     queryKey: ["live", { from, to, division, batch, faculty }],
     queryFn: async (): Promise<Lecture[]> => {
       const lectures: Lecture[] = [];

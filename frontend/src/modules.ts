@@ -37,6 +37,17 @@ export const FEATURE_MODULES: readonly FeatureModule[] = [
     protectedPrefixes: ["/timetable"],
   },
   // module:timetable:end
+  // module:tickets:start
+  {
+    id: "tickets",
+    nav: {
+      href: "/tickets",
+      label: "Tickets",
+      permissions: ["rescheduling.tickets.view", "rescheduling.tickets.view-in-scope"],
+    },
+    protectedPrefixes: ["/tickets"],
+  },
+  // module:tickets:end
 ];
 
 /** The navigation links a user may see, in the order the modules are listed. */

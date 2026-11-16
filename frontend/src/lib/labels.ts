@@ -52,6 +52,18 @@ export const CAPACITY_LABEL = {
   OTHER_FACULTY: "Other teacher",
 } as const satisfies Record<Schemas["ReviewResponse"]["capacity"], string>;
 
+/** What stands in the way of a change, in the words of domain.md section 3.5. */
+export const CONFLICT_LABEL = {
+  FACULTY_BUSY: "Teacher is busy",
+  DIVISION_BUSY: "Division is busy",
+  BATCH_BUSY: "Batch is busy",
+  ROOM_OCCUPIED: "Room is taken",
+  SAME_SLOT_TICKET: "Another ticket took this slot",
+  OUTSIDE_CALENDAR: "Outside the calendar",
+  OUTSIDE_SLOT_GRID: "Outside teaching hours",
+  OCCURRENCE_CHANGED: "The lecture changed since",
+} as const satisfies Record<Schemas["ConflictResponse"]["type"], string>;
+
 export const SESSION_LABEL = {
   THEORY: "Theory",
   LAB: "Lab",

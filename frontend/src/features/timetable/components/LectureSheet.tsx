@@ -64,17 +64,17 @@ function Details({ lecture }: { lecture: Lecture }) {
 }
 
 /**
- * The side panel of one lecture. `actions` is a slot: a higher feature (tickets) puts its buttons there, so this feature
- * never has to know about it.
+ * The side panel of one lecture. `renderActions` is a slot: a higher feature (tickets) says what to show for the lecture
+ * once it has loaded, so this feature never has to know about it.
  */
 export function LectureSheet({
   lectureId,
   onClose,
-  actions,
+  renderActions,
 }: {
   lectureId: string | null;
   onClose: () => void;
-  actions?: ReactNode;
+  renderActions?: (lecture: Lecture) => ReactNode;
 }) {
   const query = useLecture(lectureId);
   const lecture = query.data;
@@ -110,7 +110,7 @@ export function LectureSheet({
           </div>
         )}
         {lecture && <Details lecture={lecture} />}
-        <SheetFooter>{actions}</SheetFooter>
+        <SheetFooter>{lecture && renderActions?.(lecture)}</SheetFooter>
       </SheetContent>
     </Sheet>
   );
