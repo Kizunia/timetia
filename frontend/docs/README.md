@@ -33,7 +33,7 @@ An agent given one phase should read 1 to 5 once, then the phase file, and work 
 - Business rules as the product owner wrote them: `timetia-docs/modules/lecture-rescheduling/` (`rules/`, `flows/`, `requirements/`). [domain.md](domain.md) is the implemented subset; when the two differ, the code and domain.md are what the UI must match.
 - Roles and scopes: `timetia-docs/shared/roles/`, `timetia-docs/architecture/identity/role-and-scope-model.md`.
 - Platform conventions: `kibootia-docs/architecture/frontend.md`, ADR 0038 (frontend stack), 0042 (BFF proxy + CSRF), 0043 (HTTP API conventions), 0044 (authorization).
-- Running the stack and trying the API by hand: `scripts/DEMO.md` (rewritten as a UI walk-through in Phase 3).
+- Running the stack and trying the API by hand: `scripts/PRESENT.md` (start, `pnpm seed`, accounts) and `scripts/DEMO.md` (click-through).
 
 ## Repository map
 
@@ -53,7 +53,7 @@ frontend/                      Next.js 16 app (BFF + UI)
   src/features/<feature>/      one folder per feature
   src/lib/api/schema.gen.ts    GENERATED from backend/openapi.json
   docs/                        this folder
-scripts/                       dev scripts, DEMO.md, demo-seed.browser.js
+scripts/                       dev scripts, seed.mjs (`pnpm seed`), PRESENT.md, DEMO.md
 infra/keycloak/                Terraform for the local Keycloak realm and demo users
 timetia-docs/  kibootia-docs/  product and platform documentation
 ```
@@ -86,4 +86,4 @@ Backend tests: see [backend-guide.md](backend-guide.md), section "Running".
 4. Do the phases in order. Each phase's "Prerequisites" must hold before its first change.
 5. Do not commit or push unless the person you work for asks.
 6. Delivery over polish. If time is short, follow the cut order in [plan.md](plan.md).
-7. Known baseline: 15 frontend unit tests fail before any Timetia change (`tests/unit/avatar.test.tsx`, `import-screen.test.tsx`, `note-attachment.test.tsx`). They are not yours until Phase 3. A new failure is yours.
+7. All frontend unit tests pass (run them from PowerShell on this machine). Any failure is yours.

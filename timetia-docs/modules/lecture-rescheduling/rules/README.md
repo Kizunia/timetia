@@ -13,7 +13,7 @@ Business rules of the lecture-rescheduling module, one concern per file.
 | [cancellation.md](cancellation.md) | Direct cancel with a reason |
 | [issues-from-cr-and-br.md](issues-from-cr-and-br.md) | GitHub-style requests from CR and BR |
 | [rooms-and-location.md](rooms-and-location.md) | Room or meeting link, lecture mode |
-| [shared-courses.md](shared-courses.md) | Shared-course check skipped in version 1 |
+| [shared-courses.md](shared-courses.md) | Shared courses: decided, deferred and not built |
 | [faculty-load.md](faculty-load.md) | Extra lectures count, information only |
 | [faculty-on-leave.md](faculty-on-leave.md) | HOD acts on their behalf |
 | [permanent-changes.md](permanent-changes.md) | HOD approval, applied by the module for now |

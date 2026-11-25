@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-12
+- **Last updated:** 2026-11-25
 
 What authentication and authorization Timetia has today. Everything here is **inherited from Kibootia, unchanged**: outside `timetia-docs`, the branch `ishan/authn-authz` has no difference from Kibootia's `main` at commit `4cea34f`. A diff of `backend`, `frontend`, `infra`, `compose.yaml`, `.github` and `scripts` between the two is empty.
 
@@ -32,6 +32,8 @@ The classification below describes the inherited code as audited on 2026-11-11. 
 | Contract for other modules | Facts interfaces, `Authorization.reach`, `ScopeDirectory` | `academic/*AccessFacts`, `platform/authorization` |
 | Own roles in places | `GET /api/v1/me/scoped-roles`: the caller's scoped roles, any verified person | `access/application/ScopedAssignmentService.myScopedRoles`, `access/web/MyScopedRolesController` |
 | Campus directory | `GET /api/v1/directory/{departments,divisions,batches,rooms,faculties,me}`: names for any verified person, unpaged, at most 500 rows | `reference/application/DirectoryService`, `reference/web/DirectoryController` |
+| Ticket helpers | `GET /api/v1/tickets/{id}/reviewer-candidates` (the author), `GET /api/v1/timetable/free-rooms`, `GET /api/v1/tickets?awaitingReview=true` | `rescheduling/web/TicketsController`, `timetable/web/FreeRoomsController` |
+| Faculty account | `PUT /api/v1/faculties/{id}/account`: links or unlinks the account a faculty member signs in as, `timetable.config.manage`, audited | `reference/application/CatalogService.linkFacultyAccount` |
 | Provisioning import (Phase 3) | `POST /api/v1/user-imports?dryRun=`: a CSV of people and scoped roles, Super Admin only, add only, a person's rows together or not at all, bounded and audited | `identity/application/UserImportService`, `ImportCsv`, `UserImportProperties`; `identity/web/UserImportsController` |
 | Scope codes (Phase 3) | `ScopeDirectory` gains `idOf(kind, code)` and `codesOf(kind, ids)`; a place can be named by code | `platform/authorization/ScopeDirectory`, `access/application/ScopedAssignmentService` |
 | One assignment at a time (Phase 3) | `POST` adds and `DELETE …/{roleId}?scopeId=` removes one scoped role; the whole-set `PUT` stays | `access/web/ScopedUserRolesController`, `ScopedAssignmentService.addScopedRole`, `removeScopedRole` |

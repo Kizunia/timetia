@@ -47,7 +47,7 @@ The proxy attaches the token, checks CSRF (matching `Origin` plus the custom req
 
 ## Conventions
 
-- **Folders:** one feature folder per backend module under `src/features`, mirroring [package structure](../engineering/conventions/package-structure.md) (`identity`, `access`, `audit`, `notes`). Each holds its API hooks and screens; the pages in `src/app` only compose them. A feature that can be removed is listed in `src/modules.ts`, which gives the shell its navigation link and the paths that need a signed-in user, between `module:<name>:start` and `module:<name>:end` lines that the removal script deletes ([recipe](../recipes/remove-notes.md)).
+- **Folders:** one feature folder per backend module under `src/features`, mirroring [package structure](../engineering/conventions/package-structure.md) (`identity`, `access`, `audit`, `notes`, and Timetia's `campus`, `timetable`, `tickets`, `issues`, `notifications`, `setup`). Each holds its API hooks and screens; the pages in `src/app` only compose them. A feature that can be removed is listed in `src/modules.ts`, which gives the shell its navigation link and the paths that need a signed-in user, between `module:<name>:start` and `module:<name>:end` lines that the removal script deletes ([recipe](../recipes/remove-notes.md)).
 - **API client:** generated from the committed `openapi.json`; never hand-written request types.
 - **Data:** server components for first loads; TanStack Query for client data that changes.
 - **Forms:** React Hook Form with Zod for usability; the server's validation is authoritative. Validation errors come back as Problem Details `errors` and are mapped onto form fields.

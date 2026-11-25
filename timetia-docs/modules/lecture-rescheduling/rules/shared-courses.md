@@ -1,5 +1,8 @@
 # Shared courses
 
+> **Deferred (2026-11-25): not built.** The rule below is what was decided and is kept for when it is built. Today the
+> conflict checks and notifications cover only the lecture's own division or batch ([open questions](../open-questions.md)).
+
 - **Type:** rules
 - **Module:** lecture-rescheduling
 - **Status:** review

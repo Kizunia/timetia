@@ -24,7 +24,7 @@ There is **no warning level**. A ticket cannot be accepted until every [conflict
 
 A lab occupies two slots, so every check covers both hours.
 
-For shared courses, the batch and division checks cover every batch on the manually seeded shared-course list ([shared courses](shared-courses.md)).
+Shared courses are deferred: when built, the batch and division checks will cover every batch on the shared-course list ([shared courses](shared-courses.md)).
 
 ## No overrides
 
