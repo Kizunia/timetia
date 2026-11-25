@@ -276,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/faculties/{id}/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["facultiesLinkAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/failed-events": {
         parameters: {
             query?: never;
@@ -1561,10 +1577,12 @@ export interface components {
             roleIds?: string[];
         };
         IssueResponse: {
+            batchCode?: string | null;
             /** Format: uuid */
             batchId?: string | null;
             /** Format: date-time */
             closedAt?: string | null;
+            closedByName?: string | null;
             /** Format: uuid */
             closedByUserId?: string | null;
             /** Format: date-time */
@@ -1572,12 +1590,15 @@ export interface components {
             /** Format: uuid */
             departmentId: string;
             description?: string | null;
+            divisionCode?: string | null;
             /** Format: uuid */
             divisionId: string;
             /** Format: uuid */
             id: string;
             linkedTicketIds: string[];
+            mentionedFaculty: components["schemas"]["MentionedFaculty"][];
             mentionedFacultyIds: string[];
+            openerName?: string | null;
             /** Format: uuid */
             openerUserId: string;
             /** @enum {string} */
@@ -1621,6 +1642,12 @@ export interface components {
             scope: string;
             /** Format: uuid */
             userId?: string | null;
+        };
+        LinkAccountRequest: {
+            /** Format: uuid */
+            userId?: string | null;
+            /** Format: int64 */
+            version: number;
         };
         LinkRequest: {
             /** Format: uuid */
@@ -1713,6 +1740,11 @@ export interface components {
             /** Format: uuid */
             facultyId: string;
         };
+        MentionedFaculty: {
+            /** Format: uuid */
+            id: string;
+            name?: string | null;
+        };
         MyAssignmentResponse: {
             batchCode?: string | null;
             /** Format: uuid */
@@ -1755,6 +1787,8 @@ export interface components {
             version: number;
         };
         NotificationResponse: {
+            /** @description The name of who caused it. */
+            actorName?: string | null;
             /**
              * Format: uuid
              * @description Who caused it.
@@ -1766,10 +1800,19 @@ export interface components {
             id: string;
             /** Format: uuid */
             issueId?: string | null;
+            /**
+             * Format: uuid
+             * @description The lecture the ticket is about.
+             */
+            lectureId?: string | null;
             /** Format: date-time */
             readAt?: string | null;
             /** Format: uuid */
             ticketId?: string | null;
+            /** @description The kind of ticket it is about. */
+            ticketType?: string | null;
+            /** @description Whether the caller may open the ticket. */
+            ticketVisible: boolean;
             /** @enum {string} */
             type: "REVIEW_REQUESTED" | "REVIEW_APPROVED" | "REVIEW_REJECTED" | "TICKET_APPLIED" | "TICKET_CONFLICTED" | "TICKET_EDITED" | "TICKET_WITHDRAWN" | "TICKET_REVERTED" | "ISSUE_MENTION";
         };
@@ -4344,6 +4387,86 @@ export interface operations {
             };
             /** @description There is no such record, or the caller may not see it. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An unexpected failure; quote the `traceId`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    facultiesLinkAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacultyResponse"];
+                };
+            };
+            /** @description The request is malformed or fails validation; see `errors`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description No valid bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The caller may not do this. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description There is no such record, or the caller may not see it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The record changed meanwhile, or the request clashes with its state. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
