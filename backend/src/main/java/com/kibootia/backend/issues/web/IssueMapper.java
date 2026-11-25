@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.kibootia.backend.issues.application.Issue;
 import com.kibootia.backend.issues.application.IssueDetail;
+import com.kibootia.backend.issues.application.IssueNames;
 import com.kibootia.backend.issues.application.IssueService.Draft;
 
 /** Converts between API types and application types by hand (ADR 0005). */
@@ -20,12 +21,15 @@ final class IssueMapper {
 				request.description(), request.mentionedFacultyIds());
 	}
 
-	static IssueResponse toResponse(IssueDetail detail) {
+	static IssueResponse toResponse(IssueDetail detail, IssueNames names) {
 		Issue issue = detail.issue();
+		List<UUID> mentioned = sorted(detail.mentionedFacultyIds());
 		return new IssueResponse(issue.id(), issue.status(), issue.sessionType(), issue.departmentId(), issue.divisionId(),
-				issue.batchId(), issue.title(), issue.description(), issue.openerUserId(), sorted(detail.mentionedFacultyIds()),
+				issue.batchId(), issue.title(), issue.description(), issue.openerUserId(), mentioned,
 				sorted(detail.linkedTicketIds()), issue.closedAt(), issue.closedByUserId(), issue.version(), issue.createdAt(),
-				issue.updatedAt());
+				issue.updatedAt(), names.userName(issue.openerUserId()), names.userName(issue.closedByUserId()),
+				names.divisionCode(issue.divisionId()), names.batchCode(issue.batchId()),
+				mentioned.stream().map((id) -> new MentionedFaculty(id, names.facultyName(id))).toList());
 	}
 
 	/** A set has no order, and a response should not change between two reads. */

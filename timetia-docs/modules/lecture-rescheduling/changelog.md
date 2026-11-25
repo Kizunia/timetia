@@ -4,7 +4,7 @@
 - **Module:** lecture-rescheduling
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-27
+- **Last updated:** 2026-11-25
 
 History of business-logic decisions, in the order they were taken with the owner. Each line links to the file that now holds the rule.
 
@@ -67,3 +67,15 @@ History of business-logic decisions, in the order they were taken with the owner
 
 - Any signed-in person with a verified email can read campus names (`GET /api/v1/directory/{departments,divisions,batches,rooms,faculties}`), what they teach (`GET /api/v1/directory/me`) and the roles they hold in places (`GET /api/v1/me/scoped-roles`). Before this only a Super Admin could read campus data.
 - The web app has a timetable page at `/timetable` (a week in six day columns, division/batch/teacher filters, a side sheet per lecture, `?lecture=<id>` links). A person with a Timetia role is sent there from `/`. Nothing can be changed from it yet.
+
+## 2026-11-16 Frontend phase 2: tickets
+
+- Every kind of ticket can be raised, reviewed, applied and reverted in the web app (`/tickets`, and "Change this lecture" on the timetable). Responses carry names; new endpoints list reviewer candidates and free rooms, and a list filter shows what waits for the caller's review.
+
+## 2026-11-25 Frontend phase 3: issues, notifications, setup
+
+- A notification says who did what, and names the lecture, so a person who may not open tickets (a student) is taken to the lecture instead of a page they cannot see.
+- Issues carry names; a teacher can be mentioned and a ticket linked from the issue page. Close and link are offered to the opener and the mentioned teachers only.
+- A Super Admin builds the campus and publishes timetables under Administration, and links a faculty member to an account (`PUT /api/v1/faculties/{id}/account`).
+- The demo accounts are those of `pnpm seed`; the three extra Keycloak users planned for this phase were not added.
+- Shared courses are marked deferred.

@@ -2,6 +2,7 @@ package com.kibootia.backend.reference.application;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import com.kibootia.backend.academic.AcademicPermissions;
 import com.kibootia.backend.audit.AuditEntry;
 import com.kibootia.backend.audit.AuditLog;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
+import com.kibootia.backend.platform.directory.UserDirectory;
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.errors.ApiFieldError;
 import com.kibootia.backend.platform.errors.ProblemCodes;
@@ -41,10 +43,13 @@ public class CatalogService {
 
 	private final AuditLog auditLog;
 
-	CatalogService(CatalogStore catalog, CampusStore campus, AuditLog auditLog) {
+	private final UserDirectory users;
+
+	CatalogService(CatalogStore catalog, CampusStore campus, AuditLog auditLog, UserDirectory users) {
 		this.catalog = catalog;
 		this.campus = campus;
 		this.auditLog = auditLog;
+		this.users = users;
 	}
 
 	// --- subjects ---------------------------------------------------------------------------------------------------
@@ -162,6 +167,26 @@ public class CatalogService {
 			throw notFound(FACULTY_NOT_FOUND, "faculty");
 		}
 		return this.catalog.renameFaculty(id, expectedVersion, name.strip());
+	}
+
+	/**
+	 * Links a faculty member to the account they sign in as, or removes the link when {@code userId} is null. Lectures name
+	 * a teacher by their faculty record, so this is what makes "my lectures" and the teacher's own tickets theirs.
+	 */
+	@Transactional
+	@RequiresPermission(AcademicPermissions.CONFIG_MANAGE)
+	public Faculty linkFacultyAccount(UUID id, long expectedVersion, UUID userId) {
+		if (!this.catalog.facultyExists(id)) {
+			throw notFound(FACULTY_NOT_FOUND, "faculty");
+		}
+		if (userId != null && !this.users.find(Set.of(userId)).containsKey(userId)) {
+			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.",
+					List.of(new ApiFieldError("userId", "unknown_user", "There is no user with that ID.")));
+		}
+		Faculty linked = this.catalog.updateFacultyUser(id, expectedVersion, userId);
+		this.auditLog.record(AuditEntry.of("reference.faculty.account-linked", "faculty", id)
+			.withChange("user", (userId == null) ? "none" : userId.toString()));
+		return linked;
 	}
 
 	@Transactional

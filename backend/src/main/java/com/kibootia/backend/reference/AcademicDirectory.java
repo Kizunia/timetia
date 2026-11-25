@@ -38,6 +38,9 @@ public interface AcademicDirectory {
 	/** For each of these batches that exists, the division it belongs to. */
 	Map<UUID, UUID> divisionsOfBatches(Collection<UUID> batchIds);
 
+	/** The codes of the batches among these ids; one that was deleted is absent. */
+	Map<UUID, String> batchCodes(Collection<UUID> batchIds);
+
 	/** The divisions in which this user, as a faculty member, has a teaching assignment; empty when they teach in none. */
 	Set<UUID> divisionIdsTaughtBy(UUID userId);
 

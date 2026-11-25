@@ -1,4 +1,6 @@
 /*
+ * SUPERSEDED by `pnpm seed` (scripts/seed.mjs, scripts/PRESENT.md); kept for a very small campus by hand.
+ *
  * Seeds a small demo campus for trying Timetia by hand, and leaves a helper to call the API from the browser console.
  *
  * Why a console script: the web app has no Timetia screens yet, and the API needs a bearer token that only the signed-in web

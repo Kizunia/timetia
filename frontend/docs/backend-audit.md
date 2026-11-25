@@ -94,6 +94,9 @@ Field errors (`errors[]` on `platform.validation_failed`) use `field` + `code` +
 
 ## 5. Blockers (fixed in the plan)
 
+**Status 2026-11-25: B1 to B6 are all fixed** (B1, B2 in Phase 1; B3, B6 and the ticket part of B4 in Phase 2; the rest of
+B4 and B5 in Phase 3).
+
 | # | Finding | Evidence | Fixed in |
 |---|---|---|---|
 | B1 | Every reference read needs `timetable.config.manage` (Super Admin). A teacher cannot list rooms (reschedule target), faculty (substitute), their own teaching assignments (extra lecture); a CR cannot find faculty to mention. | `reference/application/CampusService.java`, `CatalogService.java`, `TeachingAssignmentService.java` | Phase 1: `/api/v1/directory/*` |
@@ -143,5 +146,5 @@ reads roles without a scope type only), and a permission added to a role templat
 | Super-HOD approval of an HOD's own lecture | `rules/approval-model.md` | |
 | Notification channels other than in-app, reminders | `notifications/triggers.md` | Decided: in-app only in version 1. |
 
-The `timetia-docs` contradiction on shared courses (rules say decided, `research/data-model-fixes.md` F-J7 says deferred)
-should be settled by marking it deferred in Phase 3.
+Shared courses were marked deferred in the rules in Phase 3, which settles the earlier contradiction with
+`research/data-model-fixes.md` F-J7. The list is also in the module's `open-questions.md`.

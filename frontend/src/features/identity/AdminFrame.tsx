@@ -29,7 +29,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="grid gap-8 md:grid-cols-[12rem_1fr]">
-      <nav aria-label="Administration" className="flex gap-1 md:flex-col">
+      <nav aria-label="Administration" className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap">
         {sections.map((section) => {
           const current = pathname === section.href || pathname.startsWith(`${section.href}/`);
           return (
@@ -47,7 +47,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
-      <div>{children}</div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }

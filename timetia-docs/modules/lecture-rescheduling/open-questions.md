@@ -4,13 +4,27 @@
 - **Module:** lecture-rescheduling
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-06
+- **Last updated:** 2026-11-25
 
 Live list of unresolved decisions. Items answered by the owner are in the resolved table below. Original questions: [module spec](_archive/original-spec.md), section 13.
 
 | # | Question | Current position | Owner |
 | --- | --- | --- | --- |
 | - | No open questions right now. | - | - |
+
+## Deferred features (not built; out of scope for the course project)
+
+| Feature | Rule or requirement | What happens today |
+| --- | --- | --- |
+| Ticket history timeline | [audit log](requirements/audit-log.md) | Actions are in the administrator's audit log; there is no per-ticket view |
+| Holidays, exam weeks, configurable slot grid | [conflict rules](rules/conflict-rules.md) | The grid is fixed at 08:00 to 20:00 and no day is a holiday |
+| Shared courses | [shared courses](rules/shared-courses.md) | Not handled: checks and notifications cover the lecture's own division or batch |
+| Room fit as a conflict | [rooms](rules/rooms-and-location.md) | Free rooms of the wrong kind are marked, not refused |
+| Information notes (projector, load, short notice) | [faculty load](rules/faculty-load.md) | Not shown |
+| `occurrence.*` events for attendance | [scope](overview/scope.md) | Not published |
+| Re-checking tickets when a new timetable version is published | [timetable version changes](integration/timetable-version-changes.md) | Publishing is refused while applied changes would be lost |
+| Approval of an HOD's own lecture by a Super HOD | [approval model](rules/approval-model.md) | Not required |
+| Channels other than in-app, reminders | [triggers](notifications/triggers.md) | In-app only |
 
 ## Resolved (2026-11-06)
 

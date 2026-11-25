@@ -33,7 +33,7 @@ Always need the HOD. See [permanent changes](permanent-changes.md).
 
 ## Review timeout and expiry
 
-There is **no escalation**. If a requested reviewer does not respond, the ticket waits. It **expires when the lecture starts**.
+There is **no automatic escalation**: nobody is brought in because time has passed. If a requested reviewer does not respond, the ticket waits. It **expires when the lecture starts**.
 
 ## Rejection
 

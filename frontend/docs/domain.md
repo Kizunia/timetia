@@ -206,16 +206,17 @@ In-app only. Created asynchronously a moment after the action commits. Each pers
 | `REVIEW_REQUESTED` | the reviewers asked (also the HOD on escalation) | {actor} asked you to review a {kind} | ticket |
 | `REVIEW_APPROVED` | the author | {actor} approved your {kind} | ticket |
 | `REVIEW_REJECTED` | the author | {actor} rejected your {kind} | ticket |
-| `TICKET_APPLIED` | author, faculty involved, HOD(s) of the department, CR(s) of the division (theory only), BR(s) and students of the batches | A {kind} was applied | ticket if the person may see tickets, else the lecture |
+| `TICKET_APPLIED` | author, faculty involved, HOD(s) of the department, CR(s) of the division (theory only), BR(s) and students of the batches | A {kind} was applied | ticket if `ticketVisible`, else the lecture |
 | `TICKET_REVERTED` | same as applied | A {kind} was undone | same |
 | `TICKET_CONFLICTED` | author, HOD(s) of the department | Something is now in the way of a {kind} | ticket |
 | `TICKET_EDITED` | the reviewers | {actor} changed a {kind} you were asked to review. Please look again | ticket |
 | `TICKET_WITHDRAWN` | the reviewers | {actor} withdrew a {kind} you were asked to review | ticket |
 | `ISSUE_MENTION` | each mentioned faculty member with an account | {actor} mentioned you on an issue | issue |
 
-"May see tickets" = holds `rescheduling.tickets.view` or `rescheduling.tickets.view-in-scope`. Students do not, so their
-link goes to the lecture (`/timetable?lecture={lectureId}`); `lectureId`, `ticketType` and `actorName` arrive in Phase 3
-(until then show the generic sentence and link the ticket only for people who may see tickets).
+Whether the person may open the ticket is the notification's `ticketVisible`, which the server works out with the same
+rules as reading the ticket. Do not guess it from permissions: a batch representative who is also a student holds a ticket
+permission and still cannot open a theory ticket. When it is false the link goes to the lecture
+(`/timetable?lecture={lectureId}`), or there is no link without a `lectureId`.
 
 ## 6. Labels
 

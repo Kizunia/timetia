@@ -60,6 +60,12 @@ class FacultiesController {
 		return CatalogMapper.toResponse(this.catalog.renameFaculty(id, request.version(), request.name()));
 	}
 
+	/** Links the faculty member to the account they sign in as, or removes the link with a null {@code userId}. */
+	@PutMapping("/{id}/account")
+	FacultyResponse linkAccount(@PathVariable UUID id, @Valid @RequestBody LinkAccountRequest request) {
+		return CatalogMapper.toResponse(this.catalog.linkFacultyAccount(id, request.version(), request.userId()));
+	}
+
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void delete(@PathVariable UUID id) {

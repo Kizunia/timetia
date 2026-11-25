@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { SignOutButton } from "@/components/SignOutButton";
-import { NotificationBell } from "@/features/notifications/NotificationBell";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { UserAvatar } from "@/features/identity/UserAvatar";
 import type { Me } from "@/lib/api/client";
 import { moduleLinks } from "@/modules";
@@ -10,6 +10,8 @@ import { moduleLinks } from "@/modules";
 export const ADMIN_SECTIONS = [
   { href: "/admin/users", label: "Users", permission: "identity.profiles.view" },
   { href: "/admin/roles", label: "Roles", permission: "access.roles.view" },
+  { href: "/admin/campus", label: "Campus", permission: "timetable.config.manage" },
+  { href: "/admin/timetables", label: "Timetables", permission: "timetable.config.manage" },
   { href: "/admin/import", label: "Import", permission: "identity.users.invite", administratorOnly: true },
   { href: "/admin/audit", label: "Audit log", permission: "audit.entries.view" },
 ] as const;
@@ -61,7 +63,7 @@ export function SiteHeader({ me }: { me: Me | null }) {
         </nav>
         {me && (
           <div className="flex items-center gap-3">
-            <NotificationBell />
+            {me.emailVerified && <NotificationBell />}
             <UserAvatar userId={me.id} name={me.name} version={me.avatarsEnabled ? me.avatarVersion : null} />
             <span className="text-sm text-muted-foreground" data-testid="header-name">
               {me.name}

@@ -855,12 +855,18 @@
       },
       "IssueResponse" : {
         "properties" : {
+          "batchCode" : {
+            "type" : [ "string", "null" ]
+          },
           "batchId" : {
             "format" : "uuid",
             "type" : [ "string", "null" ]
           },
           "closedAt" : {
             "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "closedByName" : {
             "type" : [ "string", "null" ]
           },
           "closedByUserId" : {
@@ -878,6 +884,9 @@
           "description" : {
             "type" : [ "string", "null" ]
           },
+          "divisionCode" : {
+            "type" : [ "string", "null" ]
+          },
           "divisionId" : {
             "format" : "uuid",
             "type" : "string"
@@ -893,12 +902,21 @@
             },
             "type" : "array"
           },
+          "mentionedFaculty" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MentionedFaculty"
+            },
+            "type" : "array"
+          },
           "mentionedFacultyIds" : {
             "items" : {
               "format" : "uuid",
               "type" : "string"
             },
             "type" : "array"
+          },
+          "openerName" : {
+            "type" : [ "string", "null" ]
           },
           "openerUserId" : {
             "format" : "uuid",
@@ -924,7 +942,7 @@
             "type" : "integer"
           }
         },
-        "required" : [ "createdAt", "departmentId", "divisionId", "id", "linkedTicketIds", "mentionedFacultyIds", "openerUserId", "sessionType", "status", "title", "updatedAt", "version" ],
+        "required" : [ "createdAt", "departmentId", "divisionId", "id", "linkedTicketIds", "mentionedFaculty", "mentionedFacultyIds", "openerUserId", "sessionType", "status", "title", "updatedAt", "version" ],
         "type" : "object"
       },
       "LectureSummaryResponse" : {
@@ -995,6 +1013,21 @@
           }
         },
         "required" : [ "accountCreated", "email", "line", "outcome", "role", "scope" ],
+        "type" : "object"
+      },
+      "LinkAccountRequest" : {
+        "properties" : {
+          "userId" : {
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
+          "version" : {
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "version" ],
         "type" : "object"
       },
       "LinkRequest" : {
@@ -1184,6 +1217,19 @@
         "required" : [ "facultyId" ],
         "type" : "object"
       },
+      "MentionedFaculty" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object"
+      },
       "MyAssignmentResponse" : {
         "properties" : {
           "batchCode" : {
@@ -1283,6 +1329,10 @@
       },
       "NotificationResponse" : {
         "properties" : {
+          "actorName" : {
+            "description" : "The name of who caused it.",
+            "type" : [ "string", "null" ]
+          },
           "actorUserId" : {
             "description" : "Who caused it.",
             "format" : "uuid",
@@ -1300,6 +1350,11 @@
             "format" : "uuid",
             "type" : [ "string", "null" ]
           },
+          "lectureId" : {
+            "description" : "The lecture the ticket is about.",
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
           "readAt" : {
             "format" : "date-time",
             "type" : [ "string", "null" ]
@@ -1308,12 +1363,20 @@
             "format" : "uuid",
             "type" : [ "string", "null" ]
           },
+          "ticketType" : {
+            "description" : "The kind of ticket it is about.",
+            "type" : [ "string", "null" ]
+          },
+          "ticketVisible" : {
+            "description" : "Whether the caller may open the ticket.",
+            "type" : "boolean"
+          },
           "type" : {
             "enum" : [ "REVIEW_REQUESTED", "REVIEW_APPROVED", "REVIEW_REJECTED", "TICKET_APPLIED", "TICKET_CONFLICTED", "TICKET_EDITED", "TICKET_WITHDRAWN", "TICKET_REVERTED", "ISSUE_MENTION" ],
             "type" : "string"
           }
         },
-        "required" : [ "createdAt", "id", "type" ],
+        "required" : [ "createdAt", "id", "ticketVisible", "type" ],
         "type" : "object"
       },
       "PageInfo" : {
@@ -5090,6 +5153,103 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/RenameRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FacultyResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The request is malformed or fails validation; see `errors`."
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "No valid bearer token."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The caller may not do this."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "There is no such record, or the caller may not see it."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The record changed meanwhile, or the request clashes with its state."
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "An unexpected failure; quote the `traceId`."
+          }
+        },
+        "tags" : [ "faculties" ]
+      }
+    },
+    "/api/v1/faculties/{id}/account" : {
+      "put" : {
+        "operationId" : "facultiesLinkAccount",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LinkAccountRequest"
               }
             }
           },

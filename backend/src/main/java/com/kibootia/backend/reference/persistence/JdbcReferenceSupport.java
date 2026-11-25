@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -35,6 +36,11 @@ abstract class JdbcReferenceSupport extends JdbcSupport {
 
 	private static final String RENAME = """
 			UPDATE %s SET name = ?, version = version + 1, updated_at = ?, updated_by = ?
+			WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL AND version = ?
+			""";
+
+	private static final String SET_USER = """
+			UPDATE %s SET user_id = ?, version = version + 1, updated_at = ?, updated_by = ?
 			WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL AND version = ?
 			""";
 
@@ -68,6 +74,24 @@ abstract class JdbcReferenceSupport extends JdbcSupport {
 		}
 		Instant now = now();
 		int changed = execute(RENAME.formatted(table), newName, now, actor(), tenant(), id, actualVersion);
+		requireOneRow(changed, table, id);
+		return true;
+	}
+
+	/**
+	 * Gives a row another account if the caller still has its version, with the same rules as {@link #renameIfChanged}: a
+	 * stale version is refused, and the account it already has writes nothing. Returns whether it wrote.
+	 */
+	protected final boolean setUserIfChanged(String table, UUID id, long actualVersion, long expectedVersion,
+			UUID currentUserId, UUID newUserId) {
+		if (actualVersion != expectedVersion) {
+			throw staleVersion(table, id);
+		}
+		if (Objects.equals(currentUserId, newUserId)) {
+			return false;
+		}
+		Instant now = now();
+		int changed = execute(SET_USER.formatted(table), newUserId, now, actor(), tenant(), id, actualVersion);
 		requireOneRow(changed, table, id);
 		return true;
 	}

@@ -51,7 +51,11 @@ export const FEATURE_MODULES: readonly FeatureModule[] = [
   // module:issues:start
   {
     id: "issues",
-    nav: { href: "/issues", label: "Issues", permissions: ["rescheduling.issues.view", "rescheduling.issues.view-in-scope"] },
+    nav: {
+      href: "/issues",
+      label: "Issues",
+      permissions: ["rescheduling.issues.view", "rescheduling.issues.view-in-scope", "rescheduling.issues.open"],
+    },
     protectedPrefixes: ["/issues"],
   },
   // module:issues:end

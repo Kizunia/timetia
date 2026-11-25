@@ -57,6 +57,9 @@ public interface CatalogStore {
 
 	Faculty renameFaculty(UUID id, long expectedVersion, String name);
 
+	/** Links the faculty member to the account they sign in as, or removes the link when {@code userId} is null. */
+	Faculty updateFacultyUser(UUID id, long expectedVersion, UUID userId);
+
 	void deleteFaculty(UUID id);
 
 	boolean facultyExists(UUID id);

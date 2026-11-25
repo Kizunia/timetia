@@ -156,6 +156,6 @@ After `pnpm reset`, `pnpm infra:up`, `pnpm dev`, then each of the following in t
 
 ## 6. Checklist
 
-- [ ] B3.1 issue names  - [ ] B3.2 notification enrichment  - [ ] B3.3 faculty account link  - [ ] B3.4 demo data  - [ ] B3.5 OpenApi list, Gate B3, `api:generate`
-- [ ] F3.1 notifications  - [ ] F3.2 issues  - [ ] F3.3 setup (or cut)  - [ ] F3.4 header  - [ ] F3.5 baseline failures  - [ ] F3.6 e2e  - [ ] F3.7 docs and cleanup
-- [ ] Backend full `verify` green  - [ ] Frontend all green  - [ ] Exit check 1 to 10 done  - [ ] changelog line added
+- [x] B3.1 issue names  - [x] B3.2 notification enrichment (plus `ticketVisible`)  - [x] B3.3 faculty account link  - [x] B3.4 demo data (through `pnpm seed` accounts, no new Keycloak users)  - [x] B3.5 OpenApi list, Gate B3, `api:generate`
+- [x] F3.1 notifications  - [x] F3.2 issues  - [x] F3.3 setup  - [x] F3.4 header  - [x] F3.5 baseline failures (none left)  - [x] F3.6 e2e  - [x] F3.7 docs and cleanup
+- [x] Backend full `verify` green (before the `ticketVisible` change; see `HANDOVER-PHASE-3.md`)  - [x] Frontend all green  - [ ] Exit check 1 to 10 done (partly; see the handover)  - [x] changelog line added

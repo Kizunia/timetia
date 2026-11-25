@@ -19,6 +19,9 @@ console script and no API tool:
 | BR | The same for one batch's lab and tutorial lectures |
 | Student | Reads the live timetable of their batch (changes marked) and gets notified when it changes |
 
+Status on 2026-11-25: built; what was and was not checked is in `HANDOVER-PHASE-3.md`. The demo accounts are those of
+`pnpm seed` (`scripts/PRESENT.md`), which replace the `demo-cr`, `demo-br`, `demo-student` of the phase files.
+
 Not in the definition (deferred; listed in [backend-audit.md](backend-audit.md) section 8): ticket-history timeline,
 holidays/exam weeks, shared courses, room-fit as a conflict, plain-information notes, attendance events, other notification
 channels.

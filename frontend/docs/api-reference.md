@@ -166,6 +166,7 @@ ReviewResponse  { reviewerUserId, reviewerName?: string /* +P2 */, capacity: "HO
             |"TICKET_EDITED"|"TICKET_WITHDRAWN"|"TICKET_REVERTED"|"ISSUE_MENTION",
   ticketId?, issueId?, actorUserId?,
   actorName?: string, ticketType?: string, lectureId?: string,    // +P3
+  ticketVisible: boolean,   // +P3: may the caller open the ticket? Link by this, not by permissions
   createdAt, readAt? }
 ```
 | Call | Returns |

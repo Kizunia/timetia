@@ -28,6 +28,7 @@ pnpm install
 pnpm bootstrap        # once: writes .env from .env.example with generated secrets
 pnpm infra:up         # MySQL, Keycloak, Mailpit, Adminer, Grafana LGTM (Docker must be running)
 pnpm dev              # backend :8080 + web app :3470 on the host
+pnpm seed             # demo college and sign-in accounts, with the stack running (scripts/PRESENT.md)
 pnpm reset            # wipe all local volumes, keep .env
 pnpm apps:up / apps:down   # run both apps as containers instead (stop `pnpm dev` first)
 ```
@@ -65,8 +66,8 @@ pnpm --filter kibootia-frontend build
 pnpm --filter kibootia-frontend test:e2e                              # Playwright; needs the full stack running
 ```
 
-**Known baseline:** 15 Vitest tests in `tests/unit/{avatar,import-screen,note-attachment}.test.tsx` already fail before
-any Timetia change. Any other failure is a regression.
+**Baseline:** all Vitest tests pass. Run them from PowerShell: from Git Bash on this machine the jest-dom matchers fail
+in multi-file runs. Any failure is a regression.
 
 ### After any API change (in this order; CI fails if either generated file is stale)
 
