@@ -14,6 +14,7 @@ export function useUnreadCount() {
     queryFn: async () => unwrap(await browserApi().GET("/api/v1/notifications/unread-count")).count,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
+    staleTime: 0,
   });
 }
 

@@ -1,59 +1,82 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { ErrorAlert } from "@/components/ErrorAlert";
 import { Pager } from "@/components/Pager";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMarkAllRead, useMarkRead, useNotifications } from "@/features/notifications/api";
-import { describeNotification } from "@/features/notifications/describe";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMarkAllRead, useMarkRead, useNotifications, useUnreadCount } from "@/features/notifications/api";
+import { NotificationRow } from "@/features/notifications/components/NotificationRow";
+
+const TABS = [
+  { value: "all", label: "All" },
+  { value: "unread", label: "Unread" },
+] as const;
+
+type Tab = (typeof TABS)[number]["value"];
 
 /** What happened that concerns the person, newest first. Opening one marks it read. */
 export function NotificationsScreen() {
   const [page, setPage] = useState(0);
-  const [unreadOnly, setUnreadOnly] = useState(false);
-  const list = useNotifications({ page, size: 20, ...(unreadOnly ? { unread: true } : {}) });
+  const [tab, setTab] = useState<Tab>("all");
+  const list = useNotifications({ page, size: 20, ...(tab === "unread" ? { unread: true } : {}) });
+  const unread = useUnreadCount();
   const markRead = useMarkRead();
   const markAll = useMarkAllRead();
+  const failure = markAll.error ?? markRead.error;
+
   return (
     <section aria-labelledby="notifications-heading" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 id="notifications-heading" className="text-2xl font-semibold tracking-tight">Notifications</h1>
-        <Button variant="outline" onClick={() => markAll.mutate()} disabled={markAll.isPending}>Mark all as read</Button>
+        <h1 id="notifications-heading" className="text-2xl font-semibold tracking-tight">
+          Notifications
+        </h1>
+        <Button variant="outline" onClick={() => markAll.mutate()} disabled={markAll.isPending || (unread.data ?? 0) === 0}>
+          Mark all read
+        </Button>
       </div>
-      <div className="flex items-center gap-2">
-        <Checkbox id="only-unread" checked={unreadOnly} onCheckedChange={(on) => { setUnreadOnly(on === true); setPage(0); }} />
-        <Label htmlFor="only-unread">Only unread</Label>
-      </div>
-      {list.isError && <ErrorAlert error={list.error} title="The notifications could not be loaded" />}
-      {list.isPending && <Skeleton className="h-24 w-full" aria-label="Loading notifications" />}
-      {list.data && (
-        <>
-          <ul className="flex flex-col gap-2">
-            {list.data.items.map((n) => {
-              const { text, href } = describeNotification(n);
-              return (
-                <li key={n.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
-                  <div className="flex flex-col gap-1">
-                    <span className={n.readAt ? "text-muted-foreground" : "font-medium"}>
-                      {href ? <Link href={href} onClick={() => !n.readAt && markRead.mutate(n.id)} className="underline underline-offset-2">{text}</Link> : text}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{new Date(n.createdAt).toLocaleString()}</span>
-                  </div>
-                  {!n.readAt && <Badge>New</Badge>}
-                </li>
-              );
-            })}
-            {list.data.items.length === 0 && <li className="text-muted-foreground">Nothing here yet.</li>}
-          </ul>
-          <Pager page={list.data.page.number} totalPages={list.data.page.totalPages} totalElements={list.data.page.totalElements} onPage={setPage} />
-        </>
-      )}
+
+      {failure && <ErrorAlert error={failure} title="It was not marked as read" />}
+
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          setTab(value as Tab);
+          setPage(0);
+        }}
+      >
+        <TabsList>
+          {TABS.map((option) => (
+            <TabsTrigger key={option.value} value={option.value}>
+              {option.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {TABS.map((option) => (
+          <TabsContent key={option.value} value={option.value} className="mt-4 flex flex-col gap-4">
+            {list.isError && <ErrorAlert error={list.error} title="The notifications could not be loaded" />}
+            {list.isPending && <Skeleton className="h-24 w-full" aria-label="Loading notifications" />}
+            {list.data && (
+              <>
+                <ul className="flex flex-col gap-2">
+                  {list.data.items.map((notification) => (
+                    <NotificationRow key={notification.id} notification={notification} onRead={() => markRead.mutate(notification.id)} />
+                  ))}
+                  {list.data.items.length === 0 && <li className="text-muted-foreground">Nothing to show</li>}
+                </ul>
+                <Pager
+                  page={list.data.page.number}
+                  totalPages={list.data.page.totalPages}
+                  totalElements={list.data.page.totalElements}
+                  onPage={setPage}
+                />
+              </>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
     </section>
   );
 }

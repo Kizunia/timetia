@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { SignOutButton } from "@/components/SignOutButton";
-import { NotificationBell } from "@/features/notifications/NotificationBell";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { UserAvatar } from "@/features/identity/UserAvatar";
 import type { Me } from "@/lib/api/client";
 import { moduleLinks } from "@/modules";
@@ -61,7 +61,7 @@ export function SiteHeader({ me }: { me: Me | null }) {
         </nav>
         {me && (
           <div className="flex items-center gap-3">
-            <NotificationBell />
+            {me.emailVerified && <NotificationBell />}
             <UserAvatar userId={me.id} name={me.name} version={me.avatarsEnabled ? me.avatarVersion : null} />
             <span className="text-sm text-muted-foreground" data-testid="header-name">
               {me.name}
