@@ -1,0 +1,11 @@
+.next/
+out/
+node_modules/
+next-env.d.ts
+*.tsbuildinfo
+playwright-report/
+test-results/
+# Frontend settings come from the root .env (see 'pnpm dev'); never keep a second copy here.
+.env
+.env.*
+!.env.example

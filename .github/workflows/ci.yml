@@ -1,0 +1,223 @@
+name: CI
+
+on:
+  pull_request:
+    # `labeled` so that adding the `e2e` label starts the end-to-end job.
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [main]
+  schedule:
+    # Nightly end-to-end run (verification standard).
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      # Testcontainers starts MySQL on the runner's Docker daemon.
+      - name: Build and test
+        working-directory: backend
+        run: ./mvnw -B verify
+      # OpenApiContractIT rewrites backend/openapi.json from the controllers. A change here means the committed file is
+      # stale: run `./mvnw verify` in backend/ and commit it (ADR 0043).
+      - name: Check the OpenAPI description is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- backend/openapi.json)" ]; then
+            git --no-pager diff -- backend/openapi.json
+            echo "::error file=backend/openapi.json::The committed OpenAPI description is out of date. Run ./mvnw verify in backend/ and commit the result."
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend lint, type check, test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # The pnpm version comes from "packageManager" in the root package.json.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The client is generated from backend/openapi.json (ADR 0038). A change here means schema.gen.ts is stale: run
+      # `pnpm --filter kibootia-frontend api:generate` and commit it.
+      - name: Check the generated API client is up to date
+        run: |
+          pnpm --filter kibootia-frontend api:generate
+          if [ -n "$(git status --porcelain -- frontend/src/lib/api/schema.gen.ts)" ]; then
+            git --no-pager diff -- frontend/src/lib/api/schema.gen.ts
+            echo "::error file=frontend/src/lib/api/schema.gen.ts::The generated API client is out of date. Run pnpm --filter kibootia-frontend api:generate and commit the result."
+            exit 1
+          fi
+      - name: Lint
+        run: pnpm --filter kibootia-frontend lint
+      - name: Type check
+        run: pnpm --filter kibootia-frontend typecheck
+      - name: Unit tests
+        run: pnpm --filter kibootia-frontend test
+      - name: Build
+        run: pnpm --filter kibootia-frontend build
+
+  # Proves that a fork can remove or switch off a default-on module (ADR 0024, verification standard). Each row builds
+  # and starts what is left: the notes module is deleted with the same script the removal recipe describes, the others
+  # are switched off by their property. Rows that switch a module off run the tests tagged `startup` (the application
+  # starts against MySQL, the core API answers, the module's endpoints answer 404 `<module>.disabled`); the row that
+  # deletes code runs every backend test, which must still pass without it.
+  module-removal:
+    name: Without ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: notes (removed)
+            remove: notes
+            files: "true"
+            observability: "true"
+            tests: all
+          - name: files (switched off)
+            remove: ""
+            files: "false"
+            observability: "true"
+            tests: startup
+          - name: observability (switched off)
+            remove: ""
+            files: "true"
+            observability: "false"
+            tests: startup
+          - name: notes, files and observability (all)
+            remove: notes
+            files: "false"
+            observability: "false"
+            tests: startup
+    env:
+      KIBOOTIA_FILES_ENABLED: ${{ matrix.files }}
+      KIBOOTIA_OBSERVABILITY_ENABLED: ${{ matrix.observability }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Remove the module
+        if: matrix.remove != ''
+        run: node scripts/remove-module.mjs "${{ matrix.remove }}"
+      # Testcontainers starts MySQL on the runner's Docker daemon. The build rewrites backend/openapi.json, which is
+      # expected to change in the rows that remove a module, so it is not compared here.
+      - name: Build and test the backend
+        working-directory: backend
+        run: |
+          if [ "${{ matrix.tests }}" = "startup" ]; then
+            ./mvnw -B verify -Dgroups=startup
+          else
+            ./mvnw -B verify
+          fi
+      - name: Generate the client from the remaining API
+        if: matrix.remove != ''
+        run: pnpm --filter kibootia-frontend api:generate
+      - name: Lint, type check, test and build the frontend
+        if: matrix.remove != ''
+        run: |
+          pnpm --filter kibootia-frontend lint
+          pnpm --filter kibootia-frontend typecheck
+          pnpm --filter kibootia-frontend test
+          pnpm --filter kibootia-frontend build
+
+  images:
+    name: Build and scan container images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the backend image
+        run: docker build --tag kibootia-backend:ci backend
+      - name: Build the frontend image
+        run: docker build --file frontend/Dockerfile --tag kibootia-frontend:ci .
+      # Fails on known HIGH or CRITICAL vulnerabilities that have a fix available (ADR 0047).
+      - name: Scan the backend image
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: kibootia-backend:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Scan the frontend image
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: kibootia-frontend:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  e2e:
+    name: End-to-end sign-in test
+    # Nightly, on demand, and on pull requests labelled `e2e` (verification standard).
+    if: >-
+      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create .env with generated secrets
+        run: node scripts/bootstrap.mjs
+      - name: Start the infrastructure and both applications in containers
+        run: node scripts/apps.mjs up
+      - name: Install the browser
+        run: pnpm --filter kibootia-frontend exec playwright install --with-deps chromium
+      - name: Run the sign-in test
+        run: pnpm --filter kibootia-frontend test:e2e
+      - name: Show container logs after a failure
+        if: failure()
+        run: docker compose --profile "*" logs --no-color --tail 200
+      - name: Keep the Playwright report after a failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

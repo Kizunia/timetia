@@ -1,0 +1,163 @@
+import type { components } from "./schema.gen";
+
+/** An RFC 9457 problem as the Spring API sends it (ADR 0043); the shape comes from the generated description. */
+export type Problem = components["schemas"]["Problem"];
+
+/** One invalid field in a validation failure. */
+export type FieldError = NonNullable<Problem["errors"]>[number];
+
+/** A call the API refused. `problem` is absent when the body was not a problem (a proxy or network error page). */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly problem?: Problem,
+  ) {
+    super(problem ? `The API answered ${status} ${problem.code}` : `The API answered ${status}`);
+    this.name = "ApiError";
+  }
+
+  get code(): string | undefined {
+    return this.problem?.code;
+  }
+
+  get traceId(): string | undefined {
+    return this.problem?.traceId;
+  }
+}
+
+export function isProblem(value: unknown): value is Problem {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.code === "string" && typeof candidate.status === "number" && typeof candidate.title === "string";
+}
+
+/**
+ * Validation errors keyed by field, ready to put on a form. The first message for a field wins. Fields the form does
+ * not have can still be shown from `problem.detail`.
+ */
+export function fieldErrors(problem: Problem | undefined): Record<string, FieldError> {
+  const byField: Record<string, FieldError> = {};
+  for (const error of problem?.errors ?? []) {
+    byField[error.field] ??= error;
+  }
+  return byField;
+}
+
+/**
+ * The user-facing text for a problem code. The backend's `detail` is a developer default (ADR 0043); the frontend
+ * chooses its own words from the `code`. Modules add their codes here as they add screens.
+ */
+const MESSAGES: Record<string, string> = {
+  "platform.unauthenticated": "Your session has ended. Sign in again.",
+  "platform.forbidden": "You are not allowed to do that.",
+  "platform.not_found": "That could not be found.",
+  "platform.validation_failed": "Some of the information is not valid.",
+  "platform.concurrent_modification": "Someone else changed this while you were editing. Reload it and try again.",
+  "platform.duplicate": "That already exists.",
+  "platform.rate_limited": "Too many requests. Wait a moment and try again.",
+  "platform.payload_too_large": "That is too large to send.",
+  "platform.internal_error": "Something went wrong on our side.",
+  "platform.email_not_verified": "Verify your email address to do this.",
+  "platform.service_unavailable": "A service we depend on is not available right now. Try again in a moment.",
+  "identity.account_disabled": "Your account is disabled. Ask an administrator.",
+  "identity.user_not_found": "That user could not be found.",
+  "identity.email_in_use": "Someone with this email address already has an account.",
+  "identity.cannot_change_self": "You cannot do this to your own account.",
+  "identity.not_invited": "That user has already accepted the invitation.",
+  "identity.not_disabled": "That user is not disabled.",
+  "identity.not_deleted": "Delete the user before erasing them.",
+  "identity.erasure_begun": "Erasing this user has already begun.",
+  "identity.already_verified": "Your email address is already verified. Choose “I have verified” to continue.",
+  "identity.avatar_not_found": "There is no photo.",
+  "files.too_large": "That photo is larger than 5 MB. Choose a smaller one.",
+  "files.unsupported_type": "Upload a JPEG, PNG or WebP image.",
+  "files.invalid_image": "That file could not be read as an image. Choose a different photo.",
+  "files.disabled": "Photos are switched off in this installation.",
+  "access.role_not_found": "That role could not be found.",
+  "access.role_name_in_use": "Another role already has this name.",
+  "access.role_protected": "That role is built in and cannot be changed that way.",
+  "access.role_in_use": "Users still hold this role. Take it away from them first.",
+  "access.last_administrator": "This is the last administrator who can sign in. Make someone else an administrator first.",
+  "access.user_not_found": "That user could not be found.",
+  "access.scope_unvalidated":
+    "Departments, divisions and batches cannot be checked yet, because nothing provides them. Only roles that apply everywhere can be given until it does.",
+  "access.assignment_not_found": "The user does not hold that role there. It may have been removed already.",
+  "identity.import_running": "Another import is running. Wait for it to finish, then try again.",
+  "identity.import_too_large": "That file is too large. Split it into smaller files; importing the same file again is harmless.",
+  // --- Timetia: timetable ---------------------------------------------------------------------------------------
+  "timetable.lecture_not_found": "That lecture could not be found, or you may not see it.",
+  "timetable.version_not_found": "That timetable version could not be found.",
+  "timetable.entry_not_found": "That entry is not in this version.",
+  "timetable.version_published": "A published timetable cannot be changed. Create a new version instead.",
+  "timetable.version_empty": "Add at least one lecture before publishing.",
+  "timetable.effective_from_taken": "This division already has a published timetable starting on that date.",
+  "timetable.reference_missing": "Something this timetable refers to (a term, an assignment or a room) no longer exists.",
+  "timetable.clash": "This would book a teacher, a room or a group of students twice.",
+  "timetable.slot_taken": "Someone else took that slot a moment ago. Check the timetable and try again.",
+  "timetable.changes_would_be_lost": "Lectures this version would replace have applied changes. Revert those tickets first.",
+  // --- Timetia: tickets -----------------------------------------------------------------------------------------
+  "rescheduling.ticket_not_found": "That ticket could not be found, or you may not see it.",
+  "rescheduling.lecture_not_found": "That lecture could not be found, or you may not see it.",
+  "rescheduling.assignment_not_found": "That teaching assignment could not be found, or it is not yours.",
+  "rescheduling.lecture_started": "The lecture has started, so it can no longer be changed.",
+  "rescheduling.lecture_cancelled": "The lecture is cancelled.",
+  "rescheduling.blocked_by_conflicts": "Something is in the way. Nothing was changed.",
+  "rescheduling.ticket_expired": "The lecture started before the ticket was applied, so the ticket has expired.",
+  "rescheduling.ticket_not_draft": "This can only be done to a draft.",
+  "rescheduling.ticket_not_editable": "This ticket can no longer be edited.",
+  "rescheduling.ticket_not_in_review": "This ticket is not under review.",
+  "rescheduling.ticket_not_rejected": "Only a rejected ticket can be taken to the HOD.",
+  "rescheduling.ticket_not_applied": "Only an applied ticket can be reverted.",
+  "rescheduling.review_already_decided": "You have already answered this review.",
+  "rescheduling.reviews_pending": "Not everyone asked to review has answered yet.",
+  "rescheduling.needs_hod_approval": "A permanent change needs an HOD's approval. Send it for review to an HOD.",
+  "rescheduling.stale_ticket": "The ticket was changed after you opened it. Reload it and try again.",
+  "rescheduling.not_weekly": "Only a lecture of the weekly timetable can be changed permanently.",
+  "rescheduling.not_revertible": "This kind of ticket cannot be reverted. To undo an extra lecture, cancel it.",
+  "rescheduling.revert_exists": "A revert of this ticket has already been raised.",
+  "rescheduling.lecture_changed_since": "Another ticket has changed the lecture since, so this one cannot be reverted on its own.",
+  "rescheduling.original_slot_passed": "The slot the lecture came from has passed, so it cannot go back.",
+  // --- Timetia: issues and notifications ------------------------------------------------------------------------
+  "issues.issue_not_found": "That issue could not be found, or you may not see it.",
+  "issues.issue_not_open": "The issue is closed.",
+  "issues.place_not_found": "That division or batch could not be found.",
+  "issues.ticket_not_found": "That ticket could not be found, or you may not see it.",
+  "notifications.notification_not_found": "That notification could not be found.",
+  // --- Timetia: campus data -------------------------------------------------------------------------------------
+  "reference.duplicate_code": "Something with this code already exists.",
+  "reference.duplicate_teaching_assignment": "That subject is already assigned for this division, session type and batch.",
+  "reference.department_not_found": "That department could not be found.",
+  "reference.division_not_found": "That division could not be found.",
+  "reference.batch_not_found": "That batch could not be found.",
+  "reference.subject_not_found": "That subject could not be found.",
+  "reference.room_not_found": "That room could not be found.",
+  "reference.faculty_not_found": "That faculty member could not be found.",
+  "reference.term_not_found": "That term could not be found.",
+  "reference.teaching_assignment_not_found": "That teaching assignment could not be found.",
+  "notes.not_found": "That note could not be found.", // module:notes
+  "notes.duplicate_title": "You already have a note with this title.", // module:notes
+};
+
+/** What the rules for giving a role in a place say when a request breaks one (the field error code, not the problem code). */
+const ASSIGNMENT_MESSAGES: Record<string, string> = {
+  unknown_scope: "There is no department, division or batch with that code.",
+  scope_required: "This role applies to one department, division or batch. Enter its code.",
+  scope_not_allowed: "This role applies everywhere. Leave the code empty.",
+  scope_ambiguous: "Name the place by its code only.",
+  role_not_scoped: "That role is not given in a place. Give it with the user's other roles.",
+  unknown_role: "That role no longer exists.",
+};
+
+/** The text for a validation failure of a role assignment, or undefined when it is not one. */
+export function assignmentMessageFor(error: unknown): string | undefined {
+  if (!(error instanceof ApiError) || error.code !== "platform.validation_failed") return undefined;
+  const code = fieldErrors(error.problem).assignments?.code;
+  return code ? ASSIGNMENT_MESSAGES[code] : undefined;
+}
+
+export const GENERIC_MESSAGE = "The request failed.";
+
+export function messageFor(error: unknown): string {
+  if (error instanceof ApiError && error.code) return MESSAGES[error.code] ?? GENERIC_MESSAGE;
+  return GENERIC_MESSAGE;
+}

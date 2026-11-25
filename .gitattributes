@@ -1,0 +1,9 @@
+# Files that Linux containers and CI execute must keep LF line endings, whatever the checkout's autocrlf setting.
+mvnw text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.mjs text eol=lf
+
+# Generated contract files are compared byte for byte in CI, so they keep LF on every checkout.
+backend/openapi.json text eol=lf
+frontend/src/lib/api/schema.gen.ts text eol=lf

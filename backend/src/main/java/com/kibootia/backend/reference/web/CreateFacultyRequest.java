@@ -1,0 +1,16 @@
+package com.kibootia.backend.reference.web;
+
+import java.util.UUID;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+/**
+ * The body of {@code POST /api/v1/faculties}. {@code userId} is the Keycloak user the person signs in as; optional,
+ * because a faculty record may be seeded before the account exists.
+ */
+public record CreateFacultyRequest(@NotBlank @Size(max = 30) String code, @NotBlank @Size(max = 150) String name,
+		@NotNull UUID departmentId, UUID userId) {
+
+}

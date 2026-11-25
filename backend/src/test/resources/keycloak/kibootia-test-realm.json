@@ -1,0 +1,92 @@
+{
+  "realm": "kibootia",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "kibootia@localhost",
+    "fromDisplayName": "Kibootia"
+  },
+  "clients": [
+    {
+      "clientId": "kibootia-web",
+      "name": "Kibootia web",
+      "enabled": true,
+      "secret": "web-secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:3470/"
+      ]
+    },
+    {
+      "clientId": "kibootia-admin",
+      "name": "Kibootia administration",
+      "enabled": true,
+      "secret": "admin-secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email",
+        "kc-admin-api"
+      ]
+    },
+    {
+      "clientId": "kibootia-reader",
+      "name": "A service account that may only read users",
+      "enabled": true,
+      "secret": "reader-secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email",
+        "kc-admin-api"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-kibootia-admin",
+      "enabled": true,
+      "serviceAccountClientId": "kibootia-admin",
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "query-users",
+          "manage-users"
+        ]
+      }
+    },
+    {
+      "username": "service-account-kibootia-reader",
+      "enabled": true,
+      "serviceAccountClientId": "kibootia-reader",
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "query-users"
+        ]
+      }
+    }
+  ]
+}

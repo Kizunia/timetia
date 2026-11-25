@@ -1,0 +1,77 @@
+import Link from "next/link";
+
+import { SignOutButton } from "@/components/SignOutButton";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+import { UserAvatar } from "@/features/identity/UserAvatar";
+import type { Me } from "@/lib/api/client";
+import { moduleLinks } from "@/modules";
+
+/** The sections of the administration area, the permission that shows each one, and whether only an administrator gets it. */
+export const ADMIN_SECTIONS = [
+  { href: "/admin/users", label: "Users", permission: "identity.profiles.view" },
+  { href: "/admin/roles", label: "Roles", permission: "access.roles.view" },
+  { href: "/admin/campus", label: "Campus", permission: "timetable.config.manage" },
+  { href: "/admin/timetables", label: "Timetables", permission: "timetable.config.manage" },
+  { href: "/admin/import", label: "Import", permission: "identity.users.invite", administratorOnly: true },
+  { href: "/admin/audit", label: "Audit log", permission: "audit.entries.view" },
+] as const;
+
+type AdminSection = (typeof ADMIN_SECTIONS)[number];
+
+/**
+ * The sections this user is shown. A usability hint only: the API refuses what a hidden link would have led to, and the
+ * import is refused to anyone who is not an administrator even if they hold the permission.
+ */
+export function visibleAdminSections(me: Pick<Me, "permissions" | "administrator">): AdminSection[] {
+  return ADMIN_SECTIONS.filter(
+    (section) => me.permissions.includes(section.permission) && (!("administratorOnly" in section) || me.administrator),
+  );
+}
+
+const linkClass =
+  "rounded-md px-2 py-1 text-sm font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+
+/**
+ * The top of every page. What it shows depends on the signed-in user's permissions, which is for usability only: the
+ * backend refuses what a hidden link would have led to.
+ */
+export function SiteHeader({ me }: { me: Me | null }) {
+  const sections = me ? visibleAdminSections(me) : [];
+  const links = me ? moduleLinks(me.permissions) : [];
+  return (
+    <header className="border-b">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+        <Link href="/" className="text-lg font-semibold tracking-tight">
+          Timetia
+        </Link>
+        <nav aria-label="Main" className="flex flex-1 flex-wrap items-center gap-1">
+          {me && (
+            <Link href="/profile" className={linkClass}>
+              Profile
+            </Link>
+          )}
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className={linkClass}>
+              {link.label}
+            </Link>
+          ))}
+          {sections.length > 0 && (
+            <Link href={sections[0]!.href} className={linkClass}>
+              Administration
+            </Link>
+          )}
+        </nav>
+        {me && (
+          <div className="flex items-center gap-3">
+            {me.emailVerified && <NotificationBell />}
+            <UserAvatar userId={me.id} name={me.name} version={me.avatarsEnabled ? me.avatarVersion : null} />
+            <span className="text-sm text-muted-foreground" data-testid="header-name">
+              {me.name}
+            </span>
+            <SignOutButton />
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}

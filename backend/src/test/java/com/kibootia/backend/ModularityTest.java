@@ -1,0 +1,79 @@
+package com.kibootia.backend;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModules;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Spring Modulith verification: no cycles between modules, no access to the internals of another module.
+ */
+class ModularityTest {
+
+	static final ApplicationModules MODULES = ApplicationModules.of(BackendApplication.class);
+
+	/**
+	 * The core modules are always there. The default-on modules ({@code files}, {@code notes}) are not required, because
+	 * a fork may remove them (ADR 0024); what they may and may not depend on is checked by rule 5 in
+	 * {@code ArchitectureTest}, and the verification below covers whatever modules exist.
+	 */
+	@Test
+	void coreModulesExist() {
+		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
+		assertThat(names).contains("academic", "access", "audit", "identity", "issues", "platform", "reference",
+				"rescheduling", "timetable");
+	}
+
+	/** Every module is one of the known ones, so a stray package cannot become a module unnoticed. */
+	@Test
+	void everyModuleIsKnown() {
+		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
+		assertThat(names).isSubsetOf("academic", "access", "audit", "files", "identity", "issues", "notes", "notifications",
+				"platform", "reference", "rescheduling", "timetable");
+	}
+
+	@Test
+	void moduleStructureIsValid() {
+		MODULES.verify();
+	}
+
+	/**
+	 * Verification only means something if the modules depend on each other: with no edges there is no cycle to find and no
+	 * internal access to refuse. Spring Modulith ignores test classes, so a broken module cannot be fed to it from the test
+	 * sources; this shows instead that the real graph has edges, among the core modules that are always present.
+	 */
+	@Test
+	void coreModulesDependOnEachOtherSoVerificationHasSomethingToCheck() {
+		assertThat(dependenciesOf("identity")).contains("access", "platform");
+		assertThat(dependenciesOf("access")).contains("platform");
+		assertThat(dependenciesOf("audit")).contains("platform");
+		assertThat(dependenciesOf("academic")).as("academic seeds roles through access").contains("access", "platform");
+		// reference uses the academic scope-kind constants, but those are compile-time inlined, so at the bytecode level
+		// it depends only on the platform persistence and authorization ports.
+		assertThat(dependenciesOf("reference")).as("reference builds on the platform ports").contains("platform");
+		assertThat(dependenciesOf("timetable")).as("timetable reads reference data only through its published port")
+			.contains("reference", "academic", "platform");
+		assertThat(dependenciesOf("rescheduling")).as("rescheduling reaches lectures and reference data only through their ports, and asks access who holds a place to list the people a ticket can be sent to")
+			.contains("timetable", "reference", "academic", "access", "platform");
+		assertThat(dependenciesOf("access")).as("access knows nothing of tickets (the edge only goes one way)")
+			.doesNotContain("rescheduling");
+		assertThat(dependenciesOf("issues")).as("issues reach reference data and tickets only through their ports")
+			.contains("reference", "rescheduling", "academic", "platform");
+		assertThat(dependenciesOf("notifications")).as("notifications react to the events of other modules and ask access who holds a place")
+			.contains("access", "issues", "rescheduling", "platform");
+		assertThat(dependenciesOf("platform")).as("platform depends on no other module (rule 8)").isEmpty();
+	}
+
+	private static List<String> dependenciesOf(String module) {
+		return MODULES.getModuleByName(module)
+			.orElseThrow()
+			.getDirectDependencies(MODULES)
+			.uniqueModules()
+			.map((dependency) -> dependency.getIdentifier().toString())
+			.sorted()
+			.toList();
+	}
+
+}
