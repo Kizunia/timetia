@@ -151,6 +151,16 @@ class AcademicDirectoryService implements AcademicDirectory {
 	@Override
 	@Transactional(readOnly = true)
 	@NoAuthorization("a read-only lookup for modules that have already authorized the request")
+	public Map<UUID, String> batchCodes(Collection<UUID> batchIds) {
+		if (batchIds.isEmpty()) {
+			return Map.of();
+		}
+		return this.campus.findBatches(batchIds).stream().collect(Collectors.toUnmodifiableMap(Batch::id, Batch::code));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("a read-only lookup for modules that have already authorized the request")
 	public Set<UUID> divisionIdsTaughtBy(UUID userId) {
 		Set<UUID> faculty = facultyIdsOf(userId);
 		return faculty.isEmpty() ? Set.of()

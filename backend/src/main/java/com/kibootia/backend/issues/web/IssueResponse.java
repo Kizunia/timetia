@@ -13,7 +13,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 /**
  * An issue as the API returns it. {@code batchId} is null for a theory issue, which is for the whole division.
- * {@code mentionedFacultyIds} are faculty records; {@code linkedTicketIds} are the tickets that answer it.
+ * {@code mentionedFacultyIds} are faculty records; {@code linkedTicketIds} are the tickets that answer it. The names and
+ * codes save the screens a lookup; one is null when its record was deleted.
  */
 public record IssueResponse(
 		@Schema(requiredMode = REQUIRED) UUID id,
@@ -31,6 +32,11 @@ public record IssueResponse(
 		@Schema(nullable = true) UUID closedByUserId,
 		@Schema(requiredMode = REQUIRED) long version,
 		@Schema(requiredMode = REQUIRED) Instant createdAt,
-		@Schema(requiredMode = REQUIRED) Instant updatedAt) {
+		@Schema(requiredMode = REQUIRED) Instant updatedAt,
+		@Schema(nullable = true) String openerName,
+		@Schema(nullable = true) String closedByName,
+		@Schema(nullable = true) String divisionCode,
+		@Schema(nullable = true) String batchCode,
+		@Schema(requiredMode = REQUIRED) List<MentionedFaculty> mentionedFaculty) {
 
 }
