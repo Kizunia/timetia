@@ -86,7 +86,6 @@ Use two windows: a normal one for `demo-admin` and a private window for `demo`.
 ## 5. What is built
 
 Live timetable, tickets of every kind with review/escalation/revert, conflict checks, free-room suggestions, notifications
-(bell and page), issues (open, list, detail, close), role-based visibility, audit log, user and role administration.
-Not built in the web app: screens to edit campus data and timetables (use the admin API / `scripts/seed-college.browser.js`),
-linking a ticket to an issue from the issue page (API exists), and browser-level automated tests. Walk through section 4 once
-before presenting.
+(bell and page), issues (open, mention, link a ticket, close), campus and timetable setup under Administration,
+role-based visibility, audit log, user and role administration. The longer click-through is [DEMO.md](DEMO.md).
+Deferred, and not built: see `timetia-docs/modules/lecture-rescheduling/open-questions.md`.
