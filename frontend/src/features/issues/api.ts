@@ -29,7 +29,7 @@ function useRefresh() {
     Promise.all(["issues", "issue", "notifications", "unread", "audit"].map((key) => client.invalidateQueries({ queryKey: [key] })));
 }
 
-export function useCreateIssue() {
+export function useOpenIssue() {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: async (body: NewIssue) => unwrap(await browserApi().POST("/api/v1/issues", { body })),
@@ -41,6 +41,24 @@ export function useCloseIssue(id: string) {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: async () => unwrap(await browserApi().POST("/api/v1/issues/{id}/close", { params: { path: { id } } })),
+    onSuccess: refresh,
+  });
+}
+
+export function useMentionFaculty(id: string) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: async (facultyId: string) =>
+      unwrap(await browserApi().POST("/api/v1/issues/{id}/mentions", { params: { path: { id } }, body: { facultyId } })),
+    onSuccess: refresh,
+  });
+}
+
+export function useLinkTicket(id: string) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: async (ticketId: string) =>
+      unwrap(await browserApi().POST("/api/v1/issues/{id}/links", { params: { path: { id } }, body: { ticketId } })),
     onSuccess: refresh,
   });
 }
