@@ -240,6 +240,13 @@ class JdbcCatalogStore extends JdbcReferenceSupport implements CatalogStore {
 	}
 
 	@Override
+	public Faculty updateFacultyUser(UUID id, long expectedVersion, UUID userId) {
+		Faculty current = findFaculty(id).orElseThrow();
+		boolean written = setUserIfChanged(FACULTY, id, current.version(), expectedVersion, current.userId(), userId);
+		return written ? findFaculty(id).orElseThrow() : current;
+	}
+
+	@Override
 	public void deleteFaculty(UUID id) {
 		softDelete(FACULTY, id);
 	}
