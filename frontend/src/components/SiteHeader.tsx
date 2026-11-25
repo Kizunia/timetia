@@ -10,6 +10,8 @@ import { moduleLinks } from "@/modules";
 export const ADMIN_SECTIONS = [
   { href: "/admin/users", label: "Users", permission: "identity.profiles.view" },
   { href: "/admin/roles", label: "Roles", permission: "access.roles.view" },
+  { href: "/admin/campus", label: "Campus", permission: "timetable.config.manage" },
+  { href: "/admin/timetables", label: "Timetables", permission: "timetable.config.manage" },
   { href: "/admin/import", label: "Import", permission: "identity.users.invite", administratorOnly: true },
   { href: "/admin/audit", label: "Audit log", permission: "audit.entries.view" },
 ] as const;
