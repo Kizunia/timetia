@@ -20,6 +20,10 @@ public record NotificationResponse(
 		@Schema(nullable = true) UUID issueId,
 		@Schema(nullable = true, description = "Who caused it.") UUID actorUserId,
 		@Schema(requiredMode = REQUIRED) Instant createdAt,
-		@Schema(nullable = true) Instant readAt) {
+		@Schema(nullable = true) Instant readAt,
+		@Schema(nullable = true, description = "The name of who caused it.") String actorName,
+		@Schema(nullable = true, description = "The kind of ticket it is about.") String ticketType,
+		@Schema(nullable = true, description = "The lecture the ticket is about.") UUID lectureId,
+		@Schema(requiredMode = REQUIRED, description = "Whether the caller may open the ticket.") boolean ticketVisible) {
 
 }

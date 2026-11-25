@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kibootia.backend.notifications.application.Notification;
 import com.kibootia.backend.notifications.application.NotificationService;
+import com.kibootia.backend.notifications.application.NotificationView;
 import com.kibootia.backend.platform.web.PageQuery;
 import com.kibootia.backend.platform.web.PageResponse;
 
@@ -57,9 +58,11 @@ class NotificationsController {
 		return new MarkedResponse(this.notifications.markAllRead());
 	}
 
-	private static NotificationResponse toResponse(Notification notification) {
+	private static NotificationResponse toResponse(NotificationView view) {
+		Notification notification = view.notification();
 		return new NotificationResponse(notification.id(), notification.type(), notification.ticketId(), notification.issueId(),
-				notification.actorUserId(), notification.createdAt(), notification.readAt());
+				notification.actorUserId(), notification.createdAt(), notification.readAt(), view.actorName(), view.ticketType(),
+				view.lectureId(), view.ticketVisible());
 	}
 
 }

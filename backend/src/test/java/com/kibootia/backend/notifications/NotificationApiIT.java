@@ -181,6 +181,39 @@ class NotificationApiIT extends ReschedulingApiTest {
 		get(user(MEHTA_USER), "/api/v1/notifications?unread=true").andExpect(jsonPath("$.items", hasSize(0)));
 	}
 
+	@Test
+	@DisplayName("a notification names who caused it, and for a ticket its kind and lecture; one for an issue has neither")
+	void whatANotificationIsAbout() throws Exception {
+		People people = people();
+		String lecture = lecture(this.theoryOop, "2026-07-06");
+		String ticket = raise(RAO_USER, oopToThursday());
+		applyOk(RAO_USER, ticket);
+		told(ticket, "TICKET_APPLIED");
+		String about = "$.items[?(@.ticketId == '" + ticket + "')]";
+
+		// A student may not open the ticket, so the lecture is what their screen links to.
+		get(user(people.studentA1), "/api/v1/notifications").andExpect(status().isOk())
+			.andExpect(jsonPath(about + ".ticketType").value("RESCHEDULE"))
+			.andExpect(jsonPath(about + ".lectureId").value(lecture))
+			.andExpect(jsonPath(about + ".actorName").isNotEmpty())
+			.andExpect(jsonPath(about + ".ticketVisible").value(false));
+		// A batch representative may open some tickets, but not this theory one; the author may.
+		get(user(people.brA1), "/api/v1/notifications").andExpect(jsonPath(about + ".ticketVisible").value(false));
+		get(user(RAO_USER), "/api/v1/notifications").andExpect(jsonPath(about + ".ticketVisible").value(true));
+
+		UUID cr = people.crCse;
+		String issue = read(post(user(cr), "/api/v1/issues", "{\"sessionType\":\"THEORY\",\"divisionId\":\""
+				+ this.divisionCseA + "\",\"title\":\"Extra class\",\"mentionedFacultyIds\":[\"" + this.facultyRoy + "\"]}")
+			.andExpect(status().isCreated()), "$.id");
+		await(() -> toldOfIssue(issue).size() == 1);
+		String onIssue = get(user(ROY_USER), "/api/v1/notifications").andReturn().getResponse().getContentAsString();
+		List<java.util.Map<String, Object>> found = JsonPath.read(onIssue, "$.items[?(@.issueId == '" + issue + "')]");
+		assertThat(found).hasSize(1);
+		assertThat(found.get(0).get("actorName")).isNotNull();
+		assertThat(found.get(0).get("ticketType")).isNull();
+		assertThat(found.get(0).get("lectureId")).isNull();
+	}
+
 	private long unreadCount(UUID person) throws Exception {
 		return ((Number) JsonPath.read(get(user(person), "/api/v1/notifications/unread-count").andReturn().getResponse()
 			.getContentAsString(), "$.count")).longValue();
